@@ -4,6 +4,47 @@ All notable changes to this workshop. One entry per phase PR.
 
 ## [Unreleased]
 
+### Sponsor environment (2026-10-04)
+
+- **Sponsor values filled in.** `workshop.yaml` → `environments.sponsor` and `infra/env/sponsor.bicepparam` hold the
+  sponsorship subscription, its tenant and the facilitator, the cloud-only work account `hpb.facilitator` (Fabric
+  capacity admin). Budget alerts go to the outlook.com mailbox that created the tenant. ASSUMPTIONS.md 10.1–10.12.
+- **A new environment provisions in one pass.** ARM preflight rejected `livewell-guardrails` on a brand-new Foundry
+  account because the blocklist it names is created in the same deployment. `guardrailLinkBlocklist` keeps the policy
+  unlinked until the azd env has `AZURE_AI_ACCOUNT_NAME`; the postprovision hook links it. MCAPS is unchanged, and
+  `teardown.sh` clears the value so the next provision starts fresh.
+- **Preflight finds a personal-account Owner.** Check 2 looked the caller up by sign-in name. For a personal Microsoft
+  account (`name@outlook.com`, tenant UPN `name_outlook.com#EXT#@…`) that matches no one, so an Owner failed the check.
+  `scripts/preflight.sh` now looks the caller up by object ID.
+- **Cost guardrails on a new subscription.** The "Application Insights Smart Detection" action group that App Insights
+  creates in a subscription's first resource group no longer fails the tag check.
+- **`azure-ai-projects>=2.6.1`.** An already-installed 2.2.0 satisfied the old `>=2.0.0` floor but lacks
+  `agents.download_code` and `ProtocolConfiguration`, so the hosted-agent postdeploy hook and the A2A demo agents failed.
+- **One machine, two tenants.** TENANT-BOOTSTRAP Step 2 gives the sponsor tenant its own az and azd profile folders
+  (`AZURE_CONFIG_DIR`, `AZD_CONFIG_DIR` with `auth.useAzCliAuth`). A sponsor terminal cannot touch MCAPS, and MCAPS
+  terminals keep their sign-in. Step 1 now requires a work or school facilitator: ARM cannot create a Fabric capacity
+  for a personal Microsoft account.
+- **`fab` without a shared sign-in.** TENANT-BOOTSTRAP Step 4 runs the Fabric deploy on the sponsor az sign-in's tokens
+  (`FAB_TOKEN`, `FAB_TOKEN_ONELAKE`, `FAB_TOKEN_AZURE`) instead of `fab auth login`. Step 3 covers named participant
+  accounts (`seed-attendees.sh --file attendees.txt`).
+- **Attendees can run the Lab 2 judges.** `lab2_govern.py` calls the Foundry account's OpenAI endpoint as the attendee,
+  which their project-level Foundry User role does not cover. `attendee_roles` adds Cognitive Services OpenAI User on
+  the account. ADMIN-SETUP also notes that attendees need a Fabric licence for the Fabric IQ tool (ASSUMPTIONS.md 10.10).
+- **Participants use their own accounts.** Lab 0 (both rails), the Fabric step, the README, the values sheet and both
+  decks now say "your own workshop account" instead of `hpb.labNN`; both decks are rebuilt. `check_setup.py` no longer
+  warns on every account outside the `hpb.lab` prefix: it warns when the account is not in a workshop tenant (for
+  example a work account). `lab_accounts.naming: named` makes the values sheet show `firstname.lastname@<tenant>`.
+- **Sign-in cards.** `scripts/tenant/sign-in-cards.py` prints one A4 card per participant (username, temporary
+  password, the labs repository from `workshop.repo_url`, first sign-in steps) from `attendees.txt` or the
+  lab-accounts CSV into the gitignored `.azure/<env>/`.
+- **Device code sign-in in new tenants.** Security defaults in tenants created since July 2026 block
+  `az login --use-device-code` (error 530035). TENANT-BOOTSTRAP Step 1 and ADMIN-SETUP T+1 cover turning them off for
+  the workshop and back on afterwards (ASSUMPTIONS.md 10.11).
+- **Lab 3 spec as a copy-and-paste block.** Navigators copy the profile OpenAPI spec from Lab 3 (both pages) instead of
+  opening the spec URL and selecting all. `scripts/sync-openapi-block.py` writes it from the live server; it carries
+  the environment's address, the one endpoint allowed in a lab page. `check-content.py` allows it only there and now
+  also catches real Container Apps hosts; `connect-tools.py` warns when the block is stale (ASSUMPTIONS.md 10.12).
+
 ### Lab 4 DevUI token (2026-10-05)
 
 - **Participants can read the DevUI token themselves.** Lab 4 step 1 now shows the Cloud Shell (or Codespace)

@@ -9,7 +9,7 @@ Sources (pick one):
 
 Grants per attendee (idempotent: GET before create; deterministic role-assignment names):
   * workshop.yaml attendee_roles (Foundry User on the project, Search Index Data Reader on the search
-    service, Log Analytics Reader on Application Insights)
+    service, Log Analytics Reader on Application Insights, Cognitive Services OpenAI User on the account)
   * MODE=project-per-attendee: a project livewell-<labNN> under the shared Foundry account, Foundry User on it
   * Fabric workspace Viewer when FABRIC_WORKSPACE_ID is set (Viewer = read on every item, incl. the data agent)
 

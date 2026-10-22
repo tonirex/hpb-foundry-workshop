@@ -34,12 +34,18 @@ Record the outcome in [ASSUMPTIONS.md](../../ASSUMPTIONS.md) under "Values Anton
 | You are **Global Administrator** (or hold **Fabric Administrator** + **User Administrator**) | Entra admin centre → Roles & admins → My roles | Tenant settings, lab accounts |
 | Tenant country/region is **Singapore** | Entra admin centre → Overview → Properties | Data residency statement, lab-account usage location |
 | The facilitator account is a **member** (not a guest) of this tenant | Entra → Users → user type = Member | Fabric capacity admin must be a member UPN |
-| Security defaults are **on** | Entra → Overview → Properties → Manage security defaults | MFA for lab accounts without Entra P1 |
+| The facilitator is a **work or school** account, not a personal Microsoft account | Entra → Users: the UPN ends in the tenant's domain, without `#EXT#` | ARM cannot create the Fabric capacity for a personal account ("Unable to authorize with Azure Active Directory") |
+| Security defaults are **on** | Entra → Overview → Properties → Manage security defaults | MFA for lab accounts without Entra P1. In tenants created since July 2026 they also block **device code sign-in** (`az login --use-device-code` fails with error 530035), which the Builder rail uses: turn them off for the workshop day and on again at T+1, or use plain `az login` (ASSUMPTIONS.md 10.11) |
 | The facilitator has a Fabric licence | Sign in once at https://app.fabric.microsoft.com (the Free licence is assigned on first sign-in) | Fabric REST / `fab` calls (otherwise `UserNotLicensed`) |
 
+A sponsorship subscription created with an outlook.com address comes with a tenant whose only user is that personal
+account. Create a cloud-only facilitator in it (Entra → Users → New user, `<name>@<tenant>.onmicrosoft.com`), make
+it Global Administrator and Owner on the subscription, and run every step below as that account.
+
 Put the facilitator UPN(s) into [workshop.yaml](../config/workshop.yaml) `environments.sponsor.facilitator_upns`, and into
-`fabricAdminMembers` and `budgetContactEmails` in `infra/env/sponsor.bicepparam`. Put the subscription and tenant IDs
-into `environments.sponsor`.
+`fabricAdminMembers` and `budgetContactEmails` in `infra/env/sponsor.bicepparam`. A cloud-only account has no
+mailbox, so send the budget alerts to an address someone reads. Put the subscription and tenant IDs into
+`environments.sponsor`.
 
 ## Fabric tenant settings
 
@@ -63,13 +69,26 @@ Allow up to **one hour** for the settings to propagate before running `scripts/f
 
 ## Step 2: Azure subscription preparation
 
+`az` and `azd` keep one sign-in and one default subscription per user, shared by every terminal. To keep the two
+environments apart, give the sponsor tenant its own profile folders. A terminal with the three variables below works
+only on sponsor; every other terminal stays on MCAPS, and neither changes the other's sign-in.
+
 ```bash
+# Every sponsor terminal (Git Bash). PowerShell: $env:AZURE_CONFIG_DIR = "$HOME\.azure-livewell-sponsor" and so on.
+export AZURE_CONFIG_DIR="$HOME/.azure-livewell-sponsor"   # az sign-in and default subscription
+export AZURE_EXTENSION_DIR="$HOME/.azure/cliextensions"   # reuse the az extensions already installed
+export AZD_CONFIG_DIR="$HOME/.azd-livewell-sponsor"       # azd settings and extensions
+
+# Once
 az login --tenant <sponsor-tenant-id>
-az account set --subscription <sponsor-subscription-id>
-azd auth login --tenant-id <sponsor-tenant-id>
+azd config set auth.useAzCliAuth true       # azd uses the az sign-in above
+azd extension install azure.ai.agents
 azd env new sponsor --subscription <sponsor-subscription-id> --location swedencentral
-bash scripts/preflight.sh sponsor      # registers resource providers; prints quota links for any FAIL
+azd env set SEARCH_LOCATION francecentral   # as on mcaps: no new Search capacity in swedencentral (ASSUMPTIONS 2.5)
+bash scripts/preflight.sh sponsor           # registers resource providers; prints quota links for any FAIL
 ```
+
+The azd environment itself (`.azure/sponsor/`) is gitignored and lives only in the checkout that created it.
 
 On a fresh subscription, expect to request:
 
@@ -94,16 +113,31 @@ bash scripts/tenant/create-lab-users.sh sponsor
 - It also creates a **break-glass** account `hpb.breakglass`: Global Administrator, no forced password change. Exclude
   it from any Conditional Access policy and keep its password offline.
 - Temporary passwords are written to `.azure/sponsor/lab-accounts.csv`, which is gitignored and never printed. Print one card
-  per account. Personal laptops only: WOG devices cannot sign in to an external tenant.
+  per account with `python scripts/tenant/sign-in-cards.py sponsor --lab-accounts` (A4 PDF in the same gitignored
+  folder). Personal laptops only: WOG devices cannot sign in to an external tenant.
 - Re-running is safe. Use `--reset-passwords` to issue new passwords, or `--delete` after the workshop.
+- **Named accounts instead** (the 2026 delivery, ASSUMPTIONS.md 10.8): create one cloud-only member per participant
+  (`firstname.lastname@<tenant>`, usage location SG, password changed at first sign-in), assign each the free
+  Microsoft Fabric licence, put their UPNs in `attendees.txt` (gitignored, one per line) and run
+  `bash scripts/seed-attendees.sh sponsor --file attendees.txt` after the Fabric deploy. Every member can already
+  register applications (service principals). Creating Azure resources needs an Azure role: Owner on their own
+  resource group is the safe choice; Owner on the subscription also lets them change the shared workshop resources.
+  Set `lab_accounts.naming: named` in `workshop.yaml` so the values sheet describes them, and print their cards with
+  `python scripts/tenant/sign-in-cards.py sponsor --file attendees.txt` (asks for the shared temporary password).
 
 ## Step 4: build and prove the sponsor environment
 
-Same sequence as the dry run ([ADMIN-SETUP.md → T-3](ADMIN-SETUP.md#t-3-build-the-environment)):
+Same sequence as the dry run ([ADMIN-SETUP.md → T-3](ADMIN-SETUP.md#t-3-build-the-environment)), in a sponsor
+terminal (Step 2):
 
 ```bash
 bash scripts/provision.sh sponsor --what-if       # capacity admins = member UPNs in THIS tenant
 bash scripts/cost-guardrails.sh sponsor
+# fab keeps one sign-in per user (~/.config/fab), so give it the sponsor az sign-in's tokens instead of
+# `fab auth login`; they last about an hour, so export them again before a long run.
+export FAB_TOKEN="$(az account get-access-token --resource https://analysis.windows.net/powerbi/api --query accessToken -o tsv)"
+export FAB_TOKEN_ONELAKE="$(az account get-access-token --resource https://storage.azure.com --query accessToken -o tsv)"
+export FAB_TOKEN_AZURE="$(az account get-access-token --resource https://management.azure.com --query accessToken -o tsv)"
 bash scripts/fabric/deploy.sh sponsor             # Phase 3
 # Fabric IQ connection: portal runbook step (content/labs/fabric-step.md), needs Foundry Project Manager
 bash scripts/seed-attendees.sh sponsor --lab-accounts

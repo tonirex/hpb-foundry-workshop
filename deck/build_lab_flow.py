@@ -80,7 +80,7 @@ LABS = [
         "story_prompts": [("Rahim", "lab0_am_i_diabetic")],
         "story_note": "The coach must answer kindly without diagnosing.",
         "steps": [
-            "Sign in to the Foundry portal with your hpb.labNN account and open the shared project.",
+            "Sign in to the Foundry portal with your own workshop account and open the shared project.",
             "**Agents → New agent**: name it `livewell-<initials>` and pick `gpt-5-mini`.",
             "**Parameters**: Reasoning effort **Low**; remove **Web search** if the template added it.",
             "Paste the `base` instruction block, then **Save** and note the version.",

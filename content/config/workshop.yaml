@@ -11,6 +11,7 @@ workshop:
   short_name: "livewell"
   customer: "Health Promotion Board (Singapore)"
   owner: "Antonia Chen (Sr Solution Engineer, Microsoft Singapore)"
+  repo_url: "https://github.com/tonirex/livewell-foundry-workshop"  # lab instructions, printed on the sign-in cards
   date: "TODO"                     # workshop day (YYYY-MM-DD)
   participant_count: 6              # confirmed HPB head-count; sponsor quota sized for it (ASSUMPTIONS.md 9.1)
   planning_cohort_size: 20
@@ -130,6 +131,7 @@ rbac_roles:
   acr_pull: "7f951dda-4ed3-4680-a7ca-43fe172d538d"                  # project + MCP app identities
   acr_push: "8311e382-0749-4cb8-b61a-304f252e45ec"
   log_analytics_reader: "73c42c96-874c-492b-b04d-ab87d138a893"      # attendees -> Application Insights (portal traces)
+  cognitive_services_openai_user: "5e0bd9bd-7b93-4f28-af87-19fc36ad61bd"  # attendees -> Foundry account (Lab 2 judges)
   foundry_agent_consumer: "eed3b665-ab3a-47b6-8f48-c9382fb1dad6"    # project identity -> project (A2A calls to the specialists)
 
 # What scripts/seed-attendees.sh grants each attendee (keys from rbac_roles; scope = resource).
@@ -137,6 +139,7 @@ attendee_roles:
   - { role: foundry_user, scope: project }               # agents, playground, evaluations in the shared project
   - { role: search_index_data_reader, scope: search }    # browse the shared knowledge base in the portal
   - { role: log_analytics_reader, scope: appinsights }   # Tracing tab (Lab 2)
+  - { role: cognitive_services_openai_user, scope: account }  # Lab 2 Builder judges call the account's OpenAI endpoint
 
 # Built-in Entra directory roles (template IDs, identical in every tenant). Used by
 # scripts/tenant/create-lab-users.sh for the break-glass account only.
@@ -166,10 +169,16 @@ environments:
     budget_alerts_usd: [150, 300]
   sponsor:
     purpose: "delivery"
-    subscription_id: "TODO"
-    tenant_id: "TODO"
-    facilitator_upns: ["TODO"]
+    subscription_id: "d865b78f-2913-4f0a-8945-ff436fe33f6b"   # HPB-workshop_HPB_Customer (Azure Sponsorship)
+    tenant_id: "f42d5e19-57d1-4047-8d3d-cd4bb2fe7d9a"         # hpbsub2026outlook.onmicrosoft.com
+    facilitator_upns:
+      # Cloud-only work account: a personal Microsoft account (hpb.sub2026@outlook.com, which created the tenant
+      # and stays Global Administrator + Owner) cannot create a Fabric capacity (ASSUMPTIONS.md 10.1).
+      - "hpb.facilitator@hpbsub2026outlook.onmicrosoft.com"
     lab_accounts:
+      # Named participant accounts (firstname.lastname, listed in the gitignored attendees.txt; ASSUMPTIONS.md 10.8).
+      # prefix/count/break_glass are only used by scripts/tenant/create-lab-users.sh.
+      naming: "named"
       prefix: "hpb.lab"
       count: 20
       break_glass: "hpb.breakglass"

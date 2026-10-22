@@ -59,8 +59,9 @@ workshop**. Fabric built the Resident 360 that sees Rahim; today Foundry builds 
 
 - **Bring a personal laptop.** WOG devices cannot sign in to an external Entra tenant.
 - **Guest Wi-Fi:** SSID and code are on the welcome slide (set in `content/config/workshop.yaml`).
-- **First sign-in:** you get a workshop account (`hpb.labNN@…`) and a temporary password. At first
-  sign-in you change the password and register **Microsoft Authenticator** on your phone. Install it before the day.
+- **First sign-in:** you get your own workshop account (the username on your sign-in card, for example
+  `firstname.lastname@…`) and a temporary password. At first sign-in you change the password and register
+  **Microsoft Authenticator** on your phone. Install it before the day.
 - Use a private or guest browser window so your work account does not interfere.
 
 </details>
@@ -86,8 +87,8 @@ out of your GitHub account's free monthly hours; the 2-core machine is enough.
    az login --use-device-code --allow-no-subscriptions
    ```
 
-   Open the link it prints in the **private browser window where you are signed in as `hpb.labNN`**, enter the
-   code and pick that account. If it asks you to choose a subscription, press Enter.
+   Open the link it prints in the **private browser window where you are signed in with your workshop account**,
+   enter the code and pick that account. If it asks you to choose a subscription, press Enter.
 3. Create your settings file, then fill it in (see [Your `.env`](#your-env) below):
 
    ```bash
@@ -167,7 +168,7 @@ tool connections and the two model deployments, and prints what to fix:
 | `FIX FOUNDRY_PROJECT_ENDPOINT should look like…` | Copy the whole **Project endpoint** row again |
 | `FIX not signed in to Azure` | Step 2 |
 | `FIX your account cannot open this project` | Check the endpoint; otherwise ask a facilitator to grant your account **Foundry User** |
-| `WARN not an hpb.labNN account` | You signed in with another account. Run `az logout`, then step 2 |
+| `WARN not a workshop account` | You signed in with another account (for example your work account). Run `az logout`, then step 2 |
 
 ## Facilitators
 

@@ -25,11 +25,16 @@ TEXT_EXT = {".md", ".json", ".yaml", ".yml", ".py", ".txt", ".csv", ".sh", ".ps1
 GUID_RE = re.compile(r"\b[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}\b")
 ENDPOINT_RE = re.compile(
     r"https?://[a-z0-9][a-z0-9-]*\.(?:services\.ai\.azure\.com|openai\.azure\.com|cognitiveservices\.azure\.com|"
-    r"search\.windows\.net|[a-z0-9-]+\.azurecontainerapps\.io|azurecr\.io|blob\.core\.windows\.net)",
+    r"search\.windows\.net|(?:[a-z0-9-]+\.)+azurecontainerapps\.io|azurecr\.io|blob\.core\.windows\.net)",
     re.IGNORECASE,
 )
 ID_ALLOWED = {"content/config/workshop.yaml", "SPEC.md", "CODING-AGENT-PROMPTS.md"}
 ID_ALLOWED_GLOBS = ("infra/env/*.bicepparam",)
+# The one place a lab page may hold an endpoint: the Lab 3 OpenAPI spec block written by
+# scripts/sync-openapi-block.py (the tool calls the spec's server, so the address must be in it).
+SPEC_BLOCK_PAGES = {"content/labs/lab-03.md", "content/labs/lab-03-portal.md"}
+SPEC_BLOCK_RE = re.compile(r"<!-- openapi-spec:begin\b.*?-->(.*?)<!-- openapi-spec:end -->", re.S)
+SPEC_CODE_RE = re.compile(r"```json[ \t]*\n(.*?)\n[ \t]*```", re.S)
 LINK_RE = re.compile(r"(?<!!)\[(?:[^\]\[]|\[[^\]]*\])*\]\(([^)\s]+)(?:\s+\"[^\"]*\")?\)")
 IMAGE_RE = re.compile(r"!\[[^\]]*\]\(([^)\s]+)\)")
 PROMPT_TOKEN_RE = re.compile(r"`((?:lab[0-4]|fabric_q|bridge_q)_[a-z0-9_]+)`")
@@ -161,6 +166,23 @@ def check_links(r: Report) -> None:
     r.check("relative links and anchors resolve", problems)
 
 
+def without_spec_blocks(text: str, rp: str, problems: list[str]) -> str:
+    """Blank the Lab 3 OpenAPI spec block out of the endpoint scan, but only if it is an OpenAPI 3 document,
+    so the exception cannot carry anything else. Newlines are kept so line numbers stay right."""
+    def blank(m: re.Match) -> str:
+        code = SPEC_CODE_RE.search(m.group(1))
+        try:
+            spec = json.loads(code.group(1)) if code else None
+        except ValueError:
+            spec = None
+        if not (isinstance(spec, dict) and str(spec.get("openapi", "")).startswith("3.") and spec.get("servers")):
+            problems.append(f"{rp}:{text.count(chr(10), 0, m.start()) + 1}: openapi-spec block is not an OpenAPI 3 "
+                            "document (python scripts/sync-openapi-block.py <env>)")
+            return m.group(0)
+        return re.sub(r"[^\n]", " ", m.group(0))
+    return SPEC_BLOCK_RE.sub(blank, text)
+
+
 def check_ids_and_endpoints(r: Report) -> None:
     problems = []
     allowed = set(ID_ALLOWED)
@@ -175,10 +197,12 @@ def check_ids_and_endpoints(r: Report) -> None:
             line = text.count("\n", 0, m.start()) + 1
             problems.append(f"{rp}:{line}: GUID {m.group(0)[:8]}…")
         if rp.startswith("content/") or rp in {"README.md", "foundry-workshop-plan.md"}:
-            for m in ENDPOINT_RE.finditer(text):
-                line = text.count("\n", 0, m.start()) + 1
+            scan = without_spec_blocks(text, rp, problems) if rp in SPEC_BLOCK_PAGES else text
+            for m in ENDPOINT_RE.finditer(scan):
+                line = scan.count("\n", 0, m.start()) + 1
                 problems.append(f"{rp}:{line}: concrete endpoint {m.group(0)}")
-    r.check("no GUIDs outside workshop.yaml / bicepparam; no endpoints in content", problems)
+    r.check("no GUIDs outside workshop.yaml / bicepparam; no endpoints in content (except the Lab 3 spec block)",
+            problems)
 
 
 def spec_objectives() -> dict[str, str]:

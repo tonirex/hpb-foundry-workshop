@@ -85,7 +85,7 @@ About 1.5 h end to end.
 | 3 Resident 360 on Fabric | `bash scripts/fabric/deploy.sh mcaps` | ≈ 17–20 min | 7 tables, ontology 4/5 with instances, graph refresh Completed, data agent published |
 | 4 Knowledge base | `python scripts/build-kb.py` | 5 min | `livewell-guides-kb` answers with a citation (`--check` re-tests it) |
 | 5 MCP server | `azd deploy mcp-activities` | 5 min | `MCP_URL` responds |
-| 6 Tool connections | `python scripts/connect-tools.py` | 2 min | Activities MCP, Fabric IQ and the two specialist A2A connections (`livewell-nutrition-a2a`, `livewell-activity-a2a`); `/profile/me` 200, another resident 403; `FABRIC_IQ_CONNECTION_ID` in `.azure/mcaps/.env` |
+| 6 Tool connections | `python scripts/connect-tools.py`, then `python scripts/sync-openapi-block.py mcaps` (commit and push the two Lab 3 pages if it changed them) | 2 min | Activities MCP, Fabric IQ and the two specialist A2A connections (`livewell-nutrition-a2a`, `livewell-activity-a2a`); `/profile/me` 200, another resident 403; `FABRIC_IQ_CONNECTION_ID` in `.azure/mcaps/.env`; "Lab 3 spec block in sync" |
 | 7 Hosted agent and DevUI (Lab 4) | Repo `.venv` active: `azd deploy livewell-workshop-hosted`, then `python scripts/hosted-postdeploy.py --verify`, then `azd deploy lab4-devui` | ≈ 10 min | Agent active; a week plan comes back as evidence JSON; the blocklisted prompt is blocked ([README](../assets/hosted-agent-example/README.md)). The values sheet shows **Lab 4 DevUI** and its token; signing in with the token lists both workflows |
 | 8 Demo agents | `python demos/create-demo-agents.py` | 3 min | Seven `livewell-demo-*` agents listed (five lab agents plus the Nutrition and Activity specialists, each with "a2a on") and the `livewell-eval` dataset registered (Lab 2 portal evaluation picks it); `--check` re-tests |
 | 9 Attendees | `bash scripts/seed-attendees.sh mcaps --lab-accounts` | 2 min | Every row shows `added` or `exists` |
@@ -161,9 +161,9 @@ python scripts/gen-citizens.py --from-onelake --check    # citizens.json agrees 
 
 ### T-1: dry run
 
-- `bash scripts/capacity.sh resume mcaps`, then run the whole day with a lab account in a private browser window.
+- `bash scripts/capacity.sh resume mcaps`, then run the whole day with a participant account in a private browser window.
 - Builder setup as a participant: create a Codespace from `main`, sign in with
-  `az login --use-device-code --allow-no-subscriptions` as an `hpb.labNN` account, fill `content/assets/.env`
+  `az login --use-device-code --allow-no-subscriptions` as a participant account, fill `content/assets/.env`
   ([README](../../README.md#your-env)) and run `python content/assets/check_setup.py`. It must end with
   **All set**. It is read-only and also confirms that the lab account can open the project, its connections and
   its model deployments.
@@ -234,10 +234,11 @@ python scripts/reset-demo-memory.py                      # exit 0 = no red-team 
 > ⚠️ **Re-apply the guardrail on the day.** In the MCAPS tenant a governance automation (`MCAPSGovernance-AutomationApp`) rewrites `livewell-guardrails` every morning at about 09:15 SGT: it keeps one annotate-only Indirect Attack filter and drops the blocklist. Agents still show the policy attached, but Lab 2's custom-guardrail blocks stop happening. Run `python scripts/apply-guardrail.py` after 09:30 SGT, then `python scripts/apply-guardrail.py --check` just before Lab 2 (exit 1 = drifted again; run it without `--check`). It takes under a minute and needs no agent changes (ASSUMPTIONS.md 4.14).
 
 Put `content/config/values.md` on screen: the project endpoint, agent names, lab-account pattern and Wi-Fi.
-Also post its rows in the workshop chat, so the URLs are clickable. In Lab 3, Navigators open the
-**Profile OpenAPI spec URL** and copy the JSON it returns, and Builders copy the project endpoint into `.env`.
-Both are too long to retype from the screen. The sheet holds no keys or passwords.
-Lab pages only ever use names.
+Also post its rows in the workshop chat, so the URLs are clickable. Builders copy the project endpoint into `.env`,
+which is too long to retype from the screen. In Lab 3, Navigators copy the profile OpenAPI spec straight from the lab
+page: the block carries this environment's server address, so `python scripts/sync-openapi-block.py <env> --check`
+must pass (if not, run it without `--check`, then commit and push the two Lab 3 pages). The sheet holds no keys or
+passwords. Lab pages only ever use names, except that spec block.
 
 ### T+1: teardown
 
@@ -249,6 +250,8 @@ This deletes the Fabric workspace, runs `azd down --purge` (resource group, Fabr
 the soft-deleted Foundry account), then verifies that nothing tagged `workshop=livewell env=mcaps` remains.
 Lab accounts stay; remove them with `bash scripts/tenant/create-lab-users.sh mcaps --delete`.
 Between sessions use `bash scripts/teardown.sh mcaps --pause-only` (pauses the capacity).
+If you turned **security defaults** off in the sponsor tenant for the workshop (device code sign-in, ASSUMPTIONS.md
+10.11), turn them back on: Entra admin center → Entra ID → Overview → Properties → Manage security defaults → Enabled.
 
 ## Cost table
 
@@ -314,6 +317,7 @@ type. Cost Management lags by up to 24 h.
 | Attendees | Foundry User | Project | `seed-attendees.sh` |
 | Attendees | Search Index Data Reader | Search service | `seed-attendees.sh` |
 | Attendees | Log Analytics Reader | Application Insights | `seed-attendees.sh` (Tracing tab) |
+| Attendees | Cognitive Services OpenAI User (Builder Lab 2 judges call the account's OpenAI endpoint, which a project role does not reach) | Foundry account | `seed-attendees.sh` |
 | Attendees | Fabric workspace Viewer (read on the data agent) | Fabric workspace | `seed-attendees.sh`, after Phase 3 |
 
 Role IDs are built-in and the same in every tenant. They live only in `workshop.yaml` → `rbac_roles`.
@@ -327,6 +331,9 @@ Gotchas:
   Attendees reuse it; they need Foundry User plus read on the data agent (workspace Viewer).
 - **The Fabric IQ tool runs as the signed-in user** (no service principal at runtime). The attendee's
   Foundry account and Fabric account must be the same Entra identity in the same tenant.
+- **Attendees need a Fabric licence** for that call. Assign the tenant's free Microsoft Fabric licence (Entra →
+  Users → Licenses, or Graph `assignLicense`), or have each attendee sign in once at app.fabric.microsoft.com before
+  the Fabric step. An unlicensed account gets `UserNotLicensed` from Fabric, as the facilitator did in preflight.
 - Role assignments take up to 5 minutes to apply. Attendees should sign out and back in to ai.azure.com if
   the project is missing.
 - `azd down` removes every role assignment with the resource group. `seed-attendees.sh` must be re-run after
@@ -390,7 +397,8 @@ scored locally instead", and the local scores are still valid. To publish a run 
 | [gen-citizens.py](../../scripts/gen-citizens.py) | `citizens.json` from the gold build; `--check`, `--from-onelake` |
 | [apply-guardrail.py](../../scripts/apply-guardrail.py) | `livewell-guardrails` + blocklist from `guardrails.yaml`, and each deployment's guardrail (`Microsoft.DefaultV2`) (postprovision hook); `--check` |
 | [build-kb.py](../../scripts/build-kb.py) | Foundry IQ knowledge base `livewell-guides-kb` + its MCP connection; `--source onelake`, `--check` |
-| [connect-tools.py](../../scripts/connect-tools.py) | Activities MCP, Fabric IQ and specialist A2A connections, profile tool URL, access checks; `--check` |
+| [connect-tools.py](../../scripts/connect-tools.py) | Activities MCP, Fabric IQ and specialist A2A connections, profile tool URL, access checks, Lab 3 spec block check; `--check` |
+| [sync-openapi-block.py](../../scripts/sync-openapi-block.py) | Writes the live profile OpenAPI spec into the Lab 3 copy-and-paste block (both pages); `--check`. Commit and push the pages after it changes them |
 | [hosted-postdeploy.py](../../scripts/hosted-postdeploy.py) | Hosted agent: identity RBAC + guardrail (azd postdeploy hook); `--check`, `--verify` |
 | [gen-schemas.py](../../scripts/gen-schemas.py) | Navigator JSON schemas and the hosted agent's `livewell.json` from the prompts and `livewell_common.py`; `--check` |
 | [validate-builder-rail.py](../../scripts/validate-builder-rail.py) | Runs Labs 1–4 as `INITIALS=test` with `--cleanup`, checks the key signals (KB citation, injected flyer blocked, ≥ 2 tools, Fabric for Mei and not for Rahim, hosted agent) and that nothing is left behind (items an interrupted earlier run left are deleted first); `--labs`, `--fabric`, `--report`, `--verbose`. `make -C content/assets validate-rail` |
@@ -411,3 +419,4 @@ scored locally instead", and the local scores are still valid. To publish a run 
 | [record-terminal.py](../../demos/record-terminal.py) | Evidence recorder: runs any script, then saves its output with real timings (`.cast`) and a PNG in `demos/evidence/<date>/` and a replay WebM in `demos/videos/`; IDs, endpoints, e-mails and local paths redacted; `--title`, `--render`, `--idle`, `--no-video` |
 | [teardown.sh](../../scripts/teardown.sh) | Fabric workspace → `azd down --purge` → verify; `--pause-only` |
 | [create-lab-users.sh](../../scripts/tenant/create-lab-users.sh) | 20 lab accounts + break-glass (Graph); `--delete`, `--reset-passwords` |
+| [sign-in-cards.py](../../scripts/tenant/sign-in-cards.py) | One A4 sign-in card per participant (`--file attendees.txt` or `--lab-accounts`) → `.azure/<env>/sign-in-cards.pdf` (gitignored; holds passwords) |

@@ -56,3 +56,7 @@ param storagePolicyOptOutTag = {
 
 // Allow = Entra-only public access so Lab 2 can publish evaluation runs; Deny = Search + trusted services only.
 param storageNetworkDefaultAction = 'Allow'
+
+// First provision of an environment (no AZURE_AI_ACCOUNT_NAME yet): ARM preflight rejects a guardrail policy whose
+// blocklist is created in the same deployment, so the policy starts unlinked and apply-guardrail.py links it.
+param guardrailLinkBlocklist = !empty(readEnvironmentVariable('AZURE_AI_ACCOUNT_NAME', ''))

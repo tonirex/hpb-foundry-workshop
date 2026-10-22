@@ -1,5 +1,5 @@
 # Content build + Builder rail dependencies. Pins explained in versions.md.
-azure-ai-projects>=2.0.0
+azure-ai-projects>=2.6.1
 azure-identity>=1.19
 openai>=1.99
 azure-search-documents==12.1.0b1

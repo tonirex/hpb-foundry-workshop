@@ -79,7 +79,11 @@ def main() -> int:
 
     count = int(lab.get("count", 20) or 20)
     prefix = lab.get("prefix", "hpb.lab")
-    accounts = f"{prefix}01 ... {prefix}{count:02d}" + (f" @ {tenant_domain}" if tenant_domain else "")
+    at_domain = f" @ {tenant_domain}" if tenant_domain else ""
+    if lab.get("naming") == "named":
+        accounts = f"firstname.lastname{at_domain} (on each participant's sign-in card)"
+    else:
+        accounts = f"{prefix}01 ... {prefix}{count:02d}{at_domain}"
     fabric_ws_url = v.get("FABRIC_WORKSPACE_URL") or MISSING
     devui_on = (v.get("LAB4_DEVUI") or "true").strip().lower() in ("1", "true", "yes")
     devui_off = "not deployed (LAB4_DEVUI=false)"
@@ -114,7 +118,7 @@ def main() -> int:
         ("Lab 4 DevUI (browser, no install)", g("LAB4_DEVUI_URL") if devui_on else devui_off),
         ("Lab 4 DevUI token", g("LIVEWELL_DEVUI_TOKEN") if devui_on else devui_off),
         ("Lab 4 DevUI token command (Owner or Contributor)", devui_cmd if devui_on else devui_off),
-        ("Lab accounts", accounts),
+        ("Workshop accounts", accounts),
         ("Guest Wi-Fi", f"{ws['guest_wifi']['ssid']} / {ws['guest_wifi']['code']}"),
     ]
     now = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
@@ -131,8 +135,9 @@ def main() -> int:
     lines += [f"| {k} | {val} |" for k, val in rows]
     lines += [
         "",
-        "Sign in to https://ai.azure.com with your lab account, open the project above, and name every",
-        "agent you create with your initials. Ask a facilitator if the project does not appear.",
+        "Sign in to https://ai.azure.com with your own workshop account (the username on your sign-in card), open",
+        "the project above, and name every agent you create with your initials. Ask a facilitator if the project",
+        "does not appear.",
         "",
     ]
     out = ROOT / "content" / "config" / "values.md"

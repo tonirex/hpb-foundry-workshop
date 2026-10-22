@@ -5,9 +5,10 @@
 #                                    --users upn1,upn2] [--remove] [--dry-run]
 #
 # Default source: --lab-accounts (<prefix>01..<prefix><count> from workshop.yaml, tenant default domain).
-# Grants: Foundry User on the project + Search Index Data Reader + Log Analytics Reader (workshop.yaml
-# attendee_roles); Fabric workspace Viewer (read on the data agent) once FABRIC_WORKSPACE_ID exists —
-# so re-run it after scripts/fabric/deploy.sh. MODE=project-per-attendee also creates one project each.
+# Grants: Foundry User on the project + Search Index Data Reader + Log Analytics Reader + Cognitive Services
+# OpenAI User on the account (workshop.yaml attendee_roles); Fabric workspace Viewer (read on the data agent) once
+# FABRIC_WORKSPACE_ID exists — so re-run it after scripts/fabric/deploy.sh. MODE=project-per-attendee also creates
+# one project each.
 # attendees.txt / attendees*.csv are gitignored: never commit attendee names.
 . "$(dirname "$0")/lib/common.sh"
 

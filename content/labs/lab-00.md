@@ -25,7 +25,7 @@ Patterns: #10 Governance & Safety.
 
 ## 🟢 Navigator
 
-1. Sign in to the Microsoft Foundry portal with **your hpb.labNN account** and open the shared project **`livewell-workshop`**.
+1. Sign in to the Microsoft Foundry portal with **your own workshop account** (the username on your sign-in card) and open the shared project **`livewell-workshop`**.
 2. Take the quick tour:
    - **Models** — where `gpt-5-mini` (Labs 0-2) and `gpt-4.1-mini` (Lab 3 on) are deployed.
    - **Agents** — where you create and test prompt agents.
@@ -74,7 +74,7 @@ If you finish early, help a neighbour check the trace rather than creating extra
 Lab 0 is the same portal exercise for everyone. Builders then use the remaining time to get ready for Lab 1, following [Builder setup](../../README.md#-builder-setup) (about 5 minutes):
 
 1. Open the repository in **Codespaces** (Code → Codespaces → Create codespace on main), or use your local clone with its `.venv` active.
-2. Sign in to Azure in the terminal with `az login --use-device-code --allow-no-subscriptions`, as your `hpb.labNN` account in the same private browser window.
+2. Sign in to Azure in the terminal with `az login --use-device-code --allow-no-subscriptions`, as your own workshop account in the same private browser window.
 3. Run `cp content/assets/.env.sample content/assets/.env`, then fill in two lines: `INITIALS=` with your own initials, and `FOUNDRY_PROJECT_ENDPOINT=` with the **Project endpoint** row from the values sheet. Leave `FABRIC_BRIDGE=false`.
 4. Run `python content/assets/check_setup.py` until it ends with **All set: start Lab 1**. Each FIX line says what to change.
 
@@ -115,7 +115,7 @@ There is nothing to submit. Try the steps first, then open **Expected output** t
 
 | Symptom | Fix |
 |---|---|
-| Sign-in loops or MFA never completes | Use an InPrivate window, your personal laptop, and the Authenticator prompt for your hpb.labNN account. |
+| Sign-in loops or MFA never completes | Use an InPrivate window, your personal laptop, and the Authenticator prompt for your own workshop account (not your work account). |
 | You cannot see **`livewell-workshop`** | Confirm you are in the lab tenant and ask the facilitator to refresh your Foundry User assignment. |
 | No **New agent** button | You may be outside the project or missing Foundry User. Re-open the project from the values sheet shown on screen. |
 | `gpt-5-mini` returns 429 or quota errors | Wait 30 seconds and resend. If it keeps happening, switch the agent model to `gpt-4.1-mini`, save, and tell the facilitator. |

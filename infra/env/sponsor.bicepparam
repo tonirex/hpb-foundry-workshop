@@ -1,6 +1,6 @@
 // sponsor — delivery environment (Azure sponsorship subscription, separate Entra tenant).
 // Differs from mcaps.bicepparam ONLY in: subscription (set in the azd env), capacity admins, caps, tags.
-// Subscription TODO · tenant TODO (fill in content/config/workshop.yaml → environments.sponsor)
+// Subscription d865b78f-2913-4f0a-8945-ff436fe33f6b · tenant f42d5e19-57d1-4047-8d3d-cd4bb2fe7d9a
 using '../main.bicep'
 
 param environmentName = 'sponsor'
@@ -8,10 +8,10 @@ param location = readEnvironmentVariable('AZURE_LOCATION', 'swedencentral')
 param principalId = readEnvironmentVariable('AZURE_PRINCIPAL_ID', '')
 param principalType = readEnvironmentVariable('AZURE_PRINCIPAL_TYPE', 'User')
 
-// Fabric capacity admins = UPNs of MEMBER accounts in the sponsor tenant (not guests).
-// TODO: replace with the facilitator UPN(s) created by content/admin/TENANT-BOOTSTRAP.md.
+// Fabric capacity admins = UPNs of MEMBER work accounts in the sponsor tenant (not guests, not personal accounts:
+// Fabric refuses an outlook.com account, ASSUMPTIONS.md 10.1).
 param fabricAdminMembers = [
-  'TODO-facilitator@TODO.onmicrosoft.com'
+  'hpb.facilitator@hpbsub2026outlook.onmicrosoft.com'
 ]
 param fabricBridge = bool(readEnvironmentVariable('FABRIC_BRIDGE', 'true'))
 param projectMode = readEnvironmentVariable('MODE', 'shared-project')
@@ -42,7 +42,7 @@ param budgetAlertThresholdsUsd = [
   300
 ]
 param budgetContactEmails = [
-  'TODO-facilitator@TODO.onmicrosoft.com'
+  'hpb.sub2026@outlook.com'
 ]
 
 param extraTags = {
@@ -56,3 +56,7 @@ param storagePolicyOptOutTag = {}
 
 // Allow = Entra-only public access so Lab 2 can publish evaluation runs; Deny = Search + trusted services only.
 param storageNetworkDefaultAction = 'Allow'
+
+// First provision of an environment (no AZURE_AI_ACCOUNT_NAME yet): ARM preflight rejects a guardrail policy whose
+// blocklist is created in the same deployment, so the policy starts unlinked and apply-guardrail.py links it.
+param guardrailLinkBlocklist = !empty(readEnvironmentVariable('AZURE_AI_ACCOUNT_NAME', ''))

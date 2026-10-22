@@ -15,7 +15,8 @@
      from demos/create-demo-agents.py; the project identity's Foundry Agent Consumer role from rbac.bicep.
   4. azd env: PROFILE_OPENAPI_URL (Navigator `livewell_profile` tool), FABRIC_IQ_SERVER_URL and
      FABRIC_IQ_CONNECTION_ID, then runs `scripts/render-values.py` to put them on the values sheet.
-  5. Checks: /healthz, /openapi.json (operationId get_citizen_profile), /profile/me 200 and another resident 403.
+  5. Checks: /healthz, /openapi.json (operationId get_citizen_profile), /profile/me 200 and another resident 403,
+     and that the Lab 3 spec block matches the live spec (scripts/sync-openapi-block.py --check; a warning only).
 
     python scripts/connect-tools.py            # create/update + checks
     python scripts/connect-tools.py --check    # report only
@@ -170,6 +171,12 @@ def main() -> int:
     good = me == 200 and other == 403
     rows.append(("Profile scope", "me / another resident", f"{'PASS' if good else 'FAIL'} {me} / {other}"))
     ok &= good
+    # Navigators copy the spec, with this server's address, from the Lab 3 pages: warn when the block is stale.
+    env_name = env.get("AZURE_ENV_NAME", "")
+    sync = subprocess.run([sys.executable, str(ROOT / "scripts" / "sync-openapi-block.py"), env_name, "--check"],
+                          cwd=ROOT, capture_output=True, text=True, check=False)
+    last = ((sync.stdout + sync.stderr).strip().splitlines() or [""])[-1].replace("[sync-openapi-block] ", "")
+    rows.append(("Lab 3 spec block", "content/labs/lab-03*.md", "in sync" if sync.returncode == 0 else f"WARN {last[:120]}"))
 
     w = max(len(r[0]) for r in rows)
     for r in rows:

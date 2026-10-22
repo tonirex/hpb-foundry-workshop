@@ -10,8 +10,8 @@ Where an entry changes something SPEC.md states, it says so.
 | Workshop date | `content/config/workshop.yaml` → `workshop.date` | TODO |
 | Confirmed participant count (planning default 20) | `workshop.participant_count` | 6 (sponsor quota sized for it, 9.1) |
 | Guest Wi-Fi SSID and code | `workshop.guest_wifi` (rendered on the deck logistics slide) | TODO |
-| Sponsor subscription ID and tenant ID | `environments.sponsor` and `infra/env/sponsor.bicepparam` (Phase 2) | TODO |
-| Sponsor facilitator UPN(s) | `environments.sponsor.facilitator_upns` | TODO |
+| Sponsor subscription ID and tenant ID | `environments.sponsor` and `infra/env/sponsor.bicepparam` (Phase 2) | Done 2026-10-04: subscription "HPB-workshop_HPB_Customer" (Azure Sponsorship) in its own tenant `hpbsub2026outlook.onmicrosoft.com`, kept separate from MCAPS (no Change directory) |
+| Sponsor facilitator UPN(s) | `environments.sponsor.facilitator_upns` | Done 2026-10-04: `hpb.facilitator@hpbsub2026outlook.onmicrosoft.com`, a cloud-only work account (Global Administrator, subscription Owner) that runs the sponsor environment. The tenant's creator `hpb.sub2026@outlook.com` keeps its rights and receives the budget alerts (10.1) |
 | Fabric Administrator role for the MCAPS facilitator account | Entra ID → Roles → Fabric Administrator (or activate Global Administrator in PIM). Needed for the tenant settings in `content/admin/TENANT-BOOTSTRAP.md` | Done 2026-09-29: "Users can create Ontology (preview) items" enabled; Phase 3 deploy green |
 | Fabric tenant sign-up (MCAPS tenant has never used Fabric) | A tenant user signs in once at app.fabric.microsoft.com | Done 2026-09-29: F2 `fablivewellmcaps` created by `provision.sh mcaps` |
 
@@ -183,7 +183,8 @@ Where an entry changes something SPEC.md states, it says so.
   Role-assignment names are deterministic (uuid5 of scope, principal and role), so re-running `seed-attendees.sh` is idempotent.
 - **2.11** Attendee roles (`workshop.yaml` → `attendee_roles`) are Foundry User on the project, **Search Index Data
   Reader** on the search service (portal KB browsing) and **Log Analytics Reader** on App Insights (portal Tracing tab).
-  The last two are assumptions, not verified against a least-privilege attendee account yet.
+  The last two are assumptions, not verified against a least-privilege attendee account yet. Builder Lab 2 also
+  needs Cognitive Services OpenAI User on the account (10.10).
 - **2.12** `MODE=project-per-attendee` creates `livewell-<upn-short>` projects by ARM PUT. It is written but not
   exercised in the MCAPS run; shared-project is the default and the tested path.
 - **2.13** `tenant/create-lab-users.sh` needs User Administrator (and Privileged Role Administrator for the break-glass
@@ -876,3 +877,82 @@ Where an entry changes something SPEC.md states, it says so.
     `age_band` into the one Fabric question. That gave 4 of 4 with the profile first and 60-64. Mei's region
     question and the Lab 4 Programme-Insights specialist passed unchanged (top region North, top programme
     Healthier SG; 44-108 s per Fabric call).
+
+## Phase 10: sponsor environment (2026-10-04)
+
+- **10.1** The sponsor tenant was created by the personal Microsoft account `hpb.sub2026@outlook.com` (Member, Global
+  Administrator, subscription Owner). It can sign in to Fabric (`app.fabric.microsoft.com/?ctid=<tenant-id>`), but
+  ARM cannot create a Fabric capacity for it: the `fabric` module failed with "Unauthorized: Unable to authorize with
+  Azure Active Directory", the documented result for personal accounts. With Antonia's approval the cloud-only work
+  account `hpb.facilitator@hpbsub2026outlook.onmicrosoft.com` (Global Administrator, subscription Owner) was created
+  on 2026-10-04. It runs the sponsor environment and is the Fabric capacity admin. The outlook.com account keeps its
+  rights and receives the budget alerts. Preflight check 2 used to look the caller up by sign-in name, which matches
+  no one for a personal account (tenant UPN `name_outlook.com#EXT#@…`); it now uses the object ID.
+- **10.2** One machine, two tenants. az and azd keep one sign-in per Windows user, shared by every terminal and agent
+  session, and `provision.sh` runs `az account set`. Sponsor work therefore runs with its own profile folders:
+  `AZURE_CONFIG_DIR=~/.azure-livewell-sponsor` (with `AZURE_EXTENSION_DIR` pointing at the default extensions) and
+  `AZD_CONFIG_DIR=~/.azd-livewell-sponsor` with `auth.useAzCliAuth true` (TENANT-BOOTSTRAP Step 2). The default
+  profile stays signed in to MCAPS.
+- **10.3** Search runs in `francecentral`, as on MCAPS (2.5): `SEARCH_LOCATION` is set in the sponsor azd env.
+- **10.4** The subscription already held a test Foundry resource (`Demo-foundry` / `demo-foundry-sc`) with
+  `gpt-4.1-mini` at 100K TPM, which left 100K of the 200K quota (9.1). With Antonia's approval that deployment was
+  deleted on 2026-10-04. Its `gpt-5-mini` deployment (50K) stays: 450K is still free against the 400K cap.
+- **10.5** The first provision of a new environment failed in `foundry`: ARM preflight rejects
+  `livewell-guardrails` with "Resource has invalid blocklist reference", because the blocklist it names is created
+  in the same deployment (a validation-only test passes without the link). MCAPS never hit it: its account and
+  blocklist existed before the policy was added. `guardrailLinkBlocklist` (main.bicep) is now false until the azd
+  env has `AZURE_AI_ACCOUNT_NAME`, i.e. on an environment's first provision; the policy starts unlinked and the
+  postprovision hook `apply-guardrail.py` links it. `teardown.sh` clears `AZURE_AI_ACCOUNT_NAME`.
+- **10.6** Two more first-environment gaps. `cost-guardrails.sh` failed on the untagged "Application Insights Smart
+  Detection" action group, which App Insights creates in a subscription that has none yet (MCAPS already had one);
+  it is now skipped like the smart-detector rules. `requirements.txt` accepted an already-installed
+  `azure-ai-projects` 2.2.0, which lacks `agents.download_code` (`hosted-postdeploy.py`) and `ProtocolConfiguration`
+  (A2A in `create-demo-agents.py`); the floor is now the tested 2.6.1.
+- **10.7** Sponsor verified on 2026-10-04 as `hpb.facilitator`: `cost-guardrails.sh` all PASS; knowledge base 11/11
+  guides; tool connections PASS, Fabric IQ included; hosted agent v2 with `livewell-guardrails` blocks
+  `lab2_medication_double`; seven demo agents; Phase 3 Fabric deploy green (graph 1500 residents, every edge count
+  equal to the local build; the data agent ranks North 20.0%, West 17.1%, Central 13.1%); smoke test 11/11 PASS with
+  `FABRIC_BRIDGE=true`.
+- **10.8** Participants: instead of `hpb.lab01`…`hpb.lab20`, Antonia supplied six named participants. Each has a
+  cloud-only account `firstname.lastname@<tenant>` with one standard temporary password, changed at first sign-in, and
+  the workshop roles from `seed-attendees.sh sponsor --file attendees.txt` (gitignored; names are never committed).
+  At Antonia's request they are **Owner on the sponsorship subscription**, so they can create resources and grant
+  roles to their own service principals (the tenant lets every member register applications). Owner also lets them
+  change or delete the shared workshop resources and other people's access, and the budget alerts are the only
+  spending control. No break-glass account was created: the facilitator and the tenant's creator are both Global
+  Administrators.
+- **10.9** Fabric in the sponsor tenant (2026-10-04): there is no separate "Fabric data agent" switch; the data agent
+  publishes and answers with "Users can use Copilot, AI Agents and other AI experiences powered by Azure OpenAI" on.
+  The ontology call answered 403 `FeatureNotAvailable` for a few minutes after "Users can create Ontology (preview)
+  items" was enabled, then passed on the next try (`deploy.sh sponsor --from 30`). `fab` ran on the sponsor az
+  sign-in's tokens (`FAB_TOKEN`, `FAB_TOKEN_ONELAKE`, `FAB_TOKEN_AZURE`; TENANT-BOOTSTRAP Step 4), so the user's
+  `fab auth login` for MCAPS was never touched.
+- **10.10** Attendee access re-checked against the lab code (2026-10-04). The documented set (2.11) was never
+  exercised by a non-admin account: the dry run used the facilitator only (DRY-RUN-2026-10-02, Q1/Q2 open). One gap
+  is certain: the Builder Lab 2 judges (`lw.judge_model_config`) call the Foundry **account's** OpenAI endpoint with
+  the attendee's own token. A role on the project does not reach the parent account, and Owner carries no data
+  actions, so `attendee_roles` now adds **Cognitive Services OpenAI User** on the account (model calls only; no other
+  project's agents or data). The six sponsor participants also got the tenant's free Microsoft Fabric licence, because
+  the Fabric IQ tool queries Fabric as them. Still unverified until a participant account runs the labs: whether
+  workspace Viewer is enough to query the data agent (3.16), calling the hosted agent endpoint (dry run Q2), and
+  attaching the A2A connections as a Foundry User (F08).
+- **10.11** `az login --use-device-code` in a Codespace failed for `hpb.facilitator` with error **530035** ("access has
+  been blocked by security defaults"). Since 1 July 2026, security defaults block device code sign-in in new tenants
+  (Microsoft Learn, "Configure security defaults"), and the sponsor tenant is new; the older MCAPS tenant still
+  allows it. The Builder rail (README, Lab 0, sign-in cards) signs in with device code. **Decided 2026-10-04
+  (Antonia): turn security defaults off in the sponsor tenant for the workshop** and back on at T+1 (ADMIN-SETUP).
+  While they are off, nothing enforces MFA, and the six participants are subscription Owners with a shared temporary
+  password, so they should change it before the day. Microsoft may re-enable security defaults by itself (with an email
+  notice); if device code fails again, check the setting. Alternatives: plain `az login` (a Codespace in VS Code
+  Desktop forwards the localhost redirect; in the browser, `curl` the failed localhost URL in the terminal), or an
+  Entra ID P2 trial with a Conditional Access MFA policy.
+- **10.12** **Changes AGENTS.md (no endpoints in lab pages).** At Antonia's request (2026-10-05) the profile OpenAPI
+  spec is a copy-and-paste block in Lab 3 (`lab-03.md` and `lab-03-portal.md`), so Navigators no longer open the spec
+  URL and select all. The tool calls the spec's `servers` address, so the block must hold this environment's
+  activities app address: the one endpoint allowed in a lab page. `scripts/sync-openapi-block.py <env>` writes it from
+  the live `/openapi.json` (`--check` reports drift, and `connect-tools.py` warns when it is stale), and
+  `check-content.py` allows an endpoint only inside the markers, only on those two pages, and only when the block
+  parses as an OpenAPI 3 document. The block holds the sponsor address, so a run on another environment must re-sync
+  (and commit and push) first, and anyone who can read the repo sees the address (anonymous API, synthetic data).
+  Adding the exception showed that the content check's Container Apps pattern missed real hosts
+  (`<app>.<env>.<region>.azurecontainerapps.io`); it now catches them.

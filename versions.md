@@ -55,7 +55,7 @@ Cost Management query 2023-11-01, Fabric capacity suspend/resume 2023-11-01). Fa
 
 | Package | Pin | Notes |
 |---|---|---|
-| `azure-ai-projects` | `>=2.0.0` (2.6.1 tested) | New Agents API (`agents.create_version`, `create_version_from_code`, Responses, `get_openai_client(agent_name=...)` for hosted agents) |
+| `azure-ai-projects` | `>=2.6.1` (2.6.1 tested) | New Agents API (`agents.create_version`, `create_version_from_code`, Responses, `get_openai_client(agent_name=...)` for hosted agents). 2.2.0 lacks `agents.download_code` (hosted-postdeploy) and `ProtocolConfiguration` (A2A) |
 | `azure-identity` | `>=1.19` (1.25.3 tested) | `DefaultAzureCredential` / device code |
 | `openai` | `>=1.99` (3.17.0 tested) | Responses client from `project.get_openai_client()` |
 | `azure-search-documents` | `==12.1.0b1` | Foundry IQ knowledge base API (per microsoft/iq-series); 12.1.0b2 exists but is not validated |

@@ -71,7 +71,14 @@ if [ "$WANT_TENANT" != "TODO" ] && [ -n "$WANT_TENANT" ] && [ "$TENANT_ID" != "$
 else
   ok "tenant matches"
 fi
-ROLE_OK="$(azq role assignment list --assignee "$CALLER" --scope "/subscriptions/$SUB_ID" --include-inherited \
+# Look the caller up by object ID: a personal Microsoft account signs in as name@outlook.com, but its UPN in the
+# tenant is name_outlook.com#EXT#@<tenant>, so --assignee <sign-in name> finds no one.
+if [ "$(azq account show --query user.type -o tsv)" = "servicePrincipal" ]; then
+  CALLER_ID="$(azq ad sp show --id "$CALLER" --query id -o tsv || true)"
+else
+  CALLER_ID="$(azq ad signed-in-user show --query id -o tsv || true)"
+fi
+ROLE_OK="$(azq role assignment list --assignee "${CALLER_ID:-$CALLER}" --scope "/subscriptions/$SUB_ID" --include-inherited \
   --query "[?roleDefinitionName=='Owner' || roleDefinitionName=='User Access Administrator'] | length(@)" -o tsv || echo 0)"
 if [ "${ROLE_OK:-0}" -gt 0 ]; then ok "caller can assign roles (Owner / User Access Administrator)"
 else bad "caller needs Owner (or Contributor + User Access Administrator) on the subscription for RBAC"; fi

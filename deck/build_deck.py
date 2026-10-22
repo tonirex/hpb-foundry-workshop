@@ -284,7 +284,7 @@ def logistics_slide(prs: Presentation, cfg: dict, titles: list[str]):
         "Guest Wi-Fi & logistics",
         "Cover this before anyone opens the portal because sign-in is the first likely delay. "
         "Use the TODO labels visibly if the final Wi-Fi values have not been confirmed. "
-        "Ask participants to use their hpb.labNN account for all Foundry and Fabric steps. "
+        "Ask participants to use their own workshop account (the username on their sign-in card) for all Foundry and Fabric steps. "
         "Gate: move on when everyone has Wi-Fi, Authenticator registration started and the correct account ready.",
         titles,
     )
@@ -293,7 +293,7 @@ def logistics_slide(prs: Presentation, cfg: dict, titles: list[str]):
     bullets = [
         "Bring and use personal laptops; WOG devices cannot sign in to external Entra tenants.",
         "Authenticator registration happens at first sign-in; keep the phone nearby.",
-        "Use your hpb.labNN account for Foundry portal, Fabric and workshop scripts.",
+        "Use your own workshop account (on your sign-in card) for Foundry portal, Fabric and workshop scripts.",
         "Portal-first Navigator rail and Python Builder rail share the same checkpoints.",
         "If sign-in stalls, stay with the facilitator; do not switch to personal Microsoft accounts.",
     ]

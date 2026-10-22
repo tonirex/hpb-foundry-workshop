@@ -14,7 +14,7 @@ Patterns: #2 Evidence-Based Decision Support; #3 Workflow Orchestration; #6 Huma
 
 - Fabric IQ tool ⚠️ preview, connected to a published Fabric data agent through OneLake Catalog and MCP.
 - Project connection **`livewell-fabric-resident360`**.
-- Identity passthrough: participants must use the same lab account in Foundry and Fabric. For what this means in a real deployment, see [what is fixed for the workshop](lab-03.md#workshop-shortcuts).
+- Identity passthrough: participants must use the same workshop account in Foundry and Fabric. For what this means in a real deployment, see [what is fixed for the workshop](lab-03.md#workshop-shortcuts).
 - Multi-step tool chaining in one turn: profile tool → Fabric IQ → activities MCP → approval-gated action.
 - Privacy by design: the coach asks Fabric an aggregate cohort question (age band only), never about a person.
 - Tool routing instructions that separate citizen guide questions, Rahim's one cohort question and officer programme questions.
@@ -204,8 +204,8 @@ There is nothing to submit. Try the steps first, then open **Expected output** t
 
 | Symptom | Fix |
 |---|---|
-| Data agent is not in OneLake Catalog | It may not be published, or you may be signed into a different tenant/account. Use the same lab account in Foundry and Fabric. |
-| 403 from Fabric | Ask the facilitator to confirm read access on **`Resident360 Ontology Agent`** for your lab account. |
+| Data agent is not in OneLake Catalog | It may not be published, or you may be signed into a different tenant/account. Use the same workshop account in Foundry and Fabric. |
+| 403 from Fabric | Ask the facilitator to confirm read access on **`Resident360 Ontology Agent`** for your workshop account. |
 | "Remote MCP server error while enumerating tools … did not return a valid MCP JSON-RPC response" | The Fabric capacity is paused (it is paused overnight). Ask the facilitator to resume it (`bash scripts/capacity.sh resume <env>`), wait a minute and run again. |
 | Graph query failing | Facilitator refreshes the graph model `resident_ontology_graph_*` from Fabric: Schedule → Refresh now. |
 | Fabric call is slow | Normal preview latency is **30-90 s**; wait before retrying. |

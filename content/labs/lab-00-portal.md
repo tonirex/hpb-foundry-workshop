@@ -2,9 +2,9 @@
 
 Main page: [Lab 0](lab-00.md) · [Portal track](PORTAL-TRACK.md)
 
-Use a personal laptop, an InPrivate browser window, and the `hpb.labNN` account assigned by the facilitator. Your agent name is `livewell-<initials>`; never edit `livewell-demo-*` agents.
+Use a personal laptop, an InPrivate browser window, and your own workshop account (the username on your sign-in card, not your work account). Your agent name is `livewell-<initials>`; never edit `livewell-demo-*` agents.
 
-1. Open the portal in a private browser window and sign in with your `hpb.labNN` account.
+1. Open the portal in a private browser window and sign in with your workshop account.
 
    **InPrivate browser → `https://ai.azure.com` → Sign in**
 

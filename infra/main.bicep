@@ -36,6 +36,9 @@ param fabricAdminMembers array
 @description('FABRIC_BRIDGE. false = no Fabric capacity; the profile tool reads citizens.json and the Fabric step is skipped.')
 param fabricBridge bool = true
 
+@description('Link the medication blocklist to livewell-guardrails. False on the first provision of an environment: ARM preflight rejects a policy whose blocklist does not exist yet, and the postprovision hook (scripts/apply-guardrail.py) adds the link.')
+param guardrailLinkBlocklist bool = true
+
 @allowed([
   'F2'
   'F4'
@@ -267,6 +270,7 @@ module foundry 'modules/foundry.bicep' = {
     storageConnectionName: n.storageConnection
     acrConnectionName: n.acrConnection
     appInsightsConnectionName: n.appInsightsConnection
+    linkBlocklist: guardrailLinkBlocklist
   }
 }
 

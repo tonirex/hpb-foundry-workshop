@@ -84,11 +84,13 @@ try:
     claims = json.loads(base64.urlsafe_b64decode(body + "=" * (-len(body) % 4)))
     who = claims.get("upn") or claims.get("preferred_username") or claims.get("unique_name") or "an Azure identity"
     line("OK", f"signed in as {who}")
-    if "@" in who and not who.lower().startswith("hpb.lab"):
-        line("WARN", "not an hpb.labNN account: fine for facilitators; participants sign in with the workshop account")
+    # A workshop account lives in one of the workshop tenants (workshop.yaml environments); a work account does not.
+    tenants = {str(e.get("tenant_id", "")).lower() for e in lw.config().get("environments", {}).values()} - {"", "todo"}
+    if tenants and str(claims.get("tid", "")).lower() not in tenants:
+        line("WARN", "not a workshop account: run az logout, then sign in with the workshop account on your sign-in card")
 except Exception as e:  # noqa: BLE001
     line("FIX", "not signed in to Azure: run  az login --use-device-code --allow-no-subscriptions  and sign in with "
-         f"your hpb.labNN account ({type(e).__name__})")
+         f"your workshop account ({type(e).__name__})")
     sys.exit(1)
 
 checks = [("knowledge base", lw.NAMES["kb_mcp_connection"]), ("activities MCP", lw.NAMES["mcp_connection"])]

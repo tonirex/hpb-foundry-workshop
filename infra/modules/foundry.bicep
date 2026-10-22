@@ -22,6 +22,9 @@ param storageConnectionName string
 param acrConnectionName string
 param appInsightsConnectionName string
 
+@description('Link the blocklist to the guardrail policy. False on the first provision of an environment (see main.bicep).')
+param linkBlocklist bool = true
+
 type deploymentType = {
   name: string
   model: {
@@ -98,13 +101,13 @@ resource raiPolicy 'Microsoft.CognitiveServices/accounts/raiPolicies@2025-06-01'
     basePolicyName: guardrail.base_policy
     mode: guardrail.mode
     contentFilters: guardrail.content_filters
-    customBlocklists: [
+    customBlocklists: linkBlocklist ? [
       {
         blocklistName: blocklist.name
         blocking: true
         source: guardrail.blocklist.source
       }
-    ]
+    ] : []
   }
 }
 

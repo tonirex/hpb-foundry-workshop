@@ -144,13 +144,18 @@ if len(svcs) == 1:
 else:
     bad(f"expected exactly one workshop search service for env={env}, found {len(svcs)}")
 
-AUTO_CREATED = {"microsoft.alertsmanagement/smartdetectoralertrules"}  # App Insights creates these; free, untaggable at create
-auto = [r["name"] for r in res if r.get("type", "").lower() in AUTO_CREATED]
-untagged = [r["name"] for r in res if r.get("type", "").lower() not in AUTO_CREATED
+# App Insights creates these (free, untaggable at create): smart-detector alert rules and, in a subscription that has
+# none yet, the "Application Insights Smart Detection" action group. The template creates no action groups.
+AUTO_CREATED = {"microsoft.alertsmanagement/smartdetectoralertrules"}
+AUTO_CREATED_NAMED = {("microsoft.insights/actiongroups", "application insights smart detection")}
+is_auto = lambda r: (r.get("type", "").lower() in AUTO_CREATED
+                     or (r.get("type", "").lower(), r.get("name", "").lower()) in AUTO_CREATED_NAMED)
+auto = [r["name"] for r in res if is_auto(r)]
+untagged = [r["name"] for r in res if not is_auto(r)
             and ((r.get("tags") or {}).get("workshop") != "livewell" or (r.get("tags") or {}).get("env") != env)]
 if res and not untagged:
     ok(f"all {len(res) - len(auto)} resources tagged workshop=livewell env={env}"
-       + (f" (skipped {len(auto)} auto-created alert rule(s))" if auto else ""))
+       + (f" (skipped {len(auto)} auto-created App Insights item(s))" if auto else ""))
 elif untagged:
     bad("resources missing workshop/env tags: " + ", ".join(untagged))
 acrs = [r for r in res if r.get("type", "").lower() == "microsoft.containerregistry/registries"]
