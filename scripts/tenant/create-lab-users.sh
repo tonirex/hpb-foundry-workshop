@@ -1,13 +1,21 @@
 #!/usr/bin/env bash
-# create-lab-users.sh — 20 cloud-only lab accounts + a break-glass account (SPEC.md §12.2). Idempotent.
+# create-lab-users.sh - cloud-only lab accounts (SPEC.md 12.2): hpb.lab01..hpb.lab30 for mcaps. Idempotent.
 #
-#   scripts/tenant/create-lab-users.sh [env] [--count N] [--reset-passwords] [--no-break-glass]
-#                                            [--delete] [--dry-run]
+#   scripts/tenant/create-lab-users.sh [env] [--count N] [--dry-run] [--break-glass] [--reset-passwords]
+#                                            [--disable | --delete]
 #
-# Needs User Administrator (Privileged Role Administrator for the break-glass Global Administrator
-# role) in the tenant of <env>. Names, count and usage location (SG) come from workshop.yaml
-# environments.<env>.lab_accounts. Temporary passwords go to .azure/<env>/lab-accounts.csv (gitignored).
-# MFA: keep Entra security defaults ON (no Entra P1 needed); users register Authenticator at first sign-in.
+# How people sign in comes from workshop.yaml environments.<env>.lab_accounts.sign_in:
+#   tap       (mcaps)   Temporary Access Pass. Every account gets a random password that is never printed or saved, so
+#                       the passes from scripts/tenant/issue-tap.sh are the way in (no Authenticator registration).
+#                       .azure/<env>/lab-accounts.csv (gitignored) lists upn,display_name only.
+#   password  (sponsor) a temporary password per account in .azure/<env>/lab-accounts.csv (gitignored, never printed);
+#                       --reset-passwords issues new ones. Entra security defaults add Authenticator at first sign-in.
+# --break-glass  OPT-IN: also creates hpb.breakglass, a STANDING Global Administrator (needs Privileged Role
+#                Administrator). Delete it at teardown (--delete). --no-break-glass is accepted and ignored.
+# --disable      sets accountEnabled=false on the lab accounts; nothing is deleted.
+# --delete       deletes the lab accounts and the break-glass account if it exists.
+# Needs User Administrator in the tenant of <env>. Names, count and usage location (SG) come from workshop.yaml
+# environments.<env>.lab_accounts.
 . "$(dirname "$0")/../lib/common.sh"
 
 ENV_ARG=""
@@ -15,8 +23,8 @@ PASS=()
 while [ $# -gt 0 ]; do
   case "$1" in
     --count) PASS+=("$1" "$2"); shift ;;
-    --reset-passwords|--no-break-glass|--delete|--dry-run) PASS+=("$1") ;;
-    -h|--help) sed -n '2,10p' "$0"; exit 0 ;;
+    --reset-passwords|--break-glass|--no-break-glass|--disable|--delete|--dry-run) PASS+=("$1") ;;
+    -h|--help) sed -n '2,18p' "$0"; exit 0 ;;
     -*) die "unknown option $1" ;;
     *) ENV_ARG="$1" ;;
   esac

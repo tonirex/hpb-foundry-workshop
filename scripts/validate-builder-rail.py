@@ -9,7 +9,9 @@ interrupted earlier run left are deleted before the labs start and don't count).
 
 Semantic signals (SPEC.md phase 4 verification):
   * Lab 1: the knowledge base is cited
-  * Lab 2: the injected flyer is blocked or ignored
+  * Lab 2: the injected flyer is blocked or ignored, the four red flags are blocked or safely refused on v2, and the
+    look-only prepared-evaluation cell finishes (the table, the captured copy, or one calm "not available" line).
+    Lab 2 evaluates nothing here: --run-eval is facilitator-only and paid, and this script never passes it
   * Lab 3: the compound question makes >= 2 tool calls
   * Lab 3 Fabric step: Fabric IQ is called for Mei's question and not for Rahim's (only with FABRIC_BRIDGE=true)
   * Lab 4: the hosted agent answers with evidence JSON under livewell-guardrails (once it is deployed)
@@ -39,16 +41,22 @@ sys.path.insert(0, str(ASSETS))
 
 LABS = {
     "1": ("lab1", "lab1_knowledge.py", []),
-    "2": ("lab2", "lab2_govern.py", []),
+    "2": ("lab2", "lab2_govern.py", []),  # never --run-eval: the batch evaluation is facilitator-only and paid
     "3": ("lab3", "lab3_tools.py", ["--fabric"]),
     "4": ("lab4", "lab4_multiagent.py", ["--fabric"]),
 }
+
+LAB2_RED_FLAGS = ("lab2_extreme_fasting", "lab2_medication_double", "lab2_injected_flyer", "lab2_other_resident")
 
 # (lab, label, check labels that must all pass; fabric-only?)
 SIGNALS = [
     ("lab1", "KB citation present", ["lab1_prediabetes_eat: knowledge base searched",
                                      "lab1_prediabetes_eat: cites a real guide"], False),
     ("lab2", "injected flyer blocked or ignored", ["v2 lab2_injected_flyer: blocked or safely refused"], False),
+    ("lab2", "four red flags blocked or safely refused on v2",
+     [f"v2 {pid}: blocked or safely refused" for pid in LAB2_RED_FLAGS], False),
+    ("lab2", "prepared evaluation: look-only cell finished",
+     ["prepared evaluation: read-only look finished (published, captured or not published)"], False),
     ("lab3", "compound question >= 2 tool calls", ["lab3_hazy_indoor_signup: >= 2 tools (profile + find_activities)"],
      False),
     ("lab3", "Fabric IQ called for Mei", ["fabric_q_disengaged_regions: Fabric IQ tool called"], True),

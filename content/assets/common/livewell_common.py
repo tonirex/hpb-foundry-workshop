@@ -23,6 +23,7 @@ import functools
 import json
 import os
 import pathlib
+import random
 import re
 import sys
 import threading
@@ -411,18 +412,38 @@ def models():
 
 
 _TRANSIENT = {408, 429, 500, 502, 503, 504}
+RETRY_CAP = 60.0  # the longest wait we take from a retry-after header, in seconds
+RETRY_JITTER = 0.25  # every wait gets up to 25% extra, so a room of participants does not retry in step
 
 
 def _status(err: Exception) -> int | None:
     return getattr(err, "status_code", None) or getattr(getattr(err, "response", None), "status_code", None)
 
 
-def _retry_after(err: Exception) -> float | None:
+def _retry_hint(headers: Any) -> float | None:
+    """Seconds the server asked us to wait: `retry-after-ms` first, then `retry-after` (seconds), else None."""
     try:
-        value = err.response.headers.get("retry-after")  # type: ignore[attr-defined]
-        return min(float(value), 60.0) if value else None
+        lowered = {str(k).lower(): v for k, v in headers.items()}
     except Exception:
         return None
+    for key, per_second in (("retry-after-ms", 1000.0), ("retry-after", 1.0)):
+        try:
+            seconds = float(lowered[key]) / per_second
+        except (KeyError, TypeError, ValueError):
+            continue
+        if seconds > 0:
+            return seconds
+    return None
+
+
+def retry_delay(attempt_index: int, base_delay: float = 2.0, headers: Any = None,
+                rng: Callable[[], float] = random.random) -> float:
+    """Seconds to wait before the next try (attempt_index counts from 0). The server's hint wins, capped at 60 s;
+    without one, exponential backoff: base_delay * 2**attempt_index, at most 30 s. Every wait then gets 0-25%
+    random jitter on top (never less), so 30 participants who hit the same 429 do not all retry together."""
+    hint = _retry_hint(headers)
+    wait = min(hint, RETRY_CAP) if hint else min(base_delay * 2 ** min(max(attempt_index, 0), 10), 30.0)
+    return wait * (1.0 + RETRY_JITTER * min(max(rng(), 0.0), 1.0))
 
 
 def _session_not_ready(err: Exception) -> bool:
@@ -431,15 +452,14 @@ def _session_not_ready(err: Exception) -> bool:
 
 
 def retry(fn: Callable[[], Any], *, what: str = "call", attempts: int = 5, retry_timeouts: bool = True) -> Any:
-    """Exponential backoff (2, 4, 8, 16 s; honours Retry-After) on 429, 5xx, timeouts and dropped
-    connections, and at least 15 s between tries while a hosted agent's session starts (424
-    session_not_ready). Everything else, including guardrail blocks (400 content_filter), raises at once.
-    retry_timeouts=False raises a timeout at once: the server may still be running the request, so a
-    retry could repeat an approved write."""
+    """Exponential backoff (2, 4, 8, 16 s, plus 0-25% jitter; retry-after-ms and Retry-After win, see
+    retry_delay) on 429, 5xx, timeouts and dropped connections, and at least 15 s between tries while a
+    hosted agent's session starts (424 session_not_ready). Everything else, including guardrail blocks
+    (400 content_filter), raises at once. retry_timeouts=False raises a timeout at once: the server may
+    still be running the request, so a retry could repeat an approved write."""
     import openai
     from azure.core.exceptions import HttpResponseError, ServiceRequestError, ServiceResponseError
 
-    delay = 2.0
     for attempt in range(1, attempts + 1):
         try:
             return fn()
@@ -455,12 +475,11 @@ def retry(fn: Callable[[], Any], *, what: str = "call", attempts: int = 5, retry
             err = e
         if attempt == attempts:
             raise err
-        wait = _retry_after(err) or delay
+        wait = retry_delay(attempt - 1, 2.0, getattr(getattr(err, "response", None), "headers", None))
         if _session_not_ready(err):
-            wait = max(wait, 15.0)
+            wait = max(wait, retry_delay(0, 15.0))  # at least 15 s while the hosted session starts
         say(f"   (transient {type(err).__name__} {_status(err) or ''} on {what}; retry {attempt}/{attempts - 1} in {wait:.0f}s)")
         time.sleep(wait)
-        delay = min(delay * 2, 30.0)
 
 
 # ---------------------------------------------------------------------------------------------------

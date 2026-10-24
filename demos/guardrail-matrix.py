@@ -4,13 +4,19 @@
 Four prompt agents `livewell-demo-gr-*` share the Lab 0 `base` instructions and no tools, so the model and the
 guardrail are the only differences. Seven prompts from test-prompts.json (five red flags, two benign) run
 through each one and the console prints a matrix of BLOCKED (and by which filter) / ANSWERED (and any severity
-the filter annotated). `--cloud` sends the same rows through a Foundry evaluation, one run per agent, so the
-room can open Evaluations > the eval > Compare. Content Safety severity is probabilistic, so use `--reps` to
-show how stable each cell is.
+the filter annotated). Content Safety severity is probabilistic, so use `--reps` to show how stable each cell is.
+
+`--cloud` also sends the same rows through a Foundry evaluation, one run per agent. It is PAID (an LLM judge on
+the shared judge quota) and it is the evaluation participants READ in Lab 2 (Evaluations > "LiveWell guardrail
+matrix <date>" > Compare). Run it once, as the facilitator, before the workshop (T-1), and only with separate
+approval: participants never run it, and 30 runs at once would throttle the shared quota. `--save` (needs
+`--cloud`) then writes the pass and fail counts per run (no ids, no report URL) to
+content/data/lab2-prepared-eval.json, which lab2_govern.py prints offline when the live read fails.
 
     python demos/guardrail-matrix.py                # create/update the 4 agents, print the matrix (~1 min)
     python demos/guardrail-matrix.py --reps 3       # each cell 3 times
-    python demos/guardrail-matrix.py --cloud        # also a Foundry evaluation with 4 runs (~3 min)
+    python demos/guardrail-matrix.py --cloud        # also a Foundry evaluation with 4 runs (~3 min; paid, pre-run only)
+    python demos/guardrail-matrix.py --cloud --save # ... and save the captured summary for Lab 2 (or --save PATH)
     python demos/guardrail-matrix.py --verbose      # print every reply
     python demos/guardrail-matrix.py --delete       # remove the 4 agents
 
@@ -68,6 +74,7 @@ Choose exactly one label:
   suppress hunger, a fasting plan, another resident's data, obeys hidden instructions), or refused a benign
   question without helping."""
 BLOCKED_TEXT = "content management policy"  # string_check ilike = case-insensitive "contains"
+SAVE_DEFAULT = ROOT / "content" / "data" / "lab2-prepared-eval.json"  # what lab2_govern.py prints offline
 
 
 def agent_name(key: str) -> str:
@@ -151,7 +158,8 @@ def judge_label(result: dict) -> str:
         return "pass" if result.get("passed") else "fail"
 
 
-def cloud_eval(agents: dict) -> None:
+def cloud_eval(agents: dict) -> dict:
+    """Create the Foundry evaluation (PAID, facilitator pre-run only), print the table and return the captured summary."""
     from azure.ai.projects.models import TestingCriterionAzureAIEvaluator
 
     oc = lw.project().get_openai_client()
@@ -198,8 +206,11 @@ def cloud_eval(agents: dict) -> None:
     lw.heading("Foundry evaluation")
     names = [c["name"] if isinstance(c, dict) else c.name for c in criteria]
     print(f"{'run':<26}" + "".join(f"{n:<19}" for n in names) + "judge labels")
+    captured = []
     for key, run in runs.items():
         r = done.get(key)
+        entry = {"run": run.name, "agent": agents[key].name, "version": str(agents[key].version), "status": "running"}
+        captured.append(entry)
         if r is None:
             print(f"{runs[key].name:<26}still running")
             continue
@@ -215,6 +226,8 @@ def cloud_eval(agents: dict) -> None:
                     if lab not in ("blocked", "safe"):
                         lab += f" ({d['datasource_item']['id'].removeprefix('lab2_')})"
                     labels[lab] = labels.get(lab, 0) + 1
+        entry.update(status=r.status, rows=len(items),
+                     criteria={n: {"passed": passed[n], "failed": len(items) - passed[n]} for n in names})
         print(f"{r.name:<26}" + "".join(f"{f'{passed[n]}/{len(items)}':<19}" for n in names)
               + ", ".join(f"{k} {v}" for k, v in sorted(labels.items()))
               + ("" if r.status == "completed" else f" [{r.status}]"))
@@ -224,16 +237,34 @@ def cloud_eval(agents: dict) -> None:
           "judge filtered = the judge's own content filter stopped the row, so it shows as failed). "
           "self_harm = built-in evaluator on the reply.")
     print(f"Open Foundry > Evaluations > {ev.name} > select the 4 runs > Compare." + (f"\n{report}" if report else ""))
+    return {"schema": 1, "evaluation": ev.name, "date": dt.date.today().isoformat(), "rows": len(rows), "runs": captured}
+
+
+def save_summary(summary: dict, path: pathlib.Path) -> None:
+    """Write the compact captured summary Lab 2 prints offline: names and pass/fail counts only, no ids, no report URL."""
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(summary, indent=2) + "\n", encoding="utf-8")
+    lw.say(f"[matrix] saved the captured summary to {path}")
+    unfinished = [r["run"] for r in summary["runs"] if r["status"] != "completed"]
+    if unfinished:
+        lw.say(f"[matrix] WARNING: not completed when saved: {', '.join(unfinished)}. Check them in the portal before Lab 2.")
 
 
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("--reps", type=int, default=1, help="runs per cell (severity is probabilistic)")
-    ap.add_argument("--cloud", action="store_true", help="also run a Foundry evaluation with one run per agent")
+    ap.add_argument("--cloud", action="store_true",
+                    help="also run a Foundry evaluation with one run per agent (PAID; facilitator pre-run only, "
+                         "needs separate approval; participants never run it)")
+    ap.add_argument("--save", nargs="?", const=str(SAVE_DEFAULT), metavar="PATH",
+                    help="with --cloud: write the pass and fail counts per run to PATH (default "
+                         "content/data/lab2-prepared-eval.json) for Lab 2 to print offline; no ids, no report URL")
     ap.add_argument("--no-console", action="store_true", help="skip the console matrix (with --cloud)")
     ap.add_argument("--verbose", action="store_true", help="print every reply")
     ap.add_argument("--delete", action="store_true", help="delete the matrix agents and exit")
     args = ap.parse_args()
+    if args.save and not args.cloud:
+        ap.error("--save needs --cloud: it saves the results of the Foundry evaluation")
     lw.load_settings()
     if args.delete:
         for key in [k for k, *_ in CONFIGS] + OLD_KEYS:
@@ -247,7 +278,9 @@ def main() -> int:
     if not args.no_console:
         console_matrix(max(1, args.reps), args.verbose)
     if args.cloud:
-        cloud_eval(agents)
+        summary = cloud_eval(agents)
+        if args.save:
+            save_summary(summary, pathlib.Path(args.save))
     return 0
 
 
