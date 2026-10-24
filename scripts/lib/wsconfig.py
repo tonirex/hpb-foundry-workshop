@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Read values from content/config/workshop.yaml for shell scripts.
 
-  python scripts/lib/wsconfig.py get names.search_service --env mcaps   -> srch-livewell-mcaps
+  python scripts/lib/wsconfig.py get names.search_service --env mcaps   -> srch-hpb-livewell-mcaps
   python scripts/lib/wsconfig.py get environments.mcaps.facilitator_upns -> one value per line
   python scripts/lib/wsconfig.py json region_matrix                     -> JSON
 

@@ -11,16 +11,20 @@ workshop:
   short_name: "livewell"
   customer: "Health Promotion Board (Singapore)"
   owner: "Antonia Chen (Sr Solution Engineer, Microsoft Singapore)"
-  repo_url: "https://github.com/tonirex/livewell-foundry-workshop"  # lab instructions, printed on the sign-in cards
+  # PRIVATE copy for this delivery: lab instructions, printed on the sign-in cards. An Azure/TAP identity does NOT grant
+  # GitHub access: Builder participants need a collaborator invite or the release ZIP (content/admin/HPB-DELIVERY-RUNBOOK.md).
+  repo_url: "https://github.com/tonirex/hpb-foundry-workshop"
   date: "TODO"                     # workshop day (YYYY-MM-DD)
-  participant_count: 6              # confirmed HPB head-count; sponsor quota sized for it (ASSUMPTIONS.md 9.1)
-  planning_cohort_size: 20
+  # Headcount is per environment: environments.<env>.participants (mcaps 30, sponsor 6). Quota sizing, the lab account
+  # count and the sign-in cards all derive from it (tests/test_config.py keeps them in agreement).
   guest_wifi:
     ssid: "TODO"
     code: "TODO"
   logistics:
     personal_laptops_required: true   # WOG devices cannot sign in to external Entra tenants
-    authenticator_registration_at_first_sign_in: true
+    # Per environment: environments.<env>.lab_accounts.sign_in. mcaps = Temporary Access Pass (no Authenticator registration);
+    # the sponsor tenant still uses a temporary password plus Authenticator.
+    authenticator_registration_at_first_sign_in: false
 
   rails: [navigator, builder]
   default_rail: navigator
@@ -42,13 +46,17 @@ workshop:
 # Names shared by both azd environments (SPEC.md §8.3). <env> = mcaps | sponsor.
 # ---------------------------------------------------------------------------
 names:
-  location: "swedencentral"               # single region for EVERY resource (never Southeast Asia)
-  fallback_location: "northcentralus"     # documented fallback only (SPEC.md §8.2)
-  resource_group: "rg-livewell-workshop-<env>"
-  foundry_account: "aif-livewell-<env>"
+  location: "swedencentral"               # every resource except Search; its approved per-environment location is below
+                                          # no automatic fallback (ASSUMPTIONS.md 11.13); never Southeast Asia
+  resource_group: "rg-livewell-workshop-<env>"   # the ONE resource group: set here once, exported as AZURE_RESOURCE_GROUP, used by every script
+  # The next two are GLOBAL DNS names (<name>.cognitiveservices.azure.com / <name>.search.windows.net): unique across
+  # all of Azure, not just this subscription. The bare "aif-livewell-<env>" / "srch-livewell-<env>" were already taken
+  # (checked 2026-10-23, most likely the earlier workshop's environment in another subscription), hence "hpb". Preflight
+  # check 7 re-checks availability; never reuse a name that preflight reports as someone else's.
+  foundry_account: "aif-hpb-livewell-<env>"
   foundry_project: "livewell-workshop"
-  search_service: "srch-livewell-<env>"
-  fabric_capacity: "fablivewell<env>"
+  search_service: "srch-hpb-livewell-<env>"
+  fabric_capacity: "fabhpblivewell<env>"   # original name was occupied; availability checked 2026-10-24
   fabric_workspace: "HPB Resident 360"
   lakehouse: "lh_resident360"
   ontology: "resident_ontology"
@@ -74,46 +82,67 @@ names:
   budget: "budget-livewell-<env>"
 
 models:
-  # Quota Tier 0 (Azure Sponsorship, Oct 2026) offers gpt-5-mini 500K, gpt-4.1-mini 200K, o4-mini 100K and
-  # text-embedding-3-small 1M TPM, and no model-router (ASSUMPTIONS.md 9.1). Two chat models:
+  # Chosen from read-only discovery against the HPB MCAPS subscription, region swedencentral (inventory 2026-10-23;
+  # ASSUMPTIONS.md 11.1, table in content/admin/HPB-DELIVERY-RUNBOOK.md). A catalogue entry is NOT proof of subscription
+  # eligibility, free quota or deployable capacity: scripts/preflight.sh (scripts/lib/modelcheck.py) reports the four
+  # separately and must be re-run at T-3. Live compatibility and load tests are still pending approval.
+  # Two chat models plus embeddings; no model-router (decision 3), no quota requests are ever made automatically.
   default: "gpt-5-mini"              # Labs 0-2 agents, Lab 3 specialists, memory store, KB planner, Lab 4
   reasoning_effort:                  # per-deployment default for agents; gpt-5-mini's own default is medium
     gpt-5-mini: "low"                # low: about half the latency of medium and still calls every tool
-  tools: "gpt-4.1-mini"              # Lab 3 coach on: OpenAPI, A2A and Fabric Data Agent tools are not
-                                     # supported on gpt-5-mini (the portal removes them). Also the eval judge.
-  embeddings: "text-embedding-3-small"
-  deployment_type: "GlobalStandard"
-  tpm_cap_thousands: 400             # gpt-5-mini; ~6 people plus a facilitator demo peak (~240K TPM measured)
-  tools_tpm_cap_thousands: 200       # gpt-4.1-mini; Lab 3 is ~10K tokens a turn, Lab 2 judges burst higher
-  embedding_tpm_cap_thousands: 100
-  forbidden: ["PTU", "partner models (Anthropic, Mistral, Cohere)"]
-  quota_usage_names:   # az cognitiveservices usage list -> OpenAI.GlobalStandard.<name>
-    gpt-5-mini: "gpt-5-mini"
-    gpt-4.1-mini: "gpt4.1-mini"
-    text-embedding-3-small: "text-embedding-3-small"
+  tools: "gpt-4.1-mini"              # Lab 3 coach on: OpenAPI, A2A and Fabric Data Agent tools are not supported on
+                                     # gpt-5-mini (Learn tool-support table). Also the facilitator pre-run judge.
+                                     # Catalogue lifecycle is Legacy (retires 2027-04-14), so a NEW deployment may be refused
+                                     # in another subscription; here an existing deployment is the eligibility evidence.
+  embeddings: "text-embedding-3-small"   # 1536 dimensions, unchanged: the index needs no re-build
+  deployment_type: "GlobalStandard"  # GlobalStandard (pay per token) or DataZoneStandard; never a provisioned (PTU) type
+  versions:                          # version per model name; every deployment is NoAutoUpgrade
+    gpt-5-mini: "2025-08-07"
+    gpt-4.1-mini: "2025-04-14"
+    text-embedding-3-small: "1"
+    gpt-5.4-mini: "2026-03-17"       # documented fallback for `default` (set default + deployment_type DataZoneStandard);
+                                     # NOT deployed; needs a live compatibility test first (HPB-DELIVERY-RUNBOOK.md)
+  units:                             # deployment capacity in 1K-TPM units per environment (1 unit = 1K TPM; the RPM per
+                                     # unit comes from the catalogue rate limits, e.g. embeddings 6 RPM). Single source for
+                                     # Bicep, preflight and cost-guardrails; the sum per quota pool must fit the free quota.
+    mcaps:   { default: 800, tools: 1000, embeddings: 100 }   # 30 participants + facilitator demo, see sizing
+    sponsor: { default: 400, tools: 200,  embeddings: 100 }   # 6 participants (ASSUMPTIONS.md 9.1)
+  sizing:                            # planning ASSUMPTIONS, not measurements: replace after the approved load test
+    participant_minute:              # tokens (K) and requests per participant per peak minute, by pool
+      default:    { tokens_k: 18, requests: 6 }    # coach turn + specialists + memory + KB planning
+      tools:      { tokens_k: 18, requests: 6 }    # Lab 3 coach with OpenAPI / A2A / Fabric tools
+      embeddings: { tokens_k: 2,  requests: 3 }    # query embeddings for retrieval
+    facilitator_demo:                # facilitator demo + pre-run evaluation, per peak minute
+      default:    { tokens_k: 40, requests: 20 }
+      tools:      { tokens_k: 40, requests: 20 }
+      embeddings: { tokens_k: 5,  requests: 5 }
+    burst_factor: 1.25               # headroom for bursty starts (everyone presses Run together)
+  retirement_warn_days: 180          # preflight warns when a model retires within this many days after the workshop date
+  forbidden: ["PTU", "model-router", "partner models (Anthropic, Mistral, Cohere)"]
 
 # ---------------------------------------------------------------------------
-# Region matrix (SPEC.md §8.2, validated 25 Sep 2026). scripts/preflight.sh FAILS if the configured
-# region is not "yes" on every row. "unverified" = documented fallback only: re-validate, then set
-# PREFLIGHT_ACCEPT_FALLBACK=1 for that run.
+# Region matrix (SPEC.md §8.2, service-level facts validated 25 Sep 2026 on an earlier subscription). scripts/preflight.sh
+# FAILS if the configured service region is not "yes" on its row. Search alone has an approved France Central
+# exception (ASSUMPTIONS.md 11.13). If capacity is unavailable, stop and report; never switch silently.
+# These rows say nothing about THIS subscription's eligibility or quota: preflight checks those live.
 # ---------------------------------------------------------------------------
 region_matrix:
   validated_on: "2026-09-25"
   rows:
-    foundry_project_agent_service:           { swedencentral: "yes", northcentralus: "unverified" }
-    gpt_5_mini_gpt_4_1_mini_global_standard: { swedencentral: "yes", northcentralus: "unverified" }
-    fabric_all_workloads_ontology_data_agent: { swedencentral: "yes", northcentralus: "unverified" }
-    search_agentic_retrieval_semantic_ranker: { swedencentral: "yes", northcentralus: "unverified" }
-    evaluators_playground_batch_risk_safety:  { swedencentral: "yes", northcentralus: "unverified" }
-    hosted_agents:                           { swedencentral: "yes", northcentralus: "unverified" }
+    foundry_project_agent_service:           { swedencentral: "yes" }
+    gpt_5_mini_gpt_4_1_mini_global_standard: { swedencentral: "yes" }
+    fabric_all_workloads_ontology_data_agent: { swedencentral: "yes" }
+    search_agentic_retrieval_semantic_ranker: { swedencentral: "yes", francecentral: "yes" }
+    evaluators_playground_batch_risk_safety:  { swedencentral: "yes" }
+    hosted_agents:                           { swedencentral: "yes" }
   not_colocated:
-    portal_red_teaming: "portal wizard documented for eastus2 / northcentralus only -> run the cloud red team API (scripts/red-team-cloud.py, works in swedencentral, validated 2026-10-01; results show in the portal) or the azure-ai-evaluation SDK"
+    portal_red_teaming: "participants do not run red teaming. A facilitator pre-run needs separate approval and the cloud red team API (scripts/red-team-cloud.py, works in swedencentral, validated 2026-10-01; the portal wizard is documented for eastus2 / northcentralus only)"
   ruled_out:
     eastus2: "new Azure AI Search services capacity-blocked"
     southeastasia: "never used (SPEC.md §0)"
-  capacity_notes:   # live capacity blocks seen while provisioning (preflight check 7 reads these)
+  capacity_notes:
     search:
-      swedencentral: "ResourcesForSkuUnavailable for new Basic AND serverless services on 2026-09-29 (mcaps first provision)"
+      swedencentral: "2026-10-24: FetchOfferings returned no SKUs; Microsoft Learn flags new Search capacity constraints. Quota is not capacity."
 
 # ---------------------------------------------------------------------------
 # Built-in Azure role definitions (identical in every tenant). RBAC is assigned BY ID from here:
@@ -131,15 +160,21 @@ rbac_roles:
   acr_pull: "7f951dda-4ed3-4680-a7ca-43fe172d538d"                  # project + MCP app identities
   acr_push: "8311e382-0749-4cb8-b61a-304f252e45ec"
   log_analytics_reader: "73c42c96-874c-492b-b04d-ab87d138a893"      # attendees -> Application Insights (portal traces)
-  cognitive_services_openai_user: "5e0bd9bd-7b93-4f28-af87-19fc36ad61bd"  # attendees -> Foundry account (Lab 2 judges)
+  cognitive_services_openai_user: "5e0bd9bd-7b93-4f28-af87-19fc36ad61bd"  # attendees -> Foundry account; was for the Lab 2 judges
   foundry_agent_consumer: "eed3b665-ab3a-47b6-8f48-c9382fb1dad6"    # project identity -> project (A2A calls to the specialists)
+  # Built-in roles a facilitator needs to run the template (it creates role assignments): scripts/verify-scope.py caller
+  owner: "8e3af657-a8ff-443c-a75c-2fe8c4bcb635"
+  user_access_administrator: "18d7d88d-d35e-4fb5-a5c3-7773c20a72d9"
+  rbac_administrator: "f58310d9-a9f6-439a-9e8d-f62e7b41a168"
 
 # What scripts/seed-attendees.sh grants each attendee (keys from rbac_roles; scope = resource).
 attendee_roles:
   - { role: foundry_user, scope: project }               # agents, playground, evaluations in the shared project
   - { role: search_index_data_reader, scope: search }    # browse the shared knowledge base in the portal
   - { role: log_analytics_reader, scope: appinsights }   # Tracing tab (Lab 2)
-  - { role: cognitive_services_openai_user, scope: account }  # Lab 2 Builder judges call the account's OpenAI endpoint
+  # Lab 2 is look-only now, so the judges no longer run as the attendee. Kept (model calls on this one account only) until a
+  # rehearsal shows whether reading the prepared evaluation works without it: then drop it (ASSUMPTIONS.md 11.8).
+  - { role: cognitive_services_openai_user, scope: account }
 
 # Built-in Entra directory roles (template IDs, identical in every tenant). Used by
 # scripts/tenant/create-lab-users.sh for the break-glass account only.
@@ -155,22 +190,36 @@ modes:
 # ---------------------------------------------------------------------------
 environments:
   mcaps:
-    purpose: "dry run"
-    subscription_id: "15715b5a-037a-4d59-bf60-2fa0986a3179"
-    tenant_id: "108f6739-7d66-44bd-b535-c1812dab17b5"
+    purpose: "HPB workshop delivery (30 participants): one resource group, Sweden Central with Search in France Central"
+    search_location: "francecentral"   # user-approved Search-only exception, 2026-10-24; not an automatic fallback
+    storage_policy_opt_out_tag: { SecurityControl: "Ignore" }   # explicitly approved for workshop Blob ingestion
+    subscription_id: "c4745a9c-2fb6-4336-a000-6e0f71afaeb5"
+    tenant_id: "f41bde0b-74cd-498a-9091-079dec7418a4"
+    participants: 30
     facilitator_upns:
-      - "admin@mngenvmcap761802.onmicrosoft.com"   # Fabric capacity admin + Foundry Project Manager
+      - "kychan@MngEnvMCAP261533.onmicrosoft.com"   # Fabric capacity admin + Foundry Project Manager (holds Owner on the subscription)
     lab_accounts:
       prefix: "hpb.lab"
-      count: 20
-      pattern: "hpb.lab01 … hpb.lab20"
-      break_glass: "hpb.breakglass"
+      count: 30
+      pattern: "hpb.lab01 … hpb.lab30"
+      break_glass: "hpb.breakglass"   # created ONLY by `create-lab-users.sh --break-glass` (off by default: a standing Global Administrator)
       usage_location: "SG"
-    budget_alerts_usd: [150, 300]
+      sign_in: "tap"                  # tap = Temporary Access Pass, no passwords or Authenticator; password = temporary password + Authenticator
+      tap:
+        lifetime_minutes: 480         # one workshop day; Entra policy bounds are 10 minutes to 30 days
+        one_time_use: false           # the portal, Fabric and `az login` each need a sign-in, so multi-use inside the lifetime
+    # Planning ceiling for the workshop resource group, NOT an approved spend: Azure budgets only alert, they do not stop spend.
+    budget_usd: 500
+    budget_alerts_usd: [250, 500]
+    budget_contacts: ["kychan@MngEnvMCAP261533.onmicrosoft.com"]   # confirm this is a mailbox that receives mail (ASSUMPTIONS.md 11.5)
   sponsor:
-    purpose: "delivery"
+    # Reference environment from the earlier 6-person delivery; not used or re-validated by the HPB MCAPS delivery.
+    purpose: "reference (earlier delivery)"
+    search_location: "francecentral"   # preserves the earlier sponsor Search location; this environment is not redeployed
+    storage_policy_opt_out_tag: {}
     subscription_id: "d865b78f-2913-4f0a-8945-ff436fe33f6b"   # HPB-workshop_HPB_Customer (Azure Sponsorship)
     tenant_id: "f42d5e19-57d1-4047-8d3d-cd4bb2fe7d9a"         # hpbsub2026outlook.onmicrosoft.com
+    participants: 6
     facilitator_upns:
       # Cloud-only work account: a personal Microsoft account (hpb.sub2026@outlook.com, which created the tenant
       # and stays Global Administrator + Owner) cannot create a Fabric capacity (ASSUMPTIONS.md 10.1).
@@ -183,7 +232,10 @@ environments:
       count: 20
       break_glass: "hpb.breakglass"
       usage_location: "SG"
+      sign_in: "password"
+    budget_usd: 300
     budget_alerts_usd: [150, 300]
+    budget_contacts: ["hpb.sub2026@outlook.com"]
 
 # ---------------------------------------------------------------------------
 # Upstream kit (vendored under content/data/resident360/ with NOTICE.md).

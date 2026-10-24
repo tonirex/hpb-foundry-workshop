@@ -4,7 +4,7 @@ param tags object
 param accountName string
 param projectName string
 
-@description('Model deployments: Global Standard only, capacity = TPM cap in thousands. No PTU.')
+@description('Model deployments: GlobalStandard or DataZoneStandard only (pay per token, no PTU). capacity = 1K-TPM units from workshop.yaml models.units; at most 1000 per deployment.')
 param deployments deploymentType[]
 
 param appInsightsId string
@@ -33,7 +33,7 @@ type deploymentType = {
     version: string
   }
   sku: {
-    name: 'GlobalStandard'
+    name: 'GlobalStandard' | 'DataZoneStandard'
     @minValue(1)
     @maxValue(1000)
     capacity: int

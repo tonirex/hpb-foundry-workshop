@@ -4,12 +4,14 @@
 #
 #   scripts/cost-guardrails.sh [env] [--max-usd N] [--pause-fabric]
 #
-# Checks: budget exists with alerts at the workshop.yaml thresholds (150/300 USD) · model deployments
-# Global Standard, capacity <= TPM cap, no PTU / partner models · exactly one search service, never
-# Standard tier, semantic + agentic-retrieval plans on Free · Fabric capacity F2 or F4 (FABRIC_SKU; state
-# reported; Active = billing) · MCP and Lab 4 DevUI app replicas · Log Analytics daily cap · no Bing grounding connection ·
-# every resource tagged workshop=livewell + env=<env> · month-to-date cost for the resource group
-# (--max-usd fails the run above N).
+# Checks: budget on the workshop resource group with the workshop.yaml amount and alert thresholds
+# (environments.<env>.budget_usd / budget_alerts_usd) · model deployments of the configured deployment type and
+# capacity <= models.units.<env>, OpenAI models only, no PTU / model-router / partner models · exactly one search
+# service IN THE RESOURCE GROUP, never Standard tier, semantic + agentic-retrieval plans on Free · Fabric capacity F2
+# (F4 fails unless ALLOW_FABRIC_RESIZE=1; state reported; Active = billing) · MCP and Lab 4 DevUI app replicas ·
+# Log Analytics daily cap · no Bing grounding connection · every resource tagged workshop=livewell + env=<env> ·
+# month-to-date cost for the resource group (--max-usd fails the run above N). Scope (what sits where) is checked
+# by scripts/verify-scope.py deployed.
 . "$(dirname "$0")/lib/common.sh"
 
 ENV_ARG=""; MAX_USD=""; PAUSE=0
@@ -17,7 +19,7 @@ while [ $# -gt 0 ]; do
   case "$1" in
     --max-usd) MAX_USD="$2"; shift ;;
     --pause-fabric) PAUSE=1 ;;
-    -h|--help) sed -n '2,12p' "$0"; exit 0 ;;
+    -h|--help) sed -n '2,15p' "$0"; exit 0 ;;
     -*) die "unknown option $1" ;;
     *) ENV_ARG="$1" ;;
   esac
@@ -30,6 +32,7 @@ RG="${AZURE_RESOURCE_GROUP:-$(cfg names.resource_group)}"
 ACCOUNT="${AZURE_AI_ACCOUNT_NAME:-$(cfg names.foundry_account)}"
 PROJECT="${AZURE_AI_PROJECT_NAME:-$(cfg names.foundry_project)}"
 SEARCH="${AZURE_SEARCH_SERVICE_NAME:-$(cfg names.search_service)}"
+SEARCH_LOC="$(cfg "environments.$ENV.search_location")"
 CAPACITY="${FABRIC_CAPACITY_NAME:-}"
 MCP_APP="${MCP_APP_NAME:-$(cfg names.mcp_app)}"
 DEVUI_APP="${LAB4_DEVUI_APP_NAME:-$(cfg names.devui_app)}"
@@ -42,7 +45,7 @@ az group show -n "$RG" --subscription "$SUB" -o none 2>/dev/null || die "resourc
 
 # Every ARM read in parallel (each az start-up costs seconds on some machines).
 get() {  # name url
-  az rest --method get --url "$2" -o json >"$TMPD/$1.json" 2>"$TMPD/$1.err" || echo '{}' >"$TMPD/$1.json"
+  az rest --method get --subscription "$SUB" --url "$2" -o json >"$TMPD/$1.json" 2>"$TMPD/$1.err" || echo '{}' >"$TMPD/$1.json"
 }
 FROM="$(date -u +%Y-%m-01T00:00:00Z)"; TO="$(date -u +%Y-%m-%dT23:59:59Z)"
 cat >"$TMPD/costq.json" <<EOF
@@ -54,23 +57,25 @@ az resource list -g "$RG" --subscription "$SUB" -o json >"$TMPD/resources.json" 
 get budget "$ARM/Microsoft.Consumption/budgets/$BUDGET?api-version=2023-11-01" &
 get deployments "$ARM/Microsoft.CognitiveServices/accounts/$ACCOUNT/deployments?api-version=2025-06-01" &
 get connections "$ARM/Microsoft.CognitiveServices/accounts/$ACCOUNT/projects/$PROJECT/connections?api-version=2025-06-01" &
-get searchsvcs "https://management.azure.com/subscriptions/$SUB/providers/Microsoft.Search/searchServices?api-version=2025-05-01" &
+get searchsvcs "$ARM/Microsoft.Search/searchServices?api-version=2025-05-01" &
 get mcp "$ARM/Microsoft.App/containerApps/$MCP_APP?api-version=2024-03-01" &
 get devui "$ARM/Microsoft.App/containerApps/$DEVUI_APP?api-version=2024-03-01" &
 get law "$ARM/Microsoft.OperationalInsights/workspaces/log-livewell-$ENV?api-version=2023-09-01" &
 [ -n "$CAPACITY" ] && get fabric "$ARM/Microsoft.Fabric/capacities/$CAPACITY?api-version=2023-11-01" &
-( az rest --method post --url "$ARM/Microsoft.CostManagement/query?api-version=2023-11-01" \
+( az rest --method post --subscription "$SUB" --url "$ARM/Microsoft.CostManagement/query?api-version=2023-11-01" \
     --body "@$TMPD/costq.json" -o json >"$TMPD/cost.json" 2>"$TMPD/cost.err" || echo '{}' >"$TMPD/cost.json" ) &
 wait
 [ -f "$TMPD/fabric.json" ] || echo '{}' >"$TMPD/fabric.json"
 
-THRESHOLDS="$(cfg_json "environments.$ENV.budget_alerts_usd" 2>/dev/null || echo '[150, 300]')"
+THRESHOLDS="$(cfg_json "environments.$ENV.budget_alerts_usd")"
+BUDGET_USD="$(cfg "environments.$ENV.budget_usd")"
 MODELS="$(cfg_json models)"
 set +e
-pyrun - "$TMPD" "$ENV" "$SEARCH" "$THRESHOLDS" "$MODELS" "${MAX_USD:-}" <<'EOF'
+pyrun - "$TMPD" "$ENV" "$SEARCH" "$THRESHOLDS" "$MODELS" "${MAX_USD:-}" "$BUDGET_USD" "${ALLOW_FABRIC_RESIZE:-0}" "$SEARCH_LOC" <<'EOF'
 import json, os, sys
-d, env, search_name, thresholds, models, max_usd = sys.argv[1:7]
+d, env, search_name, thresholds, models, max_usd, budget_usd, allow_resize = sys.argv[1:9]
 thresholds = sorted(json.loads(thresholds)); models = json.loads(models)
+search_location = sys.argv[9]
 def load(n):
     try:
         return json.load(open(os.path.join(d, n + ".json"), encoding="utf-8"))
@@ -91,49 +96,55 @@ else:
     amount = b.get("amount", 0)
     got = sorted(round(n["threshold"] * amount / 100) for n in b.get("notifications", {}).values() if n.get("enabled"))
     if got == thresholds:
-        ok(f"budget {amount} USD/month, alerts at {', '.join(f'US${t}' for t in got)}")
+        ok(f"budget {amount} USD/month on the resource group, alerts at {', '.join(f'US${t}' for t in got)}")
     else:
         bad(f"budget alerts {got} != {thresholds}")
+    if float(amount) != float(budget_usd):
+        bad(f"budget amount {amount} != workshop.yaml environments.{env}.budget_usd {budget_usd}")
     if not any(n.get("contactEmails") or n.get("contactRoles") for n in b.get("notifications", {}).values()):
         bad("budget notifications have no recipients")
 
-# Model deployments
-cap = int(models.get("tpm_cap_thousands", 100))
-emb_cap = int(models.get("embedding_tpm_cap_thousands", cap))
-tools_cap = int(models.get("tools_tpm_cap_thousands", cap))
-allowed = {models["default"], models["tools"], models["embeddings"]}
+# Model deployments: capacity from models.units.<env>, deployment type from models.deployment_type, OpenAI only
+units = (models.get("units") or {}).get(env) or {}
+caps = {models["default"]: int(units.get("default", 0)), models["tools"]: int(units.get("tools", 0)),
+        models["embeddings"]: int(units.get("embeddings", 0))}
 deps = load("deployments").get("value", [])
 if not deps:
     bad("no model deployments found (Foundry account missing?)")
 for dep in deps:
     sku = dep.get("sku", {}); m = dep.get("properties", {}).get("model", {})
     label = f"deployment {dep['name']} ({m.get('format')}/{m.get('name')} {m.get('version')}, {sku.get('name')} {sku.get('capacity')}K TPM)"
-    limit = {models["embeddings"]: emb_cap, models["tools"]: tools_cap}.get(dep["name"], cap)
-    if "provisioned" in sku.get("name", "").lower():
+    limit = caps.get(dep["name"], 0)
+    if "router" in str(m.get("name", "")).lower() or "router" in dep["name"].lower():
+        bad(label + " — model-router is not part of this delivery")
+    elif "provisioned" in sku.get("name", "").lower():
         bad(label + " — PTU is forbidden")
     elif sku.get("name") != models.get("deployment_type", "GlobalStandard"):
-        bad(label + " — must be GlobalStandard")
-    elif int(sku.get("capacity", 0)) > limit:
-        bad(label + f" — above the {limit}K TPM cap")
-    elif m.get("format") not in ("OpenAI", "Microsoft"):
-        bad(label + " — partner models are forbidden")
-    elif dep["name"] not in allowed:
+        bad(label + f" — must be {models.get('deployment_type', 'GlobalStandard')}")
+    elif m.get("format") != "OpenAI":
+        bad(label + " — only OpenAI models are approved (no partner or other providers)")
+    elif dep["name"] not in caps:
         warn(label + " — not one of the three workshop deployments")
+    elif int(sku.get("capacity", 0)) > limit:
+        bad(label + f" — above the {limit}K TPM cap in models.units.{env}")
     else:
         ok(label)
 
 # Resources: search, tags, Fabric SKU
 res = load("resources")
 res = res if isinstance(res, list) else []
-svcs = [s for s in load("searchsvcs").get("value", []) if s.get("tags", {}).get("workshop") == "livewell"
-        and s.get("tags", {}).get("env") == env]
+svcs = load("searchsvcs").get("value", [])
 if len(svcs) == 1:
     s = svcs[0]; sku = s.get("sku", {}).get("name", "")
     p = s.get("properties", {})
     if sku.startswith("standard") or sku.startswith("storage"):
         bad(f"search {s['name']} on {sku} — Standard tiers are forbidden")
     else:
-        ok(f"one search service {s['name']} ({sku})")
+        ok(f"one search service {s['name']} ({sku}) in the resource group")
+    if s.get("name") != search_name:
+        bad(f"the search service is {s['name']}, expected {search_name} (names.search_service)")
+    if str(s.get("location", "")).replace(" ", "").lower() != search_location:
+        bad(f"Search location {s.get('location')} differs from the approved {search_location}")
     if p.get("semanticSearch") not in (None, "free", "disabled"):
         warn(f"semantic ranker plan is {p.get('semanticSearch')} (free covers the workshop)")
     kr = p.get("knowledgeRetrieval")
@@ -142,7 +153,7 @@ if len(svcs) == 1:
     else:
         ok(f"agentic retrieval plan {kr or 'free (default)'}; semantic ranker {p.get('semanticSearch') or 'default'}")
 else:
-    bad(f"expected exactly one workshop search service for env={env}, found {len(svcs)}")
+    bad(f"expected exactly one search service in the resource group, found {len(svcs)}")
 
 # App Insights creates these (free, untaggable at create): smart-detector alert rules and, in a subscription that has
 # none yet, the "Application Insights Smart Detection" action group. The template creates no action groups.
@@ -168,7 +179,10 @@ if fab.get("sku"):
     state = fab.get("properties", {}).get("state", "?")
     sku, want = fab["sku"].get("name"), os.environ.get("FABRIC_SKU") or "F2"
     rate = {"F2": 0.36, "F4": 0.76}.get(sku)
-    if rate is None:
+    if sku != "F2" and allow_resize != "1":
+        bad(f"Fabric capacity {fab['name']} is {sku}: the workshop plan is F2 (resizing needs separate approval; "
+            "ALLOW_FABRIC_RESIZE=1 acknowledges it)")
+    elif rate is None:
         bad(f"Fabric capacity {fab['name']} is {sku} (F2 or F4 only)")
     elif sku != want:
         warn(f"Fabric capacity {fab['name']} is {sku} but FABRIC_SKU={want}: the next provision resizes it "
@@ -240,7 +254,7 @@ FAILURES=$((FAILURES + F)); WARNINGS=$((WARNINGS + W))
 if [ "$PAUSE" = "1" ] && [ -n "$CAPACITY" ]; then
   if grep -q 'FABRIC_STATE=Active' "$TMPD/fabric.state" 2>/dev/null; then
     log "suspending Fabric capacity $CAPACITY"
-    az rest --method post --url "$ARM/Microsoft.Fabric/capacities/$CAPACITY/suspend?api-version=2023-11-01" -o none &&
+    az rest --method post --subscription "$SUB" --url "$ARM/Microsoft.Fabric/capacities/$CAPACITY/suspend?api-version=2023-11-01" -o none &&
       ok "Fabric capacity $CAPACITY suspend requested" || bad "suspend failed"
   else
     ok "Fabric capacity already paused"

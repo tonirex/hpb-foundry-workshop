@@ -65,6 +65,30 @@ azd_() { AZURE_DEV_USER_AGENT=microsoft_foundry_skill azd "$@"; }
 cfg()      { "$PY" "$ROOT/scripts/lib/wsconfig.py" get "$1" --env "${AZURE_ENV_NAME:-}" | tr -d '\r'; }
 cfg_json() { "$PY" "$ROOT/scripts/lib/wsconfig.py" json "$1" --env "${AZURE_ENV_NAME:-}" | tr -d '\r'; }
 
+# Stop unless the active az session and the shell point at this environment's subscription and tenant
+# (scripts/lib/target.py). It never switches subscription itself: it prints the command to run. TARGET_GUARD=skip is for
+# offline tests only. On success the verified IDs are exported so every az / azd / Python helper below uses them.
+require_target() {
+  if [ "${TARGET_GUARD:-}" = "skip" ]; then
+    # Offline tests only: nothing is verified; the configured IDs are exported so scripts still have values.
+    export AZURE_TENANT_ID="$(cfg "environments.$AZURE_ENV_NAME.tenant_id")"
+    export AZURE_SUBSCRIPTION_ID="$(cfg "environments.$AZURE_ENV_NAME.subscription_id")"
+    return 0
+  fi
+  local mode=()
+  if [ "${TARGET_GUARD:-}" = "tenant" ]; then
+    mode=(--tenant-only)  # Entra / Graph scripts: the tenant must match, a subscription need not
+  fi
+  "$PY" "$ROOT/scripts/lib/target.py" check --env "$AZURE_ENV_NAME" ${mode[@]+"${mode[@]}"} | tr -d '\r' ||
+    die "wrong Azure target (see above); nothing was changed"
+  export AZURE_TENANT_ID="$(cfg "environments.$AZURE_ENV_NAME.tenant_id")"
+  if [ "${TARGET_GUARD:-}" = "tenant" ]; then
+    unset AZURE_SUBSCRIPTION_ID  # tokens are then requested by tenant, not by a subscription this account may lack
+  else
+    export AZURE_SUBSCRIPTION_ID="$(cfg "environments.$AZURE_ENV_NAME.subscription_id")"
+  fi
+}
+
 # Load .azure/<env>/.env into this shell (export). Optional arg selects the env first.
 load_azd_env() {
   if [ -n "${1:-}" ]; then
@@ -81,15 +105,19 @@ load_azd_env() {
     export "$key=$value"
   done < <(azd_ env get-values 2>/dev/null || true)
   [ -n "${AZURE_ENV_NAME:-}" ] || die "no azd environment selected (azd env new mcaps | azd env select mcaps)"
+  require_target
 }
 
 # Fabric REST with the caller's user token. Usage: fabric_api GET /v1/workspaces [body]
 fabric_api() {
   local method="$1" path="$2" body="${3:-}"
-  local args=(rest --method "$method" --url "https://api.fabric.microsoft.com$path"
-              --resource "https://api.fabric.microsoft.com")
-  [ -n "$body" ] && args+=(--body "$body" --headers "Content-Type=application/json")
-  az "${args[@]}" 2>&1 | tr -d '\r'
+  pyrun - "$ROOT/scripts/lib" "$method" "$path" "$body" <<'PY'
+import json, sys
+sys.path.insert(0, sys.argv[1])
+from azrest import Api
+body = json.loads(sys.argv[4]) if sys.argv[4] else None
+print(json.dumps(Api("fabric").call(sys.argv[2], sys.argv[3], body)))
+PY
 }
 
 summary_and_exit() {

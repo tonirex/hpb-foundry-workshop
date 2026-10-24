@@ -19,7 +19,10 @@ Two things `azd deploy livewell-workshop-hosted` cannot do from azure.yaml:
 from __future__ import annotations
 
 import argparse
+import os
 import pathlib
+import shutil
+import subprocess
 import sys
 import tempfile
 import time
@@ -123,6 +126,16 @@ def ensure_guardrail(name: str, latest, check: bool) -> bool:
     return status == "active"
 
 
+def record_version(name: str, version: str) -> None:
+    key = f"AGENT_{name.upper().replace('-', '_')}_VERSION"
+    result = subprocess.run([shutil.which("azd") or "azd", "env", "set", key, version], cwd=ROOT,
+                            env={**os.environ, "AZURE_DEV_USER_AGENT": "microsoft_foundry_skill"},
+                            capture_output=True, text=True)
+    if result.returncode:
+        raise SystemExit(f"could not record guarded agent version in azd: {result.stderr.strip()[:300]}")
+    log(f"azd now tracks {name} v{version}")
+
+
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("--check", action="store_true", help="report only; exit 1 if RBAC or the guardrail is missing")
@@ -141,6 +154,13 @@ def main() -> int:
     ok = ensure_guardrail(name, latest, args.check) and ok
     if not ok:
         return 1
+
+    if not args.check:
+        guarded = lw.agent_by_name(name)
+        if guarded is None:
+            log(f"{name} cannot be read after guardrail attachment", err=True)
+            return 1
+        record_version(name, str(guarded.version))
 
     if args.verify:
         run = lw.ask(name, prompt_id=BLOCKED_PROMPT, consent=False)

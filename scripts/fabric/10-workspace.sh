@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
-# Step 10: Fabric workspace "HPB Resident 360" on capacity fablivewell<env>; facilitators are Admin.
-# Idempotent: `fab exists` before `fab mkdir`; `fab acl set -f` re-applies roles.
+# Step 10: Fabric workspace "HPB Resident 360" on the configured Fabric capacity; facilitators are Admin.
+# Idempotent: re-runs reuse the workspace that is already on the workshop capacity; `fab acl set -f` re-applies roles.
+# It never adopts an existing workspace that is not on this capacity (it may belong to an earlier workshop):
+# FABRIC_ADOPT_WORKSPACE_ID=<id> is the explicit, reviewed override.
 #   bash scripts/fabric/10-workspace.sh [env]      (normally run by scripts/fabric/deploy.sh)
 . "$(dirname "$0")/../lib/common.sh"
 [ -n "${AZURE_ENV_NAME:-}" ] || load_azd_env "${1:-}"
@@ -23,8 +25,26 @@ case "$CAP_STATE" in
   *)      die "capacity $CAP is $CAP_STATE: bash scripts/capacity.sh resume $ENV" ;;
 esac
 
-if "$FAB" exists "$WS.Workspace" 2>/dev/null | tr -d '\r' | grep -qi '^true'; then
-  ok "workspace exists"
+# Never adopt a workspace that is not ours: one with this name on another capacity (or none) may belong to an earlier
+# workshop. fabric_ws.py find prints: id <TAB> capacityId <TAB> ours|foreign|unassigned (exit 2 = more than one).
+FOUND="$("$PY" "$ROOT/scripts/lib/fabric_ws.py" find --env "$ENV" 2>&1 | tr -d '\r' || true)"
+COUNT="$(printf '%s\n' "$FOUND" | grep -c . || true)"
+if [ -n "$FOUND" ] && ! printf '%s\n' "$FOUND" | awk -F'\t' 'NF != 3 { exit 1 }'; then
+  die "could not look up the Fabric workspaces: $FOUND"
+fi
+
+if [ "$COUNT" -gt 1 ]; then
+  die "$COUNT Fabric workspaces are named \"$WS\": ownership is ambiguous. Rename or delete the extras in the Fabric portal, then re-run"
+fi
+if [ "$COUNT" -eq 1 ]; then
+  F_ID="$(printf '%s\n' "$FOUND" | cut -f1)"; F_VERDICT="$(printf '%s\n' "$FOUND" | cut -f3)"
+  if [ "$F_VERDICT" = "ours" ]; then
+    ok "workspace exists (id $F_ID) and is on $CAP"
+  elif [ "${FABRIC_ADOPT_WORKSPACE_ID:-}" = "$F_ID" ]; then
+    warn "adopting the existing workspace $F_ID ($F_VERDICT) because FABRIC_ADOPT_WORKSPACE_ID names it; it will be assigned to $CAP"
+  else
+    die "a Fabric workspace named \"$WS\" (id $F_ID) already exists and is $F_VERDICT (not on $CAP): it may belong to an earlier workshop. Not adopting it. Change names.fabric_workspace, or after checking its owner re-run with FABRIC_ADOPT_WORKSPACE_ID=$F_ID"
+  fi
 else
   "$FAB" mkdir "$WS.Workspace" -P "capacityName=$CAP" >/dev/null || die "fab mkdir \"$WS.Workspace\" failed"
   ok "workspace created"

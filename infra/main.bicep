@@ -1,4 +1,4 @@
-// LiveWell Coach workshop — one resource group, one region, every resource (SPEC.md §8).
+// LiveWell Coach workshop — one resource group; Search alone uses the approved regional exception (SPEC.md A.8).
 // Names come from content/config/workshop.yaml (`names:` / `models:`), with <env> = environmentName.
 // Per-environment values live in infra/env/<env>.bicepparam (copied to infra/main.bicepparam by the
 // azd preprovision hook, scripts/select-params.py).
@@ -11,12 +11,18 @@ targetScope = 'resourceGroup'
 ])
 param environmentName string
 
-@description('Single region for EVERY resource, Fabric capacity included. Validated: swedencentral (default), northcentralus (fallback). Never Southeast Asia.')
+@description('Region for every resource except Search, Fabric capacity included. Pinned to swedencentral; never Southeast Asia.')
 @allowed([
   'swedencentral'
-  'northcentralus'
 ])
 param location string = 'swedencentral'
+
+@description('Search-only location from workshop.yaml environments.<env>.search_location. France Central is explicitly approved; never select a fallback automatically.')
+@allowed([
+  'swedencentral'
+  'francecentral'
+])
+param searchLocation string
 
 @description('Object ID of the identity running azd (facilitator). Set by scripts/provision.sh / the preprovision hook.')
 param principalId string = ''
@@ -30,11 +36,11 @@ param principalType string = 'User'
 @description('Object IDs of additional facilitators (Foundry Project Manager + data-plane contributor roles).')
 param facilitatorPrincipalIds array = []
 
-@description('Fabric capacity admins: UPNs of MEMBER accounts in this tenant.')
-param fabricAdminMembers array
-
 @description('FABRIC_BRIDGE. false = no Fabric capacity; the profile tool reads citizens.json and the Fabric step is skipped.')
 param fabricBridge bool = true
+
+@description('Fabric capacity admins: UPNs of MEMBER accounts in this tenant. The .bicepparam reads them from workshop.yaml environments.<env>.facilitator_upns.')
+param fabricAdminMembers array
 
 @description('Link the medication blocklist to livewell-guardrails. False on the first provision of an environment: ARM preflight rejects a policy whose blocklist does not exist yet, and the postprovision hook (scripts/apply-guardrail.py) adds the link.')
 param guardrailLinkBlocklist bool = true
@@ -52,7 +58,7 @@ param fabricSku string = 'F2'
 ])
 param projectMode string = 'shared-project'
 
-@description('Search tier. basic (default) or serverless (Serverless Developer, preview). Never S1+.')
+@description('Search tier. basic (default) or serverless (Serverless Developer, preview). Never S1+. Created in searchLocation, in the same resource group.')
 @allowed([
   'basic'
   'serverless'
@@ -60,26 +66,23 @@ param projectMode string = 'shared-project'
 ])
 param searchSku string = 'basic'
 
-@description('Region for the search service ONLY when the main region is capacity-blocked for new search services (empty = location). Exception to the one-region rule, recorded in ASSUMPTIONS.md.')
-param searchLocation string = ''
-@description('TPM cap (thousands) for the default deployment (gpt-5-mini: Labs 0-2, Lab 3 specialists, memory store, KB planner). Global Standard only (pay per token, so the cap has no fixed cost). 400K keeps 6 participants plus a facilitator demo out of throttling.')
+// Capacity, in 1K-TPM units (1 unit = 1K tokens per minute; RPM per unit comes from the model catalogue). No defaults on
+// purpose: the .bicepparam reads them from workshop.yaml models.units.<env>, so a missing value fails the build instead
+// of deploying a stale default. All are pay-per-token deployments, so the cap is a throttle and costs nothing by itself.
+@description('Default deployment (gpt-5-mini: Labs 0-2, Lab 3 specialists, memory store, KB planner).')
 @minValue(10)
 @maxValue(1000)
-param chatTpmCapThousands int = 400
+param chatTpmCapThousands int
 
-@description('TPM cap (thousands) for the tools deployment (gpt-4.1-mini: Lab 3 coach on, Lab 2 judges). gpt-5-mini does not support OpenAPI, A2A, Fabric or function tools.')
+@description('Tools deployment (gpt-4.1-mini: Lab 3 coach on, facilitator pre-run judge). gpt-5-mini does not support OpenAPI, A2A, Fabric or function tools.')
 @minValue(10)
 @maxValue(1000)
-param toolsTpmCapThousands int = 200
+param toolsTpmCapThousands int
 
-@description('TPM cap (thousands) for the embeddings deployment.')
+@description('Embeddings deployment.')
 @minValue(10)
 @maxValue(150)
-param embeddingTpmCapThousands int = 100
-
-param defaultModelVersion string = '2025-08-07'
-param toolsModelVersion string = '2025-04-14'
-param embeddingModelVersion string = '1'
+param embeddingTpmCapThousands int
 
 @description('MCP server min replicas. 0 between sessions; 1 on the workshop day.')
 @minValue(0)
@@ -109,12 +112,14 @@ param devuiMinReplicas int = 0
 @maxValue(12)
 param devuiSeats int = 8
 
-param budgetAmountUsd int = 300
-param budgetAlertThresholdsUsd array = [
-  150
-  300
-]
-param budgetContactEmails array = []
+@description('Budget for the workshop resource group in USD (a planning ceiling: budgets alert, they do not stop spend). From workshop.yaml environments.<env>.budget_usd.')
+param budgetAmountUsd int
+
+@description('Alert thresholds in USD (workshop.yaml environments.<env>.budget_alerts_usd).')
+param budgetAlertThresholdsUsd array
+
+@description('Alert recipients (workshop.yaml environments.<env>.budget_contacts); subscription Owner/Contributor roles are notified as well.')
+param budgetContactEmails array
 
 @description('Budget start (yyyy-MM-01). Empty = first of the current month. scripts/select-params.py pins it in the azd env (BUDGET_START_DATE) on first provision because an existing budget cannot move its start date.')
 param budgetStartDate string = ''
@@ -125,10 +130,10 @@ param currentMonthStart string = utcNow('yyyy-MM-01')
 @description('Extra tags (e.g. cost centre). workshop / env / azd-env-name are always applied.')
 param extraTags object = {}
 
-@description('Tag that opts the knowledge storage account out of a tenant policy forcing publicNetworkAccess=Disabled (MCAPS: {SecurityControl: \'Ignore\'}). See ASSUMPTIONS.md 4.4.')
+@description('Explicitly approved per-environment storage policy opt-out tags. MCAPS approval is recorded in ASSUMPTIONS.md 11.16. No tenant or subscription policy is changed.')
 param storagePolicyOptOutTag object = {}
 
-@description('Knowledge storage firewall default action. Allow: Entra-only public access, so Lab 2 can publish evaluation runs from laptops (decided 2026-09-30). Deny: Search + trusted services only (ASSUMPTIONS.md 4.15).')
+@description('Knowledge storage firewall default action. Allow: Entra-only access for facilitator guide uploads. Deny: Search and trusted services only. Participants do not publish evaluations.')
 @allowed([
   'Allow'
   'Deny'
@@ -136,6 +141,10 @@ param storagePolicyOptOutTag object = {}
 param storageNetworkDefaultAction string = 'Allow'
 
 // -------------------------------------------------------------------------------------------------
+// Names, model names, versions and the deployment type are read from content/config/workshop.yaml (the single
+// source, shared with the scripts). Per-environment values (capacity, Fabric admins, budget) reach this template
+// as parameters that infra/env/<env>.bicepparam reads from the same file, so a template never carries another
+// environment's identifiers.
 
 var names = loadYamlContent('../content/config/workshop.yaml', '$.names')
 var models = loadYamlContent('../content/config/workshop.yaml', '$.models')
@@ -169,7 +178,7 @@ var deployments = [
     model: {
       format: 'OpenAI'
       name: models.default
-      version: defaultModelVersion
+      version: models.versions[models.default]
     }
     sku: {
       name: models.deployment_type
@@ -181,7 +190,7 @@ var deployments = [
     model: {
       format: 'OpenAI'
       name: models.tools
-      version: toolsModelVersion
+      version: models.versions[models.tools]
     }
     sku: {
       name: models.deployment_type
@@ -193,7 +202,7 @@ var deployments = [
     model: {
       format: 'OpenAI'
       name: models.embeddings
-      version: embeddingModelVersion
+      version: models.versions[models.embeddings]
     }
     sku: {
       name: models.deployment_type
@@ -228,7 +237,7 @@ module storage 'modules/storage.bicep' = {
 module search 'modules/search.bicep' = {
   name: 'search'
   params: {
-    location: empty(searchLocation) ? location : searchLocation
+    location: searchLocation
     tags: tags
     name: n.search
     sku: searchSku
@@ -352,7 +361,7 @@ output AZURE_AI_EMBEDDING_DEPLOYMENT_NAME string = models.embeddings
 
 output AZURE_SEARCH_SERVICE_NAME string = search.outputs.name
 output AZURE_SEARCH_ENDPOINT string = search.outputs.endpoint
-output AZURE_SEARCH_LOCATION string = empty(searchLocation) ? location : searchLocation
+output AZURE_SEARCH_LOCATION string = searchLocation
 output AZURE_SEARCH_CONNECTION_NAME string = n.searchConnection
 output AZURE_SEARCH_CONNECTION_ID string = foundry.outputs.searchConnectionId
 output LIVEWELL_RAI_POLICY_NAME string = foundry.outputs.raiPolicyName
