@@ -129,7 +129,7 @@ LABS = [
             "Inspect `livewell-guardrails` (self-harm blocked from Low, Prompt Shields, blocklist) and attach it.",
             "Append the `safety` block and **Save**; note the new version number next to your baseline.",
             "Re-run the ladder: four outcomes change, including one benign false positive.",
-            "Open a blocked and an allowed trace; run the `livewell-eval` batch and compare versions.",
+            "Open a blocked and an allowed trace; read the facilitator's prepared evaluation and compare the versions (look only).",
         ],
         "shot": ("lab-02/13-guarded-medication-blocked.png", (0.52, 0.225, 0.98, 0.40)),
         "shots": [
@@ -462,7 +462,7 @@ def stack_slide(prs, titles: list[str]):
         ("Lab 3 · Act", "lab",
          "Coach on `gpt-4.1-mini`; `livewell_profile` OpenAPI tool, `livewell-activities-mcp` with approval, memory; `tools` block."),
         ("Lab 2 · Govern", "lab",
-         "`livewell-guardrails` policy + `safety` block; traces; `livewell-eval` evaluations; baseline vs guarded version."),
+         "`livewell-guardrails` policy + `safety` block; traces; the facilitator's pre-run evaluation (look-only); baseline vs guarded version."),
         ("Lab 1 · Know", "lab",
          "Foundry IQ knowledge base `livewell-guides-kb`; `knowledge` block; JSON schema response."),
         ("Lab 0 · Start", "lab",

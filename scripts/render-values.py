@@ -87,7 +87,8 @@ def main() -> int:
     fabric_ws_url = v.get("FABRIC_WORKSPACE_URL") or MISSING
     devui_on = (v.get("LAB4_DEVUI") or "true").strip().lower() in ("1", "true", "yes")
     devui_off = "not deployed (LAB4_DEVUI=false)"
-    # Owner or Contributor can read the token themselves (listSecrets); Foundry User cannot. Lab 4 step 1.
+    # Attendees hold resource-scoped roles only, so they cannot read the secret (listSecrets needs Owner or Contributor):
+    # they use the token below. The command is for facilitators.
     devui_cmd = (f"`az containerapp secret show -n {v.get('LAB4_DEVUI_APP_NAME') or names['devui_app']}"
                  f" -g {v.get('AZURE_RESOURCE_GROUP') or names['resource_group']}"
                  f" --subscription {g('AZURE_SUBSCRIPTION_ID')}"
@@ -117,7 +118,7 @@ def main() -> int:
         ("Hosted agent (Lab 4, facilitator)", hosted()),
         ("Lab 4 DevUI (browser, no install)", g("LAB4_DEVUI_URL") if devui_on else devui_off),
         ("Lab 4 DevUI token", g("LIVEWELL_DEVUI_TOKEN") if devui_on else devui_off),
-        ("Lab 4 DevUI token command (Owner or Contributor)", devui_cmd if devui_on else devui_off),
+        ("Lab 4 DevUI token command (facilitators: needs Owner or Contributor)", devui_cmd if devui_on else devui_off),
         ("Workshop accounts", accounts),
         ("Guest Wi-Fi", f"{ws['guest_wifi']['ssid']} / {ws['guest_wifi']['code']}"),
     ]
@@ -133,11 +134,18 @@ def main() -> int:
         "|---|---|",
     ]
     lines += [f"| {k} | {val} |" for k, val in rows]
+    if lab.get("sign_in") == "tap":
+        sign_in = ["Sign in to https://ai.azure.com with your own workshop account (the username on your sign-in card). When",
+                   "it asks for a password, enter the Temporary Access Pass from the card: there is no Authenticator to set",
+                   "up (if a page asks you to, stop and ask a facilitator). Then open the project above, and name every",
+                   "agent you create with your initials. Ask a facilitator if the project does not appear."]
+    else:
+        sign_in = ["Sign in to https://ai.azure.com with your own workshop account (the username on your sign-in card), open",
+                   "the project above, and name every agent you create with your initials. Ask a facilitator if the project",
+                   "does not appear."]
     lines += [
         "",
-        "Sign in to https://ai.azure.com with your own workshop account (the username on your sign-in card), open",
-        "the project above, and name every agent you create with your initials. Ask a facilitator if the project",
-        "does not appear.",
+        *sign_in,
         "",
     ]
     out = ROOT / "content" / "config" / "values.md"

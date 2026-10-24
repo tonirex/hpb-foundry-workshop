@@ -279,20 +279,27 @@ def agenda_slide(prs: Presentation, titles: list[str]):
 def logistics_slide(prs: Presentation, cfg: dict, titles: list[str]):
     workshop = cfg["workshop"]
     wifi = workshop.get("guest_wifi", {})
+    tap = (cfg.get("environments", {}).get("mcaps", {}).get("lab_accounts", {}) or {}).get("sign_in") == "tap"
+    sign_in_gate = ("Temporary Access Pass entered once and the correct account ready"
+                    if tap else "Authenticator registration started and the correct account ready")
     slide = content_slide(
         prs,
         "Guest Wi-Fi & logistics",
         "Cover this before anyone opens the portal because sign-in is the first likely delay. "
         "Use the TODO labels visibly if the final Wi-Fi values have not been confirmed. "
         "Ask participants to use their own workshop account (the username on their sign-in card) for all Foundry and Fabric steps. "
-        "Gate: move on when everyone has Wi-Fi, Authenticator registration started and the correct account ready.",
+        + ("The card carries a Temporary Access Pass: a secret, valid only until the printed time; nobody registers Authenticator. "
+           "If a sign-in page asks for a method to be set up, stop and fetch a facilitator; never weaken a security setting. "
+           if tap else "")
+        + f"Gate: move on when everyone has Wi-Fi, {sign_in_gate}.",
         titles,
     )
     add_box(slide, 0.75, 1.2, 5.6, 1.05, f"Guest Wi-Fi SSID\n{as_display(wifi.get('ssid'))}", fill=PALE_TEAL, line=TEAL, size=16, color=NAVY, bold=True)
     add_box(slide, 6.85, 1.2, 5.6, 1.05, f"Guest Wi-Fi code\n{as_display(wifi.get('code'))}", fill=PALE_TEAL, line=TEAL, size=16, color=NAVY, bold=True)
     bullets = [
         "Bring and use personal laptops; WOG devices cannot sign in to external Entra tenants.",
-        "Authenticator registration happens at first sign-in; keep the phone nearby.",
+        ("Enter the Temporary Access Pass from your card as the password; there is no Authenticator to register."
+         if tap else "Authenticator registration happens at first sign-in; keep the phone nearby."),
         "Use your own workshop account (on your sign-in card) for Foundry portal, Fabric and workshop scripts.",
         "Portal-first Navigator rail and Python Builder rail share the same checkpoints.",
         "If sign-in stalls, stay with the facilitator; do not switch to personal Microsoft accounts.",
@@ -475,8 +482,8 @@ MODULES = [
         "capability": "Guardrails, Evaluations & Tracing",
         "level": "Govern · Navigator + Builder",
         "story": "A flyer hides an injection; Rahim asks about doubling medication and skipping meals.",
-        "features": "Default vs custom guardrail ladder; block vs annotate; Prompt Shields; self-harm threshold; blocklist; traces; built-in/custom evaluators; version compare; red team.",
-        "checkpoint": "The ladder shows which layer catches each prompt (blocklist, self-harm at Low, Prompt Shields, instructions) and a blocked run appears as Failed in Traces.",
+        "features": "Default vs custom guardrail ladder; block vs annotate; Prompt Shields; self-harm threshold; blocklist; traces; the facilitator's pre-run evaluation (look-only); version compare; red team (facilitator demo).",
+        "checkpoint": "The ladder shows which layer catches each prompt (blocklist, self-harm at Low, Prompt Shields, instructions), a blocked run appears as Failed in Traces, and you can read the v1 vs v2 handled_safely result from the prepared evaluation.",
     },
     {
         "id": "lab-03",
@@ -667,27 +674,30 @@ def guardrail_slide(prs: Presentation, cfg: dict, titles: list[str]):
         header_size=10.8,
     )
     add_box(slide, 0.75, 4.8, 3.85, 1.55, "Block vs annotate\nAt the threshold: blocked, HTTP 400, Failed trace.\nBelow it: answered, severity recorded.", fill=WHITE, line=NAVY, size=11.5, color=NAVY, bold=True)
-    add_box(slide, 4.85, 4.8, 4.1, 1.55, "Evaluators\ngroundedness · relevance · task adherence · tool-call accuracy · intent resolution · custom \"advice matches known conditions\"", fill=PALE_TEAL, line=TEAL, size=11.5, color=NAVY, bold=True)
-    add_box(slide, 9.2, 4.8, 3.4, 1.55, "Red team\nFacilitator via SDK path\napprox. US$42 per scan", fill=LIGHT, line=ORANGE, size=13, color=NAVY, bold=True)
+    add_box(slide, 4.85, 4.8, 4.1, 1.55, "Evaluators (facilitator pre-run, look-only)\nThe prepared run scores guardrail_blocked, handled_safely (LLM judge) and self_harm. Built-in families to know: groundedness · relevance · task adherence · tool-call accuracy · intent resolution", fill=PALE_TEAL, line=TEAL, size=10.5, color=NAVY, bold=True)
+    add_box(slide, 9.2, 4.8, 3.4, 1.55, "Red team\nFacilitator only, shown on screen\nPaid (approx. US$42 per scan): needs approval; participants run none", fill=LIGHT, line=ORANGE, size=11.5, color=NAVY, bold=True)
 
 
-def cost_slide(prs: Presentation, titles: list[str]):
+def cost_slide(prs: Presentation, cfg: dict, titles: list[str]):
+    env = (cfg.get("environments") or {}).get("mcaps") or {}
+    alerts = " and ".join(f"US${a}" for a in env.get("budget_alerts_usd", []))
     rows = [
-        ["Model tokens (20 x 150 runs x buffer)", "12", "60"],
-        ["Quality evaluations", "4", "4"],
-        ["Red teaming / safety evals", "42", "42"],
-        ["Azure AI Search, 120 h", "12", "40"],
-        ["Semantic ranker, Bing, Code Interpreter, hosted agents, ACR, storage/App Insights", "~12", "~18"],
-        ["Total", "approx. 83", "approx. 166"],
-        ["Every participant runs a full red-team scan", "+126", "approx. 292"],
-        ["Fabric F2, 16 h active", "+6", "+6"],
+        ["Model tokens, 30 people, pay per token (no participant evaluations)", "25-50"],
+        ["Azure AI Search Basic, about 120 h", "~12"],
+        ["Fabric F2, 16-24 h active (about US$0.36/h)", "6-9"],
+        ["Container Apps, ACR, logs, storage, App Insights, judge tokens", "small, not itemised"],
+        ["Planning range for the whole window, with buffer", "approx. 100-160"],
+        ["Facilitator red-team scan (separate approval)", "+42 per documented scan"],
+        ["Participants run evaluations or red teaming", "not allowed"],
     ]
     slide = content_slide(
         prs,
         "Cost & controls",
-        "Anchor on sponsorship safety: the low path is the intended operating mode, not the high path. "
+        "Anchor on safety of spend: this is an indicative list-price planning range, not a measurement, and the model meters for gpt-5-mini "
+        "and gpt-4.1-mini were not confirmed, so check the pricing calculator before quoting a figure. "
         "Explain that Fabric F2 is cheap during the workshop but expensive if left running all month. "
-        "Controls are part of the design, not afterthoughts: shared search, small models, caps, budget alerts and teardown. "
+        f"The budget is US${env.get('budget_usd', 'TBC')} on the single resource group with alerts at {alerts}: it is a ceiling that alerts, it does not stop spend, and it is not an approved spend. "
+        "Controls are part of the design, not afterthoughts: one resource group, shared search, small models, capped units, budget alerts and a teardown that also covers Fabric and the temporary accounts. "
         "Gate: move on after naming who owns teardown and capacity pause.",
         titles,
     )
@@ -697,36 +707,38 @@ def cost_slide(prs: Presentation, titles: list[str]):
         1.05,
         7.25,
         4.85,
-        ["Line", "Low", "High"],
+        ["Line", "US$ (indicative)"],
         rows,
-        col_widths=[5.25, 1.0, 1.0],
+        col_widths=[5.25, 2.0],
         font_size=9.7,
         header_size=10.5,
     )
     controls = [
-        "One shared search service and KB",
-        "gpt-5-mini default (reasoning Low); TPM caps; no PTU",
-        "Red teaming facilitator-run; lite scan only if enabled",
-        "Bing off by default; budgets at US$150 and US$300",
-        "Fabric capacity paused nightly; teardown at T+1",
+        "One resource group in swedencentral; one shared search service and KB",
+        "gpt-5-mini default (reasoning Low), gpt-4.1-mini tools; capped units; no PTU, no model-router",
+        "Lab 2 is look-only: participants run no evaluation or red team",
+        f"Bing off by default; budget US${env.get('budget_usd', 'TBC')}, alerts at {alerts}",
+        "Fabric F2 paused when idle; teardown at T+1 incl. Fabric workspace and temporary accounts",
     ]
     add_box(slide, 8.15, 1.05, 4.55, 0.55, "Controls", fill=NAVY, line=NAVY, size=15, color=WHITE, bold=True)
-    add_bullets(slide, 8.25, 1.85, 4.35, 2.6, controls, size=12.2)
-    add_box(slide, 8.25, 5.0, 4.25, 0.85, "Fabric F2 line\napprox. US$0.36/h; approx. US$259/month if left on; F4 doubles it", fill=PALE_TEAL, line=TEAL, size=13, color=NAVY, bold=True)
+    add_bullets(slide, 8.25, 1.85, 4.35, 3.0, controls, size=11.6)
+    add_box(slide, 8.25, 5.0, 4.25, 0.85, "Fabric F2 line\napprox. US$0.36/h; approx. US$259/month if left on; resizing needs approval", fill=PALE_TEAL, line=TEAL, size=13, color=NAVY, bold=True)
 
 
-def resources_slide(prs: Presentation, titles: list[str]):
+def resources_slide(prs: Presentation, cfg: dict, titles: list[str]):
+    repo = str(cfg["workshop"].get("repo_url", "")).replace("https://github.com/", "github.com/")
     slide = content_slide(
         prs,
         "Getting started / resources",
         "Keep this slide practical: the workshop repo first, then official repos and Learn titles. "
+        "The repo is private: Builder participants need a GitHub invite or the release ZIP, because their workshop account does not grant GitHub access. "
         "Do not send participants to generic marketing pages; these are the artefacts Antonia can merge into the master deck. "
         "If URLs are added later, keep them to GitHub or Microsoft Learn. "
         "Gate: close the setup section when participants know where the labs and references live.",
         titles,
     )
     add_box(slide, 0.65, 1.0, 5.85, 0.72, "Workshop repo", fill=NAVY, line=NAVY, size=15, color=WHITE, bold=True)
-    add_text(slide, 0.85, 1.95, 5.35, 0.5, "tonirex/livewell-foundry-workshop\nprivate until the dry run passes", size=14, color=BODY)
+    add_text(slide, 0.85, 1.95, 5.35, 0.5, f"{repo}\nprivate: the facilitator invites your GitHub username", size=14, color=BODY)
     repos = [
         "microsoft/azure-skills (Foundry Skill)",
         "MicrosoftLearning/mslearn-ai-agents",
@@ -762,7 +774,7 @@ def close_slide(prs: Presentation, titles: list[str]):
         ["7", "Handling Uncertainty", "2", "Route to clinician / HealthHub; never dose medication"],
         ["8", "Institutional Memory", "3", "Memory of preferences and prior interactions"],
         ["9", "Collaboration Between Specialists", "3/4", "Nutrition + Activity + Programme-Insights merged reply"],
-        ["10", "Governance & Safety", "2 + cross-cutting", "Guardrails, evaluators, red-team scan, RBAC, Entra Agent ID"],
+        ["10", "Governance & Safety", "2 + cross-cutting", "Guardrails, evaluators (pre-run, facilitator), red-team demo (facilitator), RBAC, Entra Agent ID"],
     ]
     slide = content_slide(
         prs,
@@ -828,8 +840,8 @@ def build_deck(root: Path, out_path: Path) -> list[str]:
     iq_comparison_slide(prs, titles)
     fabric_paths_slide(prs, titles)
     guardrail_slide(prs, cfg, titles)
-    cost_slide(prs, titles)
-    resources_slide(prs, titles)
+    cost_slide(prs, cfg, titles)
+    resources_slide(prs, cfg, titles)
     close_slide(prs, titles)
 
     out_path.parent.mkdir(parents=True, exist_ok=True)

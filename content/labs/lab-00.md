@@ -115,7 +115,7 @@ There is nothing to submit. Try the steps first, then open **Expected output** t
 
 | Symptom | Fix |
 |---|---|
-| Sign-in loops or MFA never completes | Use an InPrivate window, your personal laptop, and the Authenticator prompt for your own workshop account (not your work account). |
+| Sign-in loops, or the Temporary Access Pass is rejected | Use an InPrivate window, your personal laptop and your own workshop account (not your work account). Check the "valid until" time on your card and that you typed the pass exactly; if it still fails, tell a facilitator, who can issue a new one. Do not register Authenticator or change any security setting. |
 | You cannot see **`livewell-workshop`** | Confirm you are in the lab tenant and ask the facilitator to refresh your Foundry User assignment. |
 | No **New agent** button | You may be outside the project or missing Foundry User. Re-open the project from the values sheet shown on screen. |
 | `gpt-5-mini` returns 429 or quota errors | Wait 30 seconds and resend. If it keeps happening, switch the agent model to `gpt-4.1-mini`, save, and tell the facilitator. |

@@ -18,7 +18,7 @@ workshop**. Fabric built the Resident 360 that sees Rahim; today Foundry builds 
 |-----|-------|----------------|------|
 | **▶ [Lab 0](content/labs/lab-00.md)** | Setup & first agent | `livewell-<initials>`: model + instructions on gpt-5-mini, a safe refusal and its trace | 15 min |
 | [Lab 1](content/labs/lab-01.md) | Agents & Knowledge: Foundry IQ | Foundry IQ knowledge base, citations, JSON contract | 40 min |
-| [Lab 2](content/labs/lab-02.md) | Guardrails, Evaluations & Tracing | RAI policy, four red-flag prompts, traces, batch evaluation, v1 vs v2 | 40 min |
+| [Lab 2](content/labs/lab-02.md) | Guardrails, Evaluations & Tracing | RAI policy, red-flag prompts, traces, the facilitator's pre-run evaluation (look-only), v1 vs v2 | 40 min |
 | [Lab 3](content/labs/lab-03.md) | Tools, MCP & Memory: hyper-personalisation | Profile tool, activities MCP with approval, memory, specialists | 40 min |
 | [Fabric step](content/labs/fabric-step.md) | Add the Fabric IQ tool (optional, in Lab 3) | Mei's region question answered by the Resident360 Ontology Agent | 15 min |
 | [Lab 4](content/labs/lab-04.md) | Multi-agent & Hosted deploy *(browser hands-on + facilitator deploy)* | Agent Framework orchestration, hosted agent with guardrails | 30 min |
@@ -48,7 +48,7 @@ workshop**. Fabric built the Resident 360 that sees Rahim; today Foundry builds 
 | 7 | Handling Uncertainty | 2 | Route to a clinician or HealthHub; never dose medication; "insufficient information" |
 | 8 | Institutional Memory | 3 | Memory of stated preferences ("I prefer mornings") |
 | 9 | Collaboration Between Specialists | 3 / 4 | Nutrition + Activity + Programme-Insights specialists, one merged reply |
-| 10 | Governance & Safety | 2 + throughout | Guardrails, evaluators, red-team scan, RBAC, Entra Agent ID |
+| 10 | Governance & Safety | 2 + throughout | Guardrails, evaluators (a facilitator pre-run you explore), red-team demo (facilitator), RBAC, Entra Agent ID |
 
 ---
 
@@ -60,9 +60,16 @@ workshop**. Fabric built the Resident 360 that sees Rahim; today Foundry builds 
 - **Bring a personal laptop.** WOG devices cannot sign in to an external Entra tenant.
 - **Guest Wi-Fi:** SSID and code are on the welcome slide (set in `content/config/workshop.yaml`).
 - **First sign-in:** you get your own workshop account (the username on your sign-in card, for example
-  `firstname.lastname@…`) and a temporary password. At first sign-in you change the password and register
-  **Microsoft Authenticator** on your phone. Install it before the day.
+  `hpb.lab07@…`) and a **Temporary Access Pass (TAP)**: a short-lived code the facilitator gives you with the card.
+  Enter it when the sign-in page asks for a password. There is nothing to install and no Authenticator to
+  register; if a page asks you to set up a sign-in method, stop and ask a facilitator. The pass stops working at
+  the time on your card. Treat the card as a secret: do not photograph or share it. *(If your card shows a
+  temporary password instead of a TAP, you are on the older sponsor flow: change the password and register
+  Microsoft Authenticator at first sign-in.)*
 - Use a private or guest browser window so your work account does not interfere.
+- **Builder rail only:** you also need a GitHub account that can open this **private** repository. Your workshop
+  account does not give you GitHub access: send your GitHub username to the facilitator before the day to be
+  invited, or ask for the release ZIP. Navigator needs only a browser.
 
 </details>
 
@@ -74,7 +81,8 @@ Do it during Lab 0 or before the day; `check_setup.py` tells you when you are re
 <details>
 <summary><strong>Option A · GitHub Codespaces (recommended, ~5 min)</strong></summary>
 
-You need a GitHub account that can open this repository (the facilitator shares access before the day). The
+You need a GitHub account that can open this repository (it is **private**: the facilitator invites your GitHub
+username as a collaborator before the day; your workshop account does not grant GitHub access). The
 dev container gives everyone the same Linux image: Python 3.13 in a `.venv` that is already active, uv, `az`,
 `azd`, `fab`, Docker-in-Docker, and everything in [`requirements.txt`](requirements.txt). Codespaces usage comes
 out of your GitHub account's free monthly hours; the 2-core machine is enough.
@@ -88,7 +96,10 @@ out of your GitHub account's free monthly hours; the 2-core machine is enough.
    ```
 
    Open the link it prints in the **private browser window where you are signed in with your workshop account**,
-   enter the code and pick that account. If it asks you to choose a subscription, press Enter.
+   enter the code and pick that account. If the page asks for a password, enter your Temporary Access Pass. If it
+   asks you to choose a subscription, press Enter. *(Whether device-code sign-in with a TAP works in this tenant is
+   confirmed by the facilitator at the rehearsal; if it does not, the facilitator tells you the approved
+   alternative. Never ask anyone to turn a security setting off.)*
 3. Create your settings file, then fill it in (see [Your `.env`](#your-env) below):
 
    ```bash
@@ -175,11 +186,15 @@ tool connections and the two model deployments, and prints what to fix:
 <details>
 <summary><strong>Run of show, admin and cost</strong></summary>
 
+- [**HPB delivery runbook**](content/admin/HPB-DELIVERY-RUNBOOK.md): the one linear runbook for the MCAPS delivery (prerequisites,
+  models and quota with the T-3 re-check, one resource group, tenant and TAP steps, approval gates, rehearsal,
+  workshop day, teardown including Fabric and temporary identities).
 - [Facilitator run of show](foundry-workshop-plan.md): the 9:00–5:30 agenda, checkpoint gates, backup plans and demo prompts.
-- [Admin setup](content/admin/ADMIN-SETUP.md): timeline T-10 → T+1, cost table, RBAC, troubleshooting.
-  [Tenant bootstrap](content/admin/TENANT-BOOTSTRAP.md): one-time tenant, Fabric and lab-account setup.
+- [Admin setup](content/admin/ADMIN-SETUP.md) and [Tenant bootstrap](content/admin/TENANT-BOOTSTRAP.md): earlier reference
+  material (sponsor delivery); where they differ from the runbook, the runbook wins.
 - Scripts: [preflight](scripts/preflight.sh), [provision](scripts/provision.sh), [cost guardrails](scripts/cost-guardrails.sh),
-  [Fabric capacity](scripts/capacity.sh), [seed attendees](scripts/seed-attendees.sh), [teardown](scripts/teardown.sh).
+  [scope check](scripts/verify-scope.py), [Fabric capacity](scripts/capacity.sh), [seed attendees](scripts/seed-attendees.sh),
+  [teardown](scripts/teardown.sh).
 - [Rahim's story](content/narrative/rahim.md): one chapter per lab, every beat tagged by seat and source.
 - [Prompt bank](content/prompts/test-prompts.json): the single source of truth for every prompt in the labs, keys and demos.
 - [Answer keys](content/answer-keys/): facilitator reference answers for each checkpoint (participants compare with the Expected output block on each lab page).

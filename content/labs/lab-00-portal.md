@@ -10,11 +10,11 @@ Use a personal laptop, an InPrivate browser window, and your own workshop accoun
 
    > 📸 **Screenshot slot** · `screenshots/lab-00/01-sign-in-inprivate.png` · InPrivate window at Foundry sign-in with the lab account prompt
 
-2. Register Microsoft Authenticator if this is your first sign-in.
+2. Enter your Temporary Access Pass when the page asks for a password. There is no Authenticator to register; if a page asks you to set up a sign-in method, stop and ask a facilitator.
 
-   **Sign-in prompt → Microsoft Authenticator → Add account → Approve sign-in**
+   **Sign-in page → your workshop username → Next → Temporary Access Pass (from your card) → Sign in**
 
-   > 📸 **Screenshot slot** · `screenshots/lab-00/02-authenticator-registration.png` · Authenticator registration completed for the lab account
+   > 📸 **Screenshot slot** · `screenshots/lab-00/02-temporary-access-pass.png` · Sign-in page asking for the Temporary Access Pass (use a placeholder value)
 
 3. Open the shared Foundry project.
 

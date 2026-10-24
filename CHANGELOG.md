@@ -4,6 +4,50 @@ All notable changes to this workshop. One entry per phase PR.
 
 ## [Unreleased]
 
+### Approved Search regional exception (2026-10-24)
+
+- The rehearsal stack is deployed: Search Basic in France Central, all other customer-managed resources in Sweden
+  Central in the workshop group, including Fabric F2. All 11 guide PDFs indexed successfully; limited live checks
+  confirmed cited retrieval, profile routing, medication blocking, the hosted structured plan and Fabric region figures.
+- Applied the user-approved storage tag exception while retaining Entra authentication and disabling anonymous blobs
+  and shared keys. Fabric uses the verified unique capacity name `fabhpblivewell<env>`.
+- Updated Fabric setup for the new ontology-context surface: one portal attachment step on a fresh agent, then
+  idempotent script verification/publication. Hosted postdeploy now records its guarded version in azd, so the
+  generated playground link does not keep pointing at the earlier unguarded version.
+- Search Basic uses the user-approved France Central location from each environment's `search_location`; all other
+  customer-managed Azure resources stay in Sweden Central in the same workshop resource group.
+- Preflight checks live Search SKU offerings separately from quota. Scope verification follows module location
+  parameters and permits the exception only for Search. Cost checks and the ownership manifest use the same setting.
+- Standalone model/scope discovery explicitly selects the configured subscription for authentication. The obsolete
+  storage opt-out was initially removed, then restored only for MCAPS after the user's explicit approval.
+- Rehearsal deployment and limited facilitator readiness checks are approved. Participant identities, tenant policies,
+  evaluations, red-team scans and load tests remain separate work.
+
+### HPB MCAPS delivery: 30 participants, current models, one resource group (2026-10-23)
+
+Static changes only (see ASSUMPTIONS.md Phase 11). Nothing was deployed or changed in any tenant, no quota was requested,
+and no evaluation, red-team, compatibility or load test was run; the workshop is **not** deployment-ready.
+
+- **Target guard.** `scripts/lib/target.py` stops every script that touches Azure unless `az` points at the subscription
+  and tenant in `workshop.yaml` (and rejects stale `AZURE_*` values). The `az account set` in `provision.sh` is gone;
+  token requests are pinned to the configured subscription, time out, and have their tenant checked.
+- **Models from discovery.** `scripts/lib/modelcheck.py` reports catalogue, lifecycle, eligibility, quota (summed per pool) and
+  the capacity API separately, with RPM next to TPM, the 30-participant sizing and a saved T-3 record. Kept gpt-5-mini
+  (800 units), gpt-4.1-mini (1,000, also the judge) and text-embedding-3-small (100); no model-router. Versions, capacity per
+  environment and sizing assumptions are now single-sourced in `workshop.yaml` (the bicepparam files read them).
+- **One region, one resource group.** `location` is pinned to swedencentral; `SEARCH_LOCATION`, `fallback_location` and
+  the northcentralus columns are removed. New `scripts/verify-scope.py` (`plan`, `deployed`, `caller`, `manifest`), group and
+  Fabric-workspace adoption guards, and a plan-only-by-default `teardown.sh` that deletes by ID and stops on failure.
+- **Read-only preflight.** It no longer registers providers (`PREFLIGHT_REGISTER_PROVIDERS=1` to opt in), reads roles from ARM
+  instead of Graph, and `provision.sh` needs `--yes` to deploy; `--what-if-only` creates nothing.
+- **Budget.** US$500 on the group, alerts at US$250 and US$500 (a planning ceiling, not an approved spend).
+- **Identity.** TAP instead of passwords for the 30 `hpb.lab` accounts: plan-only tooling, TAP-aware sign-in cards, opt-in
+  break-glass, `--disable`.
+- **Lab 2 is look-only.** No participant evaluation or red teaming; the facilitator pre-run is explored instead (checkpoint
+  changed; red-flag round 2 workers; retry jitter).
+- **Docs.** New [HPB delivery runbook](content/admin/HPB-DELIVERY-RUNBOOK.md); README, ADMIN-SETUP, TENANT-BOOTSTRAP,
+  the run of show, `versions.md` and both decks aligned. Offline tests: `python -m unittest discover -s tests`.
+
 ### Sponsor environment (2026-10-04)
 
 - **Sponsor values filled in.** `workshop.yaml` → `environments.sponsor` and `infra/env/sponsor.bicepparam` hold the
