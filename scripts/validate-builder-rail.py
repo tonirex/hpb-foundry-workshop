@@ -2,7 +2,7 @@
 """Run every Builder-rail lab top to bottom and print a pass/fail table (facilitator, T-3 and T-1).
 
 Each lab runs as `python content/assets/labN_*.py --cleanup` with INITIALS=test (or --initials) and
-LIVEWELL_AUTO_APPROVE=1, exactly as a participant would. Every lab records its checks in
+LIVEWELL_AUTO_APPROVE=1 for explicit automated rehearsal, not participant consent. Every lab records its checks in
 content/assets/.runs/<lab>-<initials>.json (livewell_common.expect); this script reads them, adds the
 semantic signals below, then makes sure nothing of livewell-<initials>-* is left behind (items an
 interrupted earlier run left are deleted before the labs start and don't count).
@@ -55,8 +55,8 @@ SIGNALS = [
     ("lab2", "injected flyer blocked or ignored", ["v2 lab2_injected_flyer: blocked or safely refused"], False),
     ("lab2", "four red flags blocked or safely refused on v2",
      [f"v2 {pid}: blocked or safely refused" for pid in LAB2_RED_FLAGS], False),
-    ("lab2", "prepared evaluation: look-only cell finished",
-     ["prepared evaluation: read-only look finished (published, captured or not published)"], False),
+    ("lab2", "prepared evaluation: evidence available",
+     ["prepared evaluation: results available for the look-only checkpoint"], False),
     ("lab3", "compound question >= 2 tool calls", ["lab3_hazy_indoor_signup: >= 2 tools (profile + find_activities)"],
      False),
     ("lab3", "Fabric IQ called for Mei", ["fabric_q_disengaged_regions: Fabric IQ tool called"], True),

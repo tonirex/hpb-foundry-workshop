@@ -52,7 +52,7 @@ def load_offline_cells() -> dict:
         head.append(cell)
     stub = _NoAzure("common.livewell_common")
     package = types.ModuleType("common")
-    package.__path__ = []
+    package.__path__ = [str(ASSETS / "common")]
     package.livewell_common = stub
     names = ("common", "common.livewell_common")
     blocked = ("azure", "openai")  # None in sys.modules makes `import azure` fail: the SDKs must not load here
@@ -247,11 +247,19 @@ class PreparedEvaluationTests(OfflineScript):
 
     def test_tally_results_counts_passes_and_fails(self):
         tally = self.ns["tally_results"](rows(1, 5, 7))
-        self.assertEqual(tally["guardrail_blocked"], {"passed": 1, "failed": 6})
-        self.assertEqual(tally["handled_safely"], {"passed": 5, "failed": 2})
-        self.assertEqual(tally["self_harm"], {"passed": 7, "failed": 0})
-        empty = self.ns["tally_results"]([{"results": None}, {}])  # an errored row counts as not passed
-        self.assertEqual(empty["handled_safely"], {"passed": 0, "failed": 2})
+        self.assertEqual(tally["guardrail_blocked"], {"passed": 1, "failed": 6, "not_scored": 0})
+        self.assertEqual(tally["handled_safely"], {"passed": 5, "failed": 2, "not_scored": 0})
+        self.assertEqual(tally["self_harm"], {"passed": 7, "failed": 0, "not_scored": 0})
+        empty = self.ns["tally_results"]([{"results": None}, {}])
+        self.assertEqual(empty["handled_safely"], {"passed": 0, "failed": 0, "not_scored": 2})
+
+    def test_grader_errors_override_the_passed_placeholder(self):
+        results = [{"passed": False, "sample": {"error": {"code": "content_filter"}}},
+                   {"passed": True, "error": {"code": "grader_error"}},
+                   {"passed": None}, {"passed": "false"}, {"passed": 1},
+                   {"passed": False}, {"passed": True, "sample": {"error": None}}]
+        tally = self.ns["tally_results"]([{"results": [{"name": "handled_safely", **r}]} for r in results])
+        self.assertEqual(tally["handled_safely"], {"passed": 1, "failed": 1, "not_scored": 5})
 
     def test_newest_prepared_ignores_other_evaluations(self):
         client = sample_client()
@@ -267,8 +275,8 @@ class PreparedEvaluationTests(OfflineScript):
         self.assertEqual(summary["evaluation"], "LiveWell guardrail matrix 2026-10-23 14:05")
         self.assertEqual(summary["rows"], 7)
         first, second, running = summary["runs"]
-        self.assertEqual(first["criteria"]["handled_safely"], {"passed": 5, "failed": 2})
-        self.assertEqual(second["criteria"]["guardrail_blocked"], {"passed": 4, "failed": 3})
+        self.assertEqual(first["criteria"]["handled_safely"], {"passed": 5, "failed": 2, "not_scored": 0})
+        self.assertEqual(second["criteria"]["guardrail_blocked"], {"passed": 4, "failed": 3, "not_scored": 0})
         self.assertEqual(running, {"run": "gpt-4.1-mini + custom", "status": "in_progress"})
         self.assertEqual(summary["report_url"], "https://portal.example.invalid/report")
 
@@ -302,7 +310,7 @@ class PreparedEvaluationTests(OfflineScript):
         self.assertEqual((status, summary["evaluation"]), ("published", "live"))
 
     def test_the_captured_copy_is_used_when_the_live_read_fails(self):
-        captured = FakePath(json.dumps({"evaluation": "saved", "date": "2026-10-23", "runs": []}))
+        captured = FakePath(json.dumps({"schema": 2, "evaluation": "saved", "date": "2026-10-23", "runs": []}))
 
         def forbidden():
             raise Forbidden("403")
@@ -312,10 +320,25 @@ class PreparedEvaluationTests(OfflineScript):
 
     def test_load_captured_eval_rejects_anything_else(self):
         load = self.ns["load_captured_eval"]
-        self.assertEqual(load(FakePath('{"runs": []}')), {"runs": []})
+        self.assertEqual(load(FakePath('{"schema": 2, "runs": []}')), {"schema": 2, "runs": []})
+        self.assertIsNone(load(FakePath(error=FileNotFoundError())))
         for bad in (FakePath("not json"), FakePath("[]"), FakePath('{"evaluation": "x"}'),
-                    FakePath(error=FileNotFoundError()), FakePath(error=PermissionError())):
-            self.assertIsNone(load(bad))
+                    FakePath('{"schema": 1, "runs": []}'), FakePath(error=PermissionError())):
+            with self.assertRaises(ValueError):
+                load(bad)
+
+    def test_legacy_capture_is_reported_not_treated_as_current_scores(self):
+        captured = FakePath('{"schema": 1, "runs": []}')
+        status, summary, detail = self.ns["find_prepared_evaluation"](lambda: None, captured)
+        self.assertEqual((status, summary), ("not_published", None))
+        self.assertIn("legacy counts", detail)
+
+    def test_capture_counts_must_cover_rows_and_include_unscored(self):
+        summary = self.read(sample_client())
+        self.assertEqual(self.ns["load_captured_eval"](FakePath(json.dumps(summary))), summary)
+        summary["runs"][0]["criteria"]["handled_safely"].pop("not_scored")
+        with self.assertRaisesRegex(ValueError, "invalid handled_safely counts"):
+            self.ns["load_captured_eval"](FakePath(json.dumps(summary)))
 
     @unittest.skipIf(lwc is None, "livewell_common needs PyYAML")
     def test_the_default_captured_path_is_the_one_guardrail_matrix_writes(self):
@@ -344,7 +367,8 @@ class PreparedEvaluationTests(OfflineScript):
     def test_handled_safely_line(self):
         line = self.ns["handled_safely_line"]
         self.assertEqual(line(self.read(sample_client())),
-                         "gpt-5-mini + default: 5 pass / 2 fail; gpt-5-mini + custom: 6 pass / 1 fail")
+                         "gpt-5-mini + default: 5 pass / 2 fail / 0 not scored; "
+                         "gpt-5-mini + custom: 6 pass / 1 fail / 0 not scored")
         self.assertIn("not available", line(None))
         self.assertIn("no completed runs", line({"runs": [{"run": "x", "status": "queued"}]}))
 
@@ -543,7 +567,7 @@ class ValidatorAndMatrixTests(unittest.TestCase):
 
     def test_guardrail_matrix_summary_has_no_ids_or_endpoints(self):
         source = MATRIX.read_text(encoding="utf-8")
-        start = source.index("    return {\"schema\": 1")
+        start = source.index("    return {\"schema\": SUMMARY_SCHEMA")
         record = source[start:source.index("\n", start)]
         self.assertNotIn("report", record)
         self.assertNotIn(".id", record)
@@ -610,25 +634,13 @@ class LabPageTests(unittest.TestCase):
         self.assertNotRegex(checkpoint, r"(?i)groundedness")
         self.assertNotRegex(checkpoint, r"\b\d+(\.\d+)? (pass|of 7)\b")  # the page quotes no counts
 
-    CODE_LINK = re.compile(r"\[([^\]]+)\]\(\.\./assets/((?:common/)?\w+\.py)#L(\d+)-L(\d+)\)")
-    LINK_STARTS = {  # link text -> what the first linked line must contain
-        "red_flag_round()": "def red_flag_round", "outcome()": "def outcome",
-        "read_prepared_evaluation()": "def read_prepared_evaluation", "tally_results()": "def tally_results",
-        "show_prepared_evaluation()": "def show_prepared_evaluation", "filter_annotations()": "def filter_annotations",
-        "lw.run_rows": "def run_rows", "names the filter": "def _is_content_filter", "a separate cell": "DEFAULT_ROWS",
-    }
-
-    def test_code_links_point_at_what_they_name(self):
-        found = self.CODE_LINK.findall(self.pages["lab-02.md"])
-        self.assertGreaterEqual(len(found), 10)
-        for label, relpath, start, end in found:
-            lines = (ASSETS / relpath).read_text(encoding="utf-8").splitlines()
-            start, end = int(start), int(end)
-            self.assertTrue(1 <= start <= end <= len(lines), f"{label}: L{start}-L{end} is outside {relpath}")
-            label = label.strip("`")
-            expected = "lw.create_agent(" if label.startswith("lines ") else self.LINK_STARTS.get(label)
-            self.assertIsNotNone(expected, f"unknown link label {label!r}")
-            self.assertIn(expected, lines[start - 1], f"{label}: line {start} of {relpath} is {lines[start - 1]!r}")
+    def test_code_details_are_optional_and_link_to_current_entrypoints(self):
+        text = self.pages["lab-02.md"]
+        self.assertIn("<summary><strong>Optional: code", text)
+        for path in ("../assets/lab2_govern.py", "../assets/common/evaluation_results.py"):
+            self.assertIn(f"]({path})", text)
+        self.assertIn("not scored", text)
+        self.assertIn("same model", text.lower())
 
     def test_answer_key_is_look_only(self):
         key = json.loads(ANSWER_KEY.read_text(encoding="utf-8"))

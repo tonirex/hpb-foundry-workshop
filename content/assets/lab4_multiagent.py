@@ -10,8 +10,8 @@
 #   MCP endpoint and `find_activities` (never `register_interest`).
 # * A SEQUENTIAL workflow: Nutrition -> Activity -> Coach. The Coach merges both answers into one evidence JSON.
 # * A HAND-OFF workflow: the Coach triages, hands off to Nutrition, and Nutrition hands off to Activity.
-# * A Programme-Insights specialist, `livewell-<INITIALS>-insights`: a Foundry agent with the Fabric IQ tool
-#   for officer questions (with `--fabric`, only when the facilitator confirms FABRIC_BRIDGE=true).
+# * Optional facilitator-only Programme-Insights: creates a Foundry agent with the Fabric IQ tool
+#   only with both `--fabric` and FABRIC_BRIDGE=true. The default run creates no Foundry agents.
 # * A smoke test of the facilitator's hosted agent, `livewell-workshop-hosted`, once it is deployed.
 #
 # Run it all:  `python content/assets/lab4_multiagent.py` (INITIALS and endpoint from content/assets/.env)
@@ -37,11 +37,14 @@ from agent_framework.orchestrations import HandoffBuilder, SequentialBuilder  # 
 
 
 def _flags(p):
-    p.add_argument("--fabric", action="store_true", help="run the Programme-Insights specialist (needs FABRIC_BRIDGE=true)")
+    p.add_argument("--fabric", action="store_true",
+                   help="facilitator only: create/run Programme-Insights (needs FABRIC_BRIDGE=true and active Fabric)")
     p.add_argument("--no-handoff", action="store_true", help="skip the hand-off workflow")
 
 
 args = lw.lab_args("Lab 4 - multi-agent and hosted deploy", _flags)
+if args.fabric and not lw.fabric_enabled():
+    raise SystemExit("--fabric is facilitator-only and requires FABRIC_BRIDGE=true; omit it for core Lab 4.")
 GUARDRAIL = lw.NAMES["rai_policy"]
 HOSTED = lw.NAMES["hosted_agent"]
 lw.heading(f"Lab 4 for livewell-{lw.initials()}-*")
@@ -154,8 +157,9 @@ lw.record("lab4_week_plan_sequential", {"seconds": round(seconds, 1), "steps": s
 # %% [markdown]
 # ## 5. Hand-off workflow: Coach -> Nutrition -> Activity
 #
-# No fixed order this time: each agent gets hand-off tools and decides who goes next, following the `handoff`
-# instruction block. Nutrition gets one autonomous turn after its answer so it hands off instead of waiting for
+# The developer permits hand-offs; the model selects among them using the `handoff` instruction block.
+# Unlike the sequential team, this example ends with Activity's answer, not merged JSON.
+# Nutrition gets one autonomous turn after its answer so it hands off instead of waiting for
 # the resident. The instructions alone were not enough (`gpt-5-mini` sometimes handed off without answering), so a
 # **chat middleware** hides Nutrition's hand-off tool on its first turn: it has to answer before it can hand off.
 # Activity gets no hand-off tool, because it is the last stop: the workflow stops once it has answered. That is why
@@ -222,7 +226,7 @@ else:
 
 # %%
 insights_result: dict = {}
-if lw.fabric_enabled(args.fabric):
+if args.fabric:
     insights = lw.create_agent("insights", lw.load_instructions("insights"),  # 👉
                                tools=[lw.fabric_tool()], rai_policy=GUARDRAIL,  # 👉
                                model=lw.TOOLS_MODEL,  # Fabric tools are not supported on gpt-5-mini
@@ -245,7 +249,7 @@ if lw.fabric_enabled(args.fabric):
     insights_result = {"lab4_q_programmes_disengaged": lw._trunc(mei.text, 600)}
     lw.record("lab4_q_programmes_disengaged", mei)
 else:
-    lw.say("Programme-Insights skipped (run with --fabric when the facilitator confirms FABRIC_BRIDGE=true)")
+    lw.say("Programme-Insights skipped (facilitator-only --fabric; core Lab 4 needs no Fabric)")
 
 # %% [markdown]
 # ## 7. The hosted agent (facilitator deploys, everyone smoke-tests)

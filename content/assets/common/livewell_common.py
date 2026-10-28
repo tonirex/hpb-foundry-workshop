@@ -913,21 +913,30 @@ def new_conversation() -> str:
 
 
 def ask_human(call: ToolCall) -> bool:
-    """Approval callback: ask at the keyboard when there is one, otherwise approve (scripted/validation runs)."""
-    if sys.stdin is not None and sys.stdin.isatty() and not os.environ.get("LIVEWELL_AUTO_APPROVE"):
+    """Require a human decision; unattended approval is an explicit rehearsal-only setting."""
+    if os.environ.get("LIVEWELL_AUTO_APPROVE", "").strip() == "1":
+        say("   AUTOMATED REHEARSAL approval (LIVEWELL_AUTO_APPROVE=1); this is not a human decision.")
+        return True
+    if sys.stdin is None or not sys.stdin.isatty():
+        say("   Approval DENIED: no interactive terminal. Run the script in a terminal for the human-approval "
+            "exercise, or supply an explicit approval callback. No write is approved.")
+        return False
+    try:
         answer = input(f"   Approve {call.server}.{call.name}({_trunc(call.arguments, 160)})? [y/N] ")
-        return answer.strip().lower() in ("y", "yes")
-    return True
+    except (EOFError, OSError):
+        say("   Approval DENIED: input is unavailable. No write is approved.")
+        return False
+    return answer.strip().lower() in ("y", "yes")
 
 
 def ask(agent: Any, text: str | None = None, *, prompt_id: str | None = None,
-        functions: dict[str, Callable[..., Any]] | None = None, approve: bool | Callable[[ToolCall], bool] = True,
+        functions: dict[str, Callable[..., Any]] | None = None, approve: bool | Callable[[ToolCall], bool] | None = None,
         conversation: str | None = None, consent: bool = True, timeout: float | None = None,
         verbose: bool = False, max_rounds: int = 10) -> Run:
     """Send one user turn and drive the tool loop until the agent answers.
 
     * Local FUNCTION tools are answered from `functions` (name -> callable).
-    * MCP approval requests are approved or denied by `approve` (bool, or a callable per request) and
+    * MCP approval requests use `ask_human` by default, or explicit `approve` (bool/callback), and are
       printed, because the approval is the human-in-the-loop moment of Lab 3.
     * A guardrail block (HTTP 400 content_filter) returns Run(blocked=True) instead of raising.
     * The consent line is prepended so the Lab 0 consent rule does not stall scripted runs.
@@ -985,7 +994,9 @@ def ask(agent: Any, text: str | None = None, *, prompt_id: str | None = None,
                 call.output = result if isinstance(result, str) else json.dumps(result, ensure_ascii=False)
                 pending.append({"type": "function_call_output", "call_id": item.call_id, "output": call.output})
             elif call.kind == "mcp_approval_request":
-                ok = approve(call) if callable(approve) else bool(approve)
+                ok = ask_human(call) if approve is None else (approve(call) if callable(approve) else approve)
+                if type(ok) is not bool:
+                    raise TypeError("Approval callback must return True or False; no approval response was sent.")
                 call.approved = ok
                 say(f"   APPROVAL requested: {call.server}.{call.name}({_trunc(call.arguments, 160)}) -> "
                     f"{'APPROVED' if ok else 'DENIED'}")
