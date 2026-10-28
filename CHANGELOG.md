@@ -4,6 +4,38 @@ All notable changes to this workshop. One entry per phase PR.
 
 ## [Unreleased]
 
+### Participant journey consolidation
+
+- One canonical lab page per capability: screenshot-led Navigator steps, Builder, checkpoints and navigation
+  together. Old portal URLs remain compatibility links; participant entry links point to `tonirex/hpb-foundry-workshop`.
+- Source-backed inline copy blocks for instructions, complete JSON schemas, prompts, confirmations and attachments.
+  `sync-lab-blocks.py --check` detects drift; the endpoint-bearing OpenAPI block keeps its dedicated generator.
+- Fixed the optional Navigator intake schema mismatch using a separate intake agent. Clarified Lab 4's sequential
+  JSON versus hand-off output and participant versus facilitator roles. Retained the aggregate-only Fabric cohort exercise.
+- Rebuilt both decks and expanded offline content/regression checks, including filename casing and image decoding.
+- **Approved text-only fallback for outdated illustrations.** Existing images all load, and 50 archived captures
+  are no longer rendered in participant guides; complete instructions and copy blocks remain, with text-only deck
+  reference cards. No PNGs were changed or live retakes claimed. Hidden metadata preserves the optional retake
+  inventory; the five uncaptured steps also remain text-only.
+- Added `--outdated-only` and an offline capture `--dry-run`, with regression coverage preventing an empty filtered
+  selection from becoming a blanket capture. Verified live sponsor demo models/schema shapes read-only; prepared an
+  isolated x64 capture runtime. These initial sponsor/legacy-MCAPS checks were not validation of the user's current target.
+- **Corrected MCAPS binding.** Replaced stale subscription/tenant settings with the user's explicitly selected
+  environment and its existing HPB-prefixed resources. Python/Bicep name overrides preserve sponsor. CLI/SDK/REST
+  authentication is subscription-scoped, portal links carry the tenant, and parameter-only inspection cannot
+  create resources or tokens. Azure Identity's minimum is now 1.20. Missing restored DevUI tokens require an
+  explicit private restore instead of silent rotation.
+- Regenerated Lab 3's OpenAPI copy block from the correct MCAPS endpoint. Read-only checks confirm the model
+  deployments, demo schemas, connections, endpoints and Resident 360 workspace on **Active F2**. The canvas
+  opens the correct project. The initial read-only audit found Lab 2 guardrail drift; it did not change cloud policy.
+- **Guardrail blocker repaired with user authorization (2026-10-28).** Reapplied only `livewell-guardrails` on the
+  correct MCAPS account. Configuration now has zero drift; the existing guarded agent blocks the medication and
+  self-harm probes while allowing the benign control with retrieval/citations. No accounts, roles, agents,
+  model deployments or capacity settings changed. Retain the day-of check because an external application
+  previously overwrote the policy.
+- Corrected principal discovery to use subscription-scoped Graph requests instead of unsupported
+  `az ad --subscription` flags; covered both identity types and fail-fast handling for an absent object ID.
+
 ### Sponsor environment (2026-10-04)
 
 - **Sponsor values filled in.** `workshop.yaml` → `environments.sponsor` and `infra/env/sponsor.bicepparam` hold the

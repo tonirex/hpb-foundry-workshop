@@ -60,6 +60,7 @@ def hosted_file() -> str:
 
 FILES = {
     SCHEMAS_DIR / "lab1-answer.schema.json": lambda: schema_file("livewell_answer", lw.lab1_schema),
+    SCHEMAS_DIR / "lab1-intake.schema.json": lambda: schema_file("livewell_intake", lw.intake_schema),
     SCHEMAS_DIR / "lab3-evidence.schema.json": lambda: schema_file("livewell_evidence", lw.evidence_schema),
     HOSTED_FILE: hosted_file,
 }

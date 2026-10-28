@@ -1,7 +1,7 @@
 """Portal scenes shared by demos/capture-screenshots.py and demos/record-demos.py.
 
 A scene walks one part of the 🟢 Navigator portal track on a facilitator demo agent (livewell-demo-*,
-livewell-workshop-hosted). In "shots" mode it saves the screenshot slots of the lab-0N-portal.md pages and the Bridge spotlight; in
+livewell-workshop-hosted). In "shots" mode it saves the numbered screenshots of the canonical lab pages, Fabric step and Bridge spotlight; in
 "video" mode it shows captions and types slowly. Scenes never save an agent: menus and dialogs are opened,
 captured and cancelled, and the Lab 0 model switch is discarded by reloading the page.
 """
@@ -22,14 +22,17 @@ LABS = ROOT / "content" / "labs"
 RUNS = ROOT / "demos" / "runs"
 PROMPTS = json.loads((ROOT / "content" / "prompts" / "test-prompts.json").read_text(encoding="utf-8"))["prompts"]
 # Same follow-up as the builder rail (content/assets/lab3_tools.py) when the coach first asks which activity.
-SIGNUP_YES = "Yes, please sign me up for the first indoor option you found."
+SIGNUP_YES = P.lw.prompt_text("lab3_signup_confirm")
 FIT = json.loads((ROOT / "content" / "fabric" / "reference-answers.json").read_text(encoding="utf-8"))["q_programme_fit"]
-PROGRAMME_YES = f"Yes, please sign me up for the {FIT['recommended_programme']} intake session."
+PROGRAMME_YES = P.lw.prompt_text("lab3_programme_confirm")
 
 SLOT_ID = r"(?:lab-0\d|bridge)/\d\d[a-z]?"
 SLOT_RE = re.compile(rf"^(?P<indent>\s*)> 📸 \*\*Screenshot slot\*\* · `(?P<path>screenshots/(?P<id>{SLOT_ID})-[^`]+\.png)`"
                      r" · (?P<caption>.+?)\s*$")
 IMAGE_RE = re.compile(rf"^(?P<indent>\s*)!\[(?P<caption>[^\]]*)\]\((?P<path>screenshots/(?P<id>{SLOT_ID})-[^)]+\.png)\)\s*$")
+HISTORICAL_RE = re.compile(
+    rf"^\s*<!-- historical-screenshot: (?P<path>screenshots/(?P<id>{SLOT_ID})-[^\s]+\.png) -->\s*$"
+)
 
 # Slots a script cannot take: they need a participant (Foundry User) lab account or a fresh sign-in.
 MANUAL = {
@@ -39,6 +42,7 @@ MANUAL = {
     "lab-04/08": "needs a Foundry User lab account (Access control, My role)",
     "lab-02/20": "needs two completed portal evaluation runs (submit step 19 for demo-kb and demo-guarded)",
 }
+EXTERNAL_CAPTURE = {"lab-04/10", "lab-04/11"}  # demos/lab4-devui.py --capture owns these.
 
 
 @dataclasses.dataclass
@@ -55,22 +59,33 @@ class Slot:
 
 
 def slot_pages() -> list[pathlib.Path]:
-    """Pages with screenshot slots: the Navigator lab pages and the Bridge spotlight."""
-    return sorted(LABS.glob("lab-0*-portal.md")) + [LABS / "bridge-spotlight.md"]
+    """Canonical pages only; legacy portal pages contain compatibility links."""
+    return [LABS / f"lab-0{n}.md" for n in range(5)] + [LABS / "fabric-step.md", LABS / "bridge-spotlight.md"]
+
+
+def historical_paths() -> set[str]:
+    return {
+        path for page in slot_pages()
+        for path in re.findall(r"<!-- historical-screenshot: (screenshots/\S+\.png) -->",
+                               page.read_text(encoding="utf-8"))
+    }
 
 
 def slots() -> dict[str, Slot]:
     found: dict[str, Slot] = {}
     for md in slot_pages():
         for line in md.read_text(encoding="utf-8").splitlines():
-            m = SLOT_RE.match(line) or IMAGE_RE.match(line)
+            m = SLOT_RE.match(line) or IMAGE_RE.match(line) or HISTORICAL_RE.match(line)
             if m:
-                found[m["id"]] = Slot(m["id"], m["path"], m["caption"], md, bool(IMAGE_RE.match(line)))
+                if m["id"] in found and found[m["id"]].path != m["path"]:
+                    raise ValueError(f"{md.name}: screenshot id {m['id']} refers to different files")
+                caption = m.groupdict().get("caption") or pathlib.PurePosixPath(m["path"]).stem
+                found.setdefault(m["id"], Slot(m["id"], m["path"], caption, md, bool(IMAGE_RE.match(line))))
     return found
 
 
 def prompt(pid: str) -> str:
-    return PROMPTS[pid]["text"] if pid in PROMPTS else pid
+    return P.lw.prompt_text(pid, with_attachments=False) if pid in PROMPTS else pid
 
 
 def profile_spec() -> str:

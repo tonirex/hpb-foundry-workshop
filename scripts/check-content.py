@@ -8,12 +8,15 @@ from __future__ import annotations
 
 import argparse
 import csv
+import importlib.util
 import json
+import os
 import re
 import subprocess
 import sys
 import textwrap
 from pathlib import Path
+from urllib.parse import unquote
 
 import yaml
 
@@ -32,11 +35,12 @@ ID_ALLOWED = {"content/config/workshop.yaml", "SPEC.md", "CODING-AGENT-PROMPTS.m
 ID_ALLOWED_GLOBS = ("infra/env/*.bicepparam",)
 # The one place a lab page may hold an endpoint: the Lab 3 OpenAPI spec block written by
 # scripts/sync-openapi-block.py (the tool calls the spec's server, so the address must be in it).
-SPEC_BLOCK_PAGES = {"content/labs/lab-03.md", "content/labs/lab-03-portal.md"}
+SPEC_BLOCK_PAGES = {"content/labs/lab-03.md"}
 SPEC_BLOCK_RE = re.compile(r"<!-- openapi-spec:begin\b.*?-->(.*?)<!-- openapi-spec:end -->", re.S)
 SPEC_CODE_RE = re.compile(r"```json[ \t]*\n(.*?)\n[ \t]*```", re.S)
 LINK_RE = re.compile(r"(?<!!)\[(?:[^\]\[]|\[[^\]]*\])*\]\(([^)\s]+)(?:\s+\"[^\"]*\")?\)")
 IMAGE_RE = re.compile(r"!\[[^\]]*\]\(([^)\s]+)\)")
+HISTORICAL_IMAGE_RE = re.compile(r"<!-- historical-screenshot: (screenshots/\S+\.png) -->")
 PROMPT_TOKEN_RE = re.compile(r"`((?:lab[0-4]|fabric_q|bridge_q)_[a-z0-9_]+)`")
 BEAT_RE = re.compile(
     r"\*\*\[(ch\d+\.\d+) · seat: (citizen|officer) · source: (kb|profile|fabric|mcp|memory) · prompt: ([a-z0-9_]+)\]\*\*"
@@ -52,7 +56,7 @@ LAB_SECTIONS = [
     "Where next",
 ]
 LAB_PAGES = ["lab-00", "lab-01", "lab-02", "lab-03", "lab-04", "fabric-step", "bridge-spotlight"]
-COACH_BLOCKS = ["base", "knowledge", "safety", "tools", "fabric", "nutrition", "activity", "insights", "handoff", "merge"]
+COACH_BLOCKS = ["base", "knowledge", "intake", "safety", "tools", "fabric", "nutrition", "activity", "insights", "handoff", "merge"]
 
 
 class Report:
@@ -101,7 +105,7 @@ def repo_files(exts: set[str] | None = None) -> list[Path]:
 
 def strip_code(md: str) -> str:
     """Remove fenced blocks and inline code so links inside code are ignored."""
-    md = re.sub(r"^(```|~~~).*?^\1\s*$", "", md, flags=re.MULTILINE | re.DOTALL)
+    md = strip_code_fences(md)
     return re.sub(r"`[^`\n]*`", "", md)
 
 
@@ -115,7 +119,7 @@ def github_slug(heading: str) -> str:
 
 def anchors_of(md_path: Path) -> set[str]:
     text = md_path.read_text(encoding="utf-8")
-    text = re.sub(r"^(```|~~~).*?^\1\s*$", "", text, flags=re.MULTILINE | re.DOTALL)
+    text = strip_code_fences(text)
     seen: dict[str, int] = {}
     out: set[str] = set()
     for m in re.finditer(r"^#{1,6}\s+(.+?)\s*#*\s*$", text, flags=re.MULTILINE):
@@ -142,14 +146,13 @@ def check_links(r: Report) -> None:
         if rel(md) in {"SPEC.md", "CODING-AGENT-PROMPTS.md"}:
             continue
         text = strip_code(md.read_text(encoding="utf-8"))
-        for img in IMAGE_RE.findall(text):
-            if not img.startswith(("http://", "https://")) and not (md.parent / img.split("#")[0]).exists():
-                problems.append(f"{rel(md)}: missing image {img}")
-        for target in LINK_RE.findall(text):
+        for target in LINK_RE.findall(text) + IMAGE_RE.findall(text) + HISTORICAL_IMAGE_RE.findall(text):
             if target.startswith(("http://", "https://", "mailto:")):
                 continue
             path_part, _, anchor = target.partition("#")
+            path_part, anchor = unquote(path_part), unquote(anchor)
             dest = md if not path_part else (md.parent / path_part)
+            spelling = Path(os.path.normpath(str(dest)))
             try:
                 dest = dest.resolve()
             except OSError:
@@ -161,8 +164,21 @@ def check_links(r: Report) -> None:
             if ROOT not in dest.parents and dest != ROOT:
                 problems.append(f"{rel(md)}: link leaves the repo {target}")
                 continue
+            current = ROOT
+            if ROOT not in spelling.parents and spelling != ROOT:
+                problems.append(f"{rel(md)}: link spelling leaves the repo {target}")
+                continue
+            for part in spelling.relative_to(ROOT).parts:
+                if part not in {child.name for child in current.iterdir()}:
+                    problems.append(f"{rel(md)}: wrong filename case in {target}")
+                    break
+                current /= part
             if anchor and dest.suffix == ".md" and anchor not in anchors_of(dest):
                 problems.append(f"{rel(md)}: missing anchor #{anchor} in {rel(dest)}")
+            if anchor and dest.is_file() and dest.suffix in TEXT_EXT and (lines := re.fullmatch(r"L(\d+)(?:-L(\d+))?", anchor)):
+                start, end = int(lines[1]), int(lines[2] or lines[1])
+                if not 1 <= start <= end <= len(dest.read_text(encoding="utf-8").splitlines()):
+                    problems.append(f"{rel(md)}: invalid source line range in {target}")
     r.check("relative links and anchors resolve", problems)
 
 
@@ -249,17 +265,80 @@ def check_lab_pages(r: Report) -> None:
             obj = objectives[page]
             if normalise(obj) not in normalise(text):
                 problems.append(f"{page}: shared objective is not verbatim from SPEC §5.1")
+        for anchor in ("navigator", "builder", "checkpoint", "troubleshooting"):
+            if anchor not in anchors_of(p):
+                problems.append(f"{page}: missing stable #{anchor} anchor")
+        if "Screenshot slot" in text:
+            problems.append(f"{page}: empty screenshot placeholder in a participant guide")
+        if re.search(r"\]\([^)]*(?:lab-0\d-portal|PORTAL-TRACK)\.md", strip_code(text)):
+            problems.append(f"{page}: primary journey still points to a separate portal guide")
     for n in range(5):
         pp = ROOT / "content" / "labs" / f"lab-0{n}-portal.md"
         if not pp.exists():
             problems.append(f"missing {rel(pp)}")
+            continue
+        legacy = pp.read_text(encoding="utf-8")
+        if f"(lab-0{n}.md#navigator)" not in legacy:
+            problems.append(f"{pp.name}: missing canonical Navigator compatibility link")
+        if IMAGE_RE.search(strip_code(legacy)) or "```" in legacy or "<!-- copy:" in legacy:
+            problems.append(f"{pp.name}: compatibility page must not duplicate instructions or screenshots")
+        for anchor in ("what-you-should-see", "if-something-looks-different"):
+            if anchor not in anchors_of(pp):
+                problems.append(f"{pp.name}: missing legacy #{anchor}")
     if not (ROOT / "content" / "labs" / "PORTAL-TRACK.md").exists():
         problems.append("missing content/labs/PORTAL-TRACK.md")
-    r.check("lab pages: 8 sections in order, verbatim objectives, portal track present", problems)
+    r.check("canonical lab structure, objectives, rail anchors and legacy compatibility links", problems)
 
 
 def strip_code_fences(md: str) -> str:
-    return re.sub(r"^(```|~~~).*?^\1\s*$", "", md, flags=re.MULTILINE | re.DOTALL)
+    out = []
+    fence = ""
+    for line in md.splitlines(keepends=True):
+        marker = re.match(r"^[ \t]*(`{3,}|~{3,})(.*)$", line.rstrip("\r\n"))
+        if marker and not fence:
+            fence = marker[1]
+        elif marker and fence and marker[1][0] == fence[0] and len(marker[1]) >= len(fence) and not marker[2].strip():
+            fence = ""
+        elif not fence:
+            out.append(line)
+    return "".join(out)
+
+
+def check_copy_blocks(r: Report) -> None:
+    spec = importlib.util.spec_from_file_location("sync_lab_blocks", ROOT / "scripts" / "sync-lab-blocks.py")
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    try:
+        problems = [f"{rel(path)}: generated copy blocks are stale" for path, _ in module.updates()]
+    except (ValueError, KeyError, OSError) as exc:
+        problems = [str(exc)]
+    r.check("inline copy blocks complete and identical to canonical sources", problems)
+
+
+def check_images(r: Report) -> None:
+    from PIL import Image, UnidentifiedImageError
+
+    problems = []
+    for path in sorted((ROOT / "content" / "labs" / "screenshots").glob("**/*.png")):
+        try:
+            with Image.open(path) as image:
+                image.verify()
+            with Image.open(path) as image:
+                image.load()
+                if image.width < 1 or image.height < 1:
+                    problems.append(f"{rel(path)}: empty image")
+        except (OSError, ValueError, UnidentifiedImageError) as exc:
+            problems.append(f"{rel(path)}: unreadable image ({exc})")
+    historical = sorted({
+        path for page in (ROOT / "content" / "labs").glob("*.md")
+        for path in HISTORICAL_IMAGE_RE.findall(page.read_text(encoding="utf-8"))
+    })
+    for stem in LAB_PAGES:
+        page = ROOT / "content" / "labs" / f"{stem}.md"
+        visible = set(IMAGE_RE.findall(strip_code(page.read_text(encoding="utf-8"))))
+        problems.extend(f"{rel(page)}: archived capture still rendered: {path}" for path in sorted(visible & set(historical)))
+    r.check("screenshot PNGs decode; archived captures are not rendered in participant guides", problems)
+    r.warn("archived captures retained for optional authorized retakes; current steps use text instead", historical)
 
 
 def normalise(s: str) -> str:
@@ -339,7 +418,7 @@ def check_prompts(r: Report, prompts: dict, contracts: set[str]) -> None:
     flyer = (ROOT / "content" / "data" / "flyer-injected.md").read_text(encoding="utf-8")
     flyer = re.sub(r"\A(?:>.*\n)+\s*^---\s*$\n", "", flyer, count=1, flags=re.MULTILINE).strip()
     want = prompts.get("lab2_injected_flyer", {}).get("text", "") + "\n\n" + flyer
-    for page in ("lab-02.md", "lab-02-portal.md"):
+    for page in ("lab-02.md",):
         md = (ROOT / "content" / "labs" / page).read_text(encoding="utf-8")
         blocks = [textwrap.dedent(m.group(2)).strip()
                   for m in re.finditer(r"^( *)```text\n(.*?)^\1```", md, flags=re.MULTILINE | re.DOTALL)
@@ -531,6 +610,8 @@ def main() -> int:
     check_links(r)
     check_ids_and_endpoints(r)
     check_lab_pages(r)
+    check_copy_blocks(r)
+    check_images(r)
     check_patterns(r, cfg)
     check_prompts(r, prompts, contracts)
     check_narrative(r, prompts)

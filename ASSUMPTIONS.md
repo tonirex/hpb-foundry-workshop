@@ -12,8 +12,8 @@ Where an entry changes something SPEC.md states, it says so.
 | Guest Wi-Fi SSID and code | `workshop.guest_wifi` (rendered on the deck logistics slide) | TODO |
 | Sponsor subscription ID and tenant ID | `environments.sponsor` and `infra/env/sponsor.bicepparam` (Phase 2) | Done 2026-10-04: subscription "HPB-workshop_HPB_Customer" (Azure Sponsorship) in its own tenant `hpbsub2026outlook.onmicrosoft.com`, kept separate from MCAPS (no Change directory) |
 | Sponsor facilitator UPN(s) | `environments.sponsor.facilitator_upns` | Done 2026-10-04: `hpb.facilitator@hpbsub2026outlook.onmicrosoft.com`, a cloud-only work account (Global Administrator, subscription Owner) that runs the sponsor environment. The tenant's creator `hpb.sub2026@outlook.com` keeps its rights and receives the budget alerts (10.1) |
-| Fabric Administrator role for the MCAPS facilitator account | Entra ID → Roles → Fabric Administrator (or activate Global Administrator in PIM). Needed for the tenant settings in `content/admin/TENANT-BOOTSTRAP.md` | Done 2026-09-29: "Users can create Ontology (preview) items" enabled; Phase 3 deploy green |
-| Fabric tenant sign-up (MCAPS tenant has never used Fabric) | A tenant user signs in once at app.fabric.microsoft.com | Done 2026-09-29: F2 `fablivewellmcaps` created by `provision.sh mcaps` |
+| Fabric Administrator role for the MCAPS facilitator account | Entra ID → Roles → Fabric Administrator (or activate Global Administrator in PIM). Needed for the tenant settings in `content/admin/TENANT-BOOTSTRAP.md` | The 2026-09-29 bootstrap used the legacy MCAPS tenant. Current-tenant role assignments were not changed or re-audited in 11.15 |
+| Fabric tenant sign-up | A tenant user signs in once at app.fabric.microsoft.com | Current MCAPS: existing `fabhpblivewellmcaps` is Active F2 and hosts the Resident 360 workspace (11.15) |
 
 ## Phase 0: bootstrap
 
@@ -956,3 +956,106 @@ Where an entry changes something SPEC.md states, it says so.
   (and commit and push) first, and anyone who can read the repo sees the address (anonymous API, synthetic data).
   Adding the exception showed that the content check's Container Apps pattern missed real hosts
   (`<app>.<env>.<region>.azurecontainerapps.io`); it now catches them.
+
+## Phase 11: participant journey consolidation
+
+- **11.1 (user-directed)** Keep GitHub Markdown, merge the screenshot walkthroughs into each main lab's Navigator
+  section, and retain Builder separately. Old portal filenames and their checkpoint/troubleshooting anchors remain
+  compatibility links. The optional Fabric step has one canonical page.
+- **11.2 (user-directed)** Retain the existing age-band-only programme-fit exercise from 6.7 and align SPEC.md with
+  it. Ordinary citizen guidance and individual profile lookups never use Fabric; the optional cohort question sends
+  only the age band. The core learning objectives remain verbatim.
+- **11.3 (user-directed)** Participant entry links now use `tonirex/hpb-foundry-workshop`, including generated
+  sign-in cards and the Day 1 deck. The older `tonirex/livewell-foundry-workshop` is a separate repository that had
+  the same starting revision, not a dead link. This guide consolidation did not rename Azure resources or
+  deterministic ID namespaces; the later environment-binding correction is recorded in 11.15.
+- **11.4** `sync-lab-blocks.py` generates inline copy payloads from canonical sources and fails on missing markers,
+  unknown sources or drift. Instructions explicitly say append or replace. Schemas include their full wrapper,
+  intake includes both documents, and the flyer's hidden HTML survives exactly as in the tested portal message.
+  The Lab 3 OpenAPI endpoint exception now applies only to `lab-03.md`; its generator remains separate.
+- **11.5** Navigator's optional intake previously asked for an intake object while the strict knowledge-answer
+  schema was active. It now uses a separate `livewell-<initials>-intake` agent, matching Builder. The existing
+  Builder intake rules moved verbatim into the shared instruction file; the schema comes from `lw.intake_schema()`.
+- **11.6** Lab 4's sequential/hosted team merges evidence JSON; the hand-off team ends with Activity's answer.
+  The story, checkpoints and decks now distinguish these outcomes. Browser DevUI and hosted chat are participant
+  activities; publishing remains facilitator-only. Accounts with broader permissions must still follow that boundary.
+- **11.7 (user-directed)** Retake only outdated existing screenshots, not the five missing sign-in/MFA,
+  evaluation-comparison or participant-role illustrations. Those steps are text-only. All 83 PNGs decode and
+  their linked paths resolve, but visual review found 50 captures showing obsolete model/schema or trace content,
+  plus two unused historical assets. Those captures are omitted from participant rendering and retained only as
+  hidden maintenance references; the lab-flow deck uses text-only reference cards instead of embedding them.
+- **11.8 (unverified live)** No PNG was retaken in this pass. A fresh isolated Edge session was signed out, and
+  the existing Foundry window exposed no verified page to the UI tool, which required stopping that attempt.
+  No main-checkout files, browser profiles, credentials, tenant settings or permissions were copied or changed.
+  `capture-screenshots.py --list-outdated` lists the pending subset and exits nonzero; file integrity must not be
+  mistaken for a completed live retake. Retakes require an authorized worktree-local capture session.
+- **11.9** Content validation now covers inline payload fidelity, case-sensitive paths, source-line bounds,
+  compatibility anchors and PNG decoding, with offline regression tests in `scripts/tests/`. Network reachability
+  and authenticated live behaviour remain separate checks. The fixed agenda is unchanged; full reference exercises
+  and optional participant extensions are distinguished from facilitated demonstrations.
+- **11.10** Rail switching is not an implicit agent conversion. Navigator's `livewell-<initials>` and Builder's
+  `livewell-<initials>-coach` remain separate. The README and entry checks require missing target-rail setup before
+  continuing; a Builder Lab 3 function-tool agent cannot be used directly in the portal without its Python client.
+- **11.11** GitHub's authenticated Markdown renderer preserved the exact text of all 37 generated required
+  copy blocks, including the hidden flyer markup and both intake documents. The committed profile OpenAPI block
+  also matched the reachable anonymous server's current `/openapi.json`. This is not a new authenticated Foundry
+  lab run or a claim that the historical portal screenshots were retaken.
+- **11.12 (capture readiness, not a live retake)** The capture SDK could not install on the host's ARM64 Python
+  because `cryptography` required unavailable native build tools. An already-installed x64 Python 3.13 now runs an
+  isolated `.venv/capture-x64` with binary wheels and `azure-ai-projects==2.6.1`. Read-only management calls populated
+  a gitignored sponsor capture context from existing resource metadata; no credentials or main-checkout files were copied.
+  SDK reads verified all seven sponsor demo agents' models and all four structured response schemas against the
+  canonical helpers. The knowledge/guarded demo schema label is `livewell_lab1_answer`; its schema is identical to
+  the participant's `livewell_answer`, so the guide explains that cosmetic difference rather than changing the cloud agent.
+- **11.13 (initial wrong-target checks; superseded by 11.15)** The sponsor and legacy-MCAPS capacities inspected
+  initially were Paused. Those results did **not** describe the user's intended MCAPS subscription. No capacity
+  was resumed, no new capture sign-in was saved, and no model was invoked. An unavailable approval prompt was
+  not treated as authorization. Future retakes need an authorized capture session and a fresh check of the chosen
+  environment, not these historical capacity observations.
+  `--outdated-only --dry-run` now proves the exact 50-image selection offline and never broadens an empty selection.
+- **11.14 (approved fallback applied)** The plan explicitly permits complete text-only guidance when an outdated
+  screenshot cannot be refreshed. That fallback is now applied without leaving historical images in expandable
+  participant sections. The image files remain unchanged, hidden markers keep the optional retake inventory usable,
+  and validation fails if an archived capture is rendered in a canonical guide. This is not a claim that a live
+  retake occurred. The sponsor password prompt reached during that attempt was the wrong target; no password
+  was submitted. The later MCAPS canvas correction is recorded below, and guides do not depend on a new sign-in.
+- **11.15 (user-directed MCAPS correction)** The user supplied the authoritative subscription, now recorded in
+  `environments.mcaps`. Live ARM verification identifies it as `ME-MngEnvMCAP261533-antoniachen-1`, Enabled.
+  The stale config and CLI default described a different MCAPS subscription. The selected local azd environment,
+  tenant, generated parameters and endpoint metadata now match the user-selected target. Effective names are
+  `aif-hpb-livewell-mcaps` / `livewell-workshop`, `srch-hpb-livewell-mcaps` and `fabhpblivewellmcaps`; Python and
+  Bicep merge only those three MCAPS overrides, preserving sponsor defaults. All 15 resource IDs, the three
+  required model deployments, nine project connections, seven demo-agent models and four response schemas were
+  checked read-only. The profile endpoint and DevUI sign-in page respond; the Resident 360 workspace is assigned
+  to this exact **Active F2** capacity. Search remains in France Central under the existing capacity exception.
+  The browser canvas opens the correct project using the existing MCAPS session; no password was entered and
+  no account was created. The existing capacity administrator supplies the configuration's facilitator defaults.
+  The CLI's global default and all cloud resources, roles and capacity states were left unchanged.
+- **11.16 (binding safeguards)** CLI credentials and standalone REST helpers explicitly select the environment's
+  subscription instead of accidentally using another signed-in account. `az account get-access-token` accepts
+  subscription **or** tenant, not both; subscription wins when supplied. `azure-identity>=1.20` is required for
+  `AzureCliCredential(subscription=...)`. `--parameters-only` never creates access or resources. A restored
+  environment with an existing DevUI but no local token stops normal provisioning rather than rotating the token.
+  Account creation remains the user's separate task; no attendee seeding or RBAC operation was run.
+- **11.17 (initial readiness finding; resolved in 11.18)** Read-only `apply-guardrail.py --check` on the corrected
+  MCAPS target found drift in `livewell-guardrails`: its mode, blocking filters and custom-blocklist attachment
+  differed from `guardrails.yaml`. The four blocklist items and deployment-level policies matched. That initial
+  validation did not change the cloud policy or claim a model-behaviour run; the user subsequently authorized
+  the targeted repair below.
+- **11.18 (user-directed guardrail repair, 2026-10-28)** Reapplied the canonical `livewell-guardrails` policy on
+  `aif-hpb-livewell-mcaps` with `scripts/apply-guardrail.py`. Only the policy changed: the four existing blocklist
+  items and all deployment-level policies were already correct. The subsequent `--check` reports zero drift
+  across Blocking mode, all 13 configured filters and the prompt-side blocking attachment to
+  `livewell-medication-dosage`. On existing `livewell-demo-guarded` version 1, `lab2_medication_double` was blocked
+  by `custom_blocklists`, `lab2_skip_meals` was blocked by `self_harm`, and `lab2_benign_control` was allowed with
+  `route=self_care`, knowledge retrieval and citations. This resolves the specific guardrail readiness blocker;
+  it is not a full new Lab 2 evaluation or screenshot run. No accounts, roles, agent versions, model deployments
+  or capacity settings were changed. The activity log shows an external-tenant application writing this policy
+  on 2026-10-27 at 09:19 SGT; its display name could not be resolved in the workshop tenant. That writer was not
+  disabled or modified. Keep the existing day-of/pre-Lab-2 drift check: this repair is not a permanent exemption
+  from tenant governance.
+- **11.19 (principal lookup compatibility)** Verification exposed that `az ad` does not accept `--subscription`
+  on this installed CLI. `select-params.py` now uses the existing subscription-scoped Graph helper for `/me`
+  and service-principal lookup by app ID, rather than relying on the global CLI account or passing unsupported
+  flags. The helper also avoids Windows command-shell interpretation of Graph alternate-key URLs. Both lookup
+  shapes were verified read-only; missing principal IDs stop before any local identity value is written.

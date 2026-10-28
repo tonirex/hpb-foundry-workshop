@@ -34,10 +34,13 @@ class ApiError(RuntimeError):
             self.code = ""
 
 
-def az_token(resource: str, tenant: str | None = None) -> str:
+def az_token(resource: str, tenant: str | None = None, *, subscription: str | None = None) -> str:
     az = shutil.which("az") or "az"
     cmd = [az, "account", "get-access-token", "--resource", resource, "--query", "accessToken", "-o", "tsv"]
-    if tenant:
+    subscription = subscription or os.environ.get("AZURE_SUBSCRIPTION_ID")
+    if subscription:
+        cmd += ["--subscription", subscription]
+    elif tenant:
         cmd += ["--tenant", tenant]
     proc = subprocess.run(cmd, capture_output=True, text=True)
     if proc.returncode != 0:
@@ -46,9 +49,9 @@ def az_token(resource: str, tenant: str | None = None) -> str:
 
 
 class Api:
-    def __init__(self, kind: str, tenant: str | None = None):
+    def __init__(self, kind: str, tenant: str | None = None, *, subscription: str | None = None):
         self.base, resource = RESOURCES[kind]
-        self.token = az_token(resource, tenant or os.environ.get("AZURE_TENANT_ID") or None)
+        self.token = az_token(resource, tenant or os.environ.get("AZURE_TENANT_ID") or None, subscription=subscription)
 
     def call(self, method: str, path: str, body: object | None = None, ok_404: bool = False,
              headers: dict | None = None) -> dict | None:

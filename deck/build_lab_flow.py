@@ -128,7 +128,7 @@ LABS = [
             "Note who stops each prompt: the model, Prompt Shields, or nobody (skip meals is only annotated).",
             "Inspect `livewell-guardrails` (self-harm blocked from Low, Prompt Shields, blocklist) and attach it.",
             "Append the `safety` block and **Save**; note the new version number next to your baseline.",
-            "Re-run the ladder: four outcomes change, including one benign false positive.",
+            "Re-run the ladder: three additional blocks, including one benign false positive.",
             "Open a blocked and an allowed trace; run the `livewell-eval` batch and compare versions.",
         ],
         "shot": ("lab-02/13-guarded-medication-blocked.png", (0.52, 0.225, 0.98, 0.40)),
@@ -187,17 +187,17 @@ LABS = [
         "id": "lab-04",
         "short": "Lab 4",
         "title": "Multi-agent & Hosted deploy",
-        "kind": "led",
-        "when": "Part C · facilitator demo",
+        "kind": "lab",
+        "when": "Part C · browser hands-on + demo",
         "level": "L300",
-        "rails": "Facilitator-led · Builder code",
+        "rails": "Navigator + Builder · facilitator deploys",
         "gain": "Specialist team + hosted endpoint\nsame policy behind two doors",
         "story_prompts": [("Rahim", "lab4_week_plan_handoff")],
-        "story_note": "Two specialists answer; one reply comes back.",
+        "story_note": "Sequential merges JSON; hand-off ends with Activity's answer.",
         "steps": [
-            "The facilitator opens DevUI (`python demos/lab4-devui.py`) with two workflows.",
+            "Open the browser DevUI using the address and token from the values sheet.",
             "**LiveWell sequential**: Nutrition → Activity → Coach, in a fixed order.",
-            "**LiveWell hand-off**: the Coach triages and the model picks the route.",
+            "**LiveWell hand-off**: the model picks the route, ending with Activity's answer.",
             "The Programme-Insights specialist answers Mei's question with Fabric IQ.",
             "`azd deploy livewell-workshop-hosted` puts the sequential team behind an endpoint.",
             "Smoke-test the endpoint, then compare the hosted trace with the playground trace.",
@@ -344,6 +344,13 @@ def chip(slide, x: float, y: float, text: str, *, fill=LIGHT, color=NAVY, size: 
 
 def add_screenshot(slide, root: Path, rel: str, crop: tuple[float, float, float, float],
                    x: float, y: float, w: float, h: float) -> None:
+    marker = f"<!-- historical-screenshot: screenshots/{rel} -->"
+    if any(marker in page.read_text(encoding="utf-8") for page in (root / "content" / "labs").glob("*.md")):
+        add_panel(slide, x, y, w, h,
+                  [("Text-only reference", {"bold": True, "color": NAVY}),
+                   "Follow the current Navigator steps and copy blocks. The older screenshot is awaiting a live refresh."],
+                  fill=LIGHT, line=MID, size=11, valign=MSO_ANCHOR.MIDDLE)
+        return
     image = Image.open(root / SCREENSHOTS / rel).convert("RGB")
     iw, ih = image.size
     left, top, right, bottom = crop
@@ -604,7 +611,7 @@ def lab_page_slide(prs, titles: list[str]):
 def lab_slide(prs, root: Path, lab: dict, prompts: dict, titles: list[str]):
     notes = (
         f"{lab['short']}: {lab['title']}. Objective, read from the lab page: {lab['objective']}. "
-        f"Walk the steps on the left; the screenshot shows what success looks like. "
+        f"Walk the steps on the left; use the illustration or text-only reference to explain the expected outcome. "
         f"Close by reading the 'You learned' line aloud: {lab['learned']}"
     )
     slide = content_slide(prs, f"{lab['short']} · {lab['title']}", notes, titles)

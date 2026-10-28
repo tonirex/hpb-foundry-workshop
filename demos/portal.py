@@ -9,7 +9,7 @@ screenshot capture. Also a small CLI for the one-time sign-in and for looking ar
 
 The browser profile lives in demos/.playwright/profile (git-ignored). Use the facilitator account for the
 demo agents and videos; screenshots mask the account menu. After the first sign-in, later runs get through
-'Pick an account' by themselves (LIVEWELL_PORTAL_ACCOUNT, default: the `az account show` user). Install once:
+'Pick an account' by themselves (LIVEWELL_PORTAL_ACCOUNT, default: the selected subscription's CLI user). Install once:
     python -m pip install -r requirements-demos.txt      (uses the installed Microsoft Edge, no download)
 """
 from __future__ import annotations
@@ -55,18 +55,21 @@ def url(route: str) -> str:
     guardrails, models, tools, traces, or any path starting with / (relative to the project)."""
     base = f"{PORTAL}/nextgen/r/{project_segment()}"
     if route in ("home", ""):
-        return f"{PORTAL}/nextgen"
-    if route == "project":
-        return f"{base}/home"
-    if route.startswith("agent:"):
+        link = f"{PORTAL}/nextgen"
+    elif route == "project":
+        link = f"{base}/home"
+    elif route.startswith("agent:"):
         name, _, version = route[6:].partition("@")
         if not version:
             latest = lw.agent_by_name(name)
             version = str(latest.version) if latest is not None else "1"
-        return f"{base}/build/agents/{name}/build?version={version}"
-    if route.startswith("/"):
-        return base + route
-    return f"{base}/build/{route}"
+        link = f"{base}/build/agents/{name}/build?version={version}"
+    elif route.startswith("/"):
+        link = base + route
+    else:
+        link = f"{base}/build/{route}"
+    tenant = os.environ.get("AZURE_TENANT_ID")
+    return f"{link}{'&' if '?' in link else '?'}tid={tenant}" if tenant else link
 
 
 def launch(pw, *, headless: bool = False, video_dir: pathlib.Path | None = None, redacted: bool = True,
@@ -174,17 +177,23 @@ def signed_in(page, timeout: float = 45, *, wait_for_user: bool = False, verbose
 
 
 def portal_account() -> str | None:
-    """The account to pick on 'Pick an account': LIVEWELL_PORTAL_ACCOUNT, else the signed-in Azure CLI user."""
+    """Prefer LIVEWELL_PORTAL_ACCOUNT, otherwise the selected subscription's Azure CLI user."""
     global _ACCOUNT
     if _ACCOUNT is None:
-        _ACCOUNT = os.environ.get("LIVEWELL_PORTAL_ACCOUNT", "")
+        _ACCOUNT = os.environ.get("LIVEWELL_PORTAL_ACCOUNT") or None
         if not _ACCOUNT:
-            with contextlib.suppress(Exception):
-                import shutil
-                import subprocess
-                az = shutil.which("az") or shutil.which("az.cmd")
-                _ACCOUNT = subprocess.run([az, "account", "show", "--query", "user.name", "-o", "tsv"],
-                                          capture_output=True, text=True, timeout=60).stdout.strip()
+            import shutil
+            import subprocess
+            az = shutil.which("az") or shutil.which("az.cmd")
+            if not az:
+                raise SystemExit("Azure CLI is required to identify the portal account; set LIVEWELL_PORTAL_ACCOUNT explicitly.")
+            cmd = [az, "account", "show", "--query", "user.name", "-o", "tsv"]
+            if subscription := os.environ.get("AZURE_SUBSCRIPTION_ID"):
+                cmd += ["--subscription", subscription]
+            result = subprocess.run(cmd, capture_output=True, text=True, timeout=60)
+            if result.returncode or not result.stdout.strip():
+                raise SystemExit(f"Cannot identify the selected subscription's portal account: {result.stderr.strip()}")
+            _ACCOUNT = result.stdout.strip()
     return _ACCOUNT or None
 
 

@@ -95,13 +95,13 @@ def main() -> int:
     args = ap.parse_args()
 
     env = azd_env()
-    for key in ("AZURE_AI_PROJECT_ID", "MCP_URL"):
+    for key in ("AZURE_SUBSCRIPTION_ID", "AZURE_AI_PROJECT_ID", "MCP_URL"):
         if not env.get(key):
             raise SystemExit(f"[connect-tools] {key} missing in the azd env; run azd provision first")
     cfg = wsconfig.load(env.get("AZURE_ENV_NAME"))
     names = cfg["names"]
     fabric = (env.get("FABRIC_BRIDGE") or str(cfg["modes"]["fabric_bridge"])).lower() == "true"
-    arm = Api("arm")
+    arm = Api("arm", subscription=env["AZURE_SUBSCRIPTION_ID"])
     rows: list[tuple[str, str, str]] = []
     ok = True
 

@@ -19,6 +19,7 @@ help:
 validate:
 	cd "$(ROOT)" && $(PYTHON) scripts/check-content.py
 	cd "$(ROOT)" && $(PYTHON) scripts/validate-narrative.py --layers static,data --check --no-report
+	cd "$(ROOT)" && $(PYTHON) -m unittest discover -s scripts/tests -p "test_*.py"
 
 validate-live:
 	cd "$(ROOT)" && $(PYTHON) scripts/validate-narrative.py --layers all --runs $(RUNS) $(if $(ENV),--env $(ENV))

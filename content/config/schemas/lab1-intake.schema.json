@@ -1,0 +1,137 @@
+{
+  "name": "livewell_intake",
+  "strict": true,
+  "schema": {
+    "type": "object",
+    "properties": {
+      "screening": {
+        "type": "object",
+        "properties": {
+          "screening_date": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "bmi": {
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "systolic_bp": {
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "diastolic_bp": {
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "fasting_glucose_mmol": {
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "total_cholesterol_mmol": {
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "risk_band": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "enum": [
+              "Low",
+              "Moderate",
+              "High",
+              "Not Screened",
+              null
+            ]
+          }
+        },
+        "additionalProperties": false,
+        "required": [
+          "screening_date",
+          "bmi",
+          "systolic_bp",
+          "diastolic_bp",
+          "fasting_glucose_mmol",
+          "total_cholesterol_mmol",
+          "risk_band"
+        ]
+      },
+      "activity": {
+        "type": "object",
+        "properties": {
+          "days_logged": {
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "avg_daily_steps": {
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "hazy_days_skipped": {
+            "type": [
+              "integer",
+              "null"
+            ]
+          }
+        },
+        "additionalProperties": false,
+        "required": [
+          "days_logged",
+          "avg_daily_steps",
+          "hazy_days_skipped"
+        ]
+      },
+      "preferences": {
+        "type": "object",
+        "properties": {
+          "preferred_time_of_day": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "dislikes": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "additionalProperties": false,
+        "required": [
+          "preferred_time_of_day",
+          "dislikes"
+        ]
+      },
+      "follow_up_flags": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        }
+      }
+    },
+    "additionalProperties": false,
+    "required": [
+      "screening",
+      "activity",
+      "preferences",
+      "follow_up_flags"
+    ]
+  }
+}

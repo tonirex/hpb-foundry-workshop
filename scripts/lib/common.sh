@@ -88,6 +88,7 @@ fabric_api() {
   local method="$1" path="$2" body="${3:-}"
   local args=(rest --method "$method" --url "https://api.fabric.microsoft.com$path"
               --resource "https://api.fabric.microsoft.com")
+  [ -n "${AZURE_SUBSCRIPTION_ID:-}" ] && args+=(--subscription "$AZURE_SUBSCRIPTION_ID")
   [ -n "$body" ] && args+=(--body "$body" --headers "Content-Type=application/json")
   az "${args[@]}" 2>&1 | tr -d '\r'
 }

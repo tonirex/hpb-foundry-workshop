@@ -71,7 +71,9 @@ def main() -> int:
 
     def portal_link() -> str:
         pid = v.get("AZURE_AI_PROJECT_ID")
-        return f"https://ai.azure.com/resource/overview?wsid={pid}" if pid else MISSING
+        tenant = v.get("AZURE_TENANT_ID")
+        suffix = f"&tid={tenant}" if tenant else ""
+        return f"https://ai.azure.com/resource/overview?wsid={pid}{suffix}" if pid else MISSING
 
     def hosted() -> str:
         # Name only: the postdeploy hook publishes a newer version than the one azd records in .env.
@@ -116,7 +118,9 @@ def main() -> int:
         ("Builder agents", ws["agent_naming"]["builder_agent"] + "  (Builder)"),
         ("Hosted agent (Lab 4, facilitator)", hosted()),
         ("Lab 4 DevUI (browser, no install)", g("LAB4_DEVUI_URL") if devui_on else devui_off),
-        ("Lab 4 DevUI token", g("LIVEWELL_DEVUI_TOKEN") if devui_on else devui_off),
+        ("Lab 4 DevUI token", (v.get("LIVEWELL_DEVUI_TOKEN") or
+                              ("not loaded locally; ask the facilitator or use the command below"
+                               if v.get("LAB4_DEVUI_APP_NAME") else MISSING)) if devui_on else devui_off),
         ("Lab 4 DevUI token command (Owner or Contributor)", devui_cmd if devui_on else devui_off),
         ("Workshop accounts", accounts),
         ("Guest Wi-Fi", f"{ws['guest_wifi']['ssid']} / {ws['guest_wifi']['code']}"),

@@ -137,7 +137,9 @@ param storageNetworkDefaultAction string = 'Allow'
 
 // -------------------------------------------------------------------------------------------------
 
-var names = loadYamlContent('../content/config/workshop.yaml', '$.names')
+var baseNames = loadYamlContent('../content/config/workshop.yaml', '$.names')
+var environments = loadYamlContent('../content/config/workshop.yaml', '$.environments')
+var names = union(baseNames, environments[environmentName].?names ?? {})
 var models = loadYamlContent('../content/config/workshop.yaml', '$.models')
 var n = {
   foundryAccount: replace(names.foundry_account, '<env>', environmentName)

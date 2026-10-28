@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
-"""Write the live profile OpenAPI spec into the Lab 3 copy-and-paste block (Navigator and portal pages).
+"""Write the live profile OpenAPI spec into the canonical Lab 3 Navigator copy-and-paste block.
 
 Participants copy the spec from the lab page instead of opening the spec URL. The spec has to carry the
 environment's server address, because the OpenAPI tool calls it, so this block is the one place a lab page holds an
 endpoint (AGENTS.md; scripts/check-content.py allows it only inside the markers, only on the Lab 3 pages, and only
-as an OpenAPI 3 document). Participants read the pages on GitHub, so re-run this and commit and push the two pages
+as an OpenAPI 3 document). Participants read the page on GitHub, so re-run this and commit and push that page
 whenever the activities app's address changes (a new azd environment, or a provision after teardown).
 
     python scripts/sync-openapi-block.py [env]           # default: the selected azd env
@@ -25,7 +25,7 @@ import urllib.request
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-PAGES = [ROOT / "content" / "labs" / "lab-03.md", ROOT / "content" / "labs" / "lab-03-portal.md"]
+PAGES = [ROOT / "content" / "labs" / "lab-03.md"]
 BLOCK_RE = re.compile(r"^([ \t]*)<!-- openapi-spec:begin\b[^\n]*-->\n.*?^[ \t]*<!-- openapi-spec:end -->[ \t]*$",
                       re.M | re.S)
 

@@ -11,7 +11,7 @@ workshop:
   short_name: "livewell"
   customer: "Health Promotion Board (Singapore)"
   owner: "Antonia Chen (Sr Solution Engineer, Microsoft Singapore)"
-  repo_url: "https://github.com/tonirex/livewell-foundry-workshop"  # lab instructions, printed on the sign-in cards
+  repo_url: "https://github.com/tonirex/hpb-foundry-workshop"  # lab instructions, printed on the sign-in cards
   date: "TODO"                     # workshop day (YYYY-MM-DD)
   participant_count: 6              # confirmed HPB head-count; sponsor quota sized for it (ASSUMPTIONS.md 9.1)
   planning_cohort_size: 20
@@ -155,11 +155,15 @@ modes:
 # ---------------------------------------------------------------------------
 environments:
   mcaps:
-    purpose: "dry run"
-    subscription_id: "15715b5a-037a-4d59-bf60-2fa0986a3179"
-    tenant_id: "108f6739-7d66-44bd-b535-c1812dab17b5"
+    purpose: "MCAPS workshop and validation"
+    subscription_id: "c4745a9c-2fb6-4336-a000-6e0f71afaeb5"
+    tenant_id: "f41bde0b-74cd-498a-9091-079dec7418a4"
+    names:
+      foundry_account: "aif-hpb-livewell-mcaps"
+      search_service: "srch-hpb-livewell-mcaps"
+      fabric_capacity: "fabhpblivewellmcaps"
     facilitator_upns:
-      - "admin@mngenvmcap761802.onmicrosoft.com"   # Fabric capacity admin + Foundry Project Manager
+      - "kychan@MngEnvMCAP261533.onmicrosoft.com"  # Existing capacity admin; workshop users are created separately.
     lab_accounts:
       prefix: "hpb.lab"
       count: 20
@@ -220,8 +224,8 @@ labs:
   - id: lab-04
     title: "Multi-agent & Hosted deploy"
     minutes: 30
-    rails: [builder]
-    facilitator_only: true
+    rails: [navigator, builder]
+    facilitator_deploy_only: true
     patterns: [3, 9, 10]
   - id: bridge-spotlight
     title: "Two IQs, one agent"

@@ -35,6 +35,22 @@ azd auth login --tenant-id <tenant-id>
 fab auth login                            # Phase 3 onwards
 ```
 
+**Checking an existing MCAPS setup is not provisioning it.** Compare the subscription explicitly with
+`environments.mcaps.subscription_id` in [workshop.yaml](../config/workshop.yaml), not just the friendly name
+`mcaps` or the CLI's global default. The current MCAPS deployment uses `aif-hpb-livewell-mcaps`,
+`srch-hpb-livewell-mcaps` and `fabhpblivewellmcaps`; per-environment name overrides leave sponsor unchanged.
+Its existing Search service is in France Central (the capacity exception in ASSUMPTIONS.md 2.5); Foundry
+and Fabric remain in Sweden Central. To regenerate only the local parameter file:
+
+```bash
+azd env select mcaps
+AZURE_ENV_NAME=mcaps python scripts/select-params.py --parameters-only
+```
+
+This does not create users, assign roles, generate a token, provision resources or resume capacity.
+Account creation remains a separate operator task. Restoring deployment outputs does not restore the
+private DevUI token; restore that value privately before a later provision, rather than generating a replacement.
+
 ## Timeline
 
 ### T-10: quota requests
@@ -117,7 +133,9 @@ About 1.5 h end to end.
   once took 38–52 s each.
 - **Opting out.** `azd env set LAB4_DEVUI false` skips it. Then deploy services by name and leave out `lab4-devui`.
 - **Caveats.** DevUI is a sample (beta), not a production app. Everyone with the token shares one session list, and
-  the data is fictional. Rotate the token with `azd env set LIVEWELL_DEVUI_TOKEN ""`, then provision again.
+  the data is fictional. To rotate deliberately, generate a new token privately, set it explicitly with
+  `azd env set LIVEWELL_DEVUI_TOKEN "<new-token>"`, then provision again. If an existing app's local token is
+  missing, `select-params.py` stops rather than silently replacing it.
 
 Re-run step 9 after step 3 so that attendees also get **Viewer** on the Fabric workspace, which gives read access to
 the data agent. The postprovision hook (`scripts/apply-guardrail.py`) keeps every model deployment on the platform
@@ -383,6 +401,82 @@ scored locally instead", and the local scores are still valid. To publish a run 
 | Hosted agent: 424 `session_not_ready`, or `postdeploy` hook failed | See the troubleshooting table in [hosted-agent-example/README.md](../assets/hosted-agent-example/README.md) |
 | Git Bash: paths like `C:/Program Files/Git/subscriptions/...` | Use the scripts; `scripts/lib/common.sh` sets `MSYS_NO_PATHCONV=1` |
 
+## Screenshot maintenance
+
+The participant procedure lives in each main lab's **Navigator** section, including the optional
+[Fabric step](../labs/fabric-step.md). The old portal filenames are compatibility pages, not capture sources.
+Keep screenshot paths stable and relative to `content/labs/`, using `screenshots/lab-0N/NN-short-slug.png`.
+DevUI's `10` and `11` screenshots are captured by `demos/lab4-devui.py --capture`; Builder evidence remains separate.
+
+Review the model, schema name, controls, caption and redaction before deciding an image needs a retake.
+**Retake only outdated existing images**, using explicit slot IDs; do not run a blanket capture or create new
+sign-in/MFA, evaluation-comparison or participant-role images for the currently text-only steps.
+
+```bash
+python demos/capture-screenshots.py --list-missing
+python demos/capture-screenshots.py --list-outdated
+python demos/capture-screenshots.py --outdated-only --dry-run
+python demos/capture-screenshots.py --only lab-00/08 lab-01/06 --headless
+python demos/capture-screenshots.py --link --dry-run
+```
+
+Capture requires an authorized facilitator browser session and the selected environment in this worktree.
+Review each replacement PNG before linking it. Never fabricate a new model label in an old screenshot, and never
+copy credentials from another checkout. When live capture is unavailable, state that explicitly and keep the step
+usable from its text; a successful image decode does not establish that the portal is current.
+
+The review identified **50 archived captures** needing a refresh, plus two unused historical assets. None of those
+captures is rendered in a participant guide. Their steps have complete text instructions, and the lab-flow deck uses
+explicit text-only reference cards. Hidden `historical-screenshot` markers preserve the optional maintenance inventory.
+`--list-outdated` prints that inventory and exits nonzero while any remain; this is separate from the participant
+content gate, which verifies that archived captures are not displayed.
+After a genuine retake and visual/redaction review, replace the relevant marker with a normal Markdown image and
+descriptive alt text, then rebuild the deck. Do not reintroduce an archived image merely because its file exists.
+
+Retakes were not performed during this content pass. The original browser session was expired; the requested browser
+canvas reached the correct sponsor account's password prompt and requires the user's sign-in/MFA.
+No tenant, account, permission or PNG was changed to bypass that boundary. The approved text-only fallback therefore
+completes the participant guide without requiring live captures.
+
+The follow-up readiness check resolved the existing sponsor project through read-only management calls and verified
+all seven demo agents use the intended models. Both workshop Fabric capacities were **Paused**. Fabric-related live
+retakes therefore need explicit approval to resume the selected capacity, followed by pausing it again; do not
+silently restart it to obtain a screenshot.
+
+On Windows ARM64, the capture SDK's `cryptography` dependency may require unavailable native build tools. Use an
+existing **x64 Python 3.13** with an isolated capture venv and binary wheels instead. The worktree preparation used
+`.venv/capture-x64`; no main-checkout files or browser credentials were copied. Once the operator has authorized and
+completed the capture-browser sign-in, the bounded command is:
+
+```powershell
+.\.venv\capture-x64\Scripts\python.exe demos\capture-screenshots.py --outdated-only --headless
+```
+
+`--outdated-only --dry-run` is safe before authentication: it lists exactly the historical subset without opening a
+browser, invoking a model, changing files, or selecting current/missing illustrations.
+
+## Maintaining inline copy blocks
+
+Edit instructions in `content/prompts/coach-instructions.md`, prompts in `content/prompts/test-prompts.json`,
+and attachment sources in `content/data/`. Lab-page copies are generated, not independently authored:
+
+```bash
+python scripts/gen-schemas.py
+python scripts/sync-lab-blocks.py
+python scripts/check-content.py
+python scripts/validate-narrative.py --layers static,data --check --no-report
+python -m unittest discover -s scripts/tests -p "test_*.py"
+```
+
+The renderer includes complete JSON wrappers and complete multi-document messages. Keep the flyer's hidden HTML
+literal inside its code block. `--check` detects missing markers, missing sources and stale generated text.
+Use `scripts/sync-openapi-block.py <env>` separately for the one endpoint-bearing block on the canonical Lab 3 page.
+After content or retained screenshots change, rebuild both decks as described in [deck/README](../../deck/README.md).
+
+`workshop.repo_url` points to the participant repository, `tonirex/hpb-foundry-workshop`. Regenerate the private
+sign-in cards through the normal account runbook if existing distributed cards still name the old repository;
+never commit those credential-bearing PDFs.
+
 ## Script reference
 
 | Script | What it does |
@@ -398,7 +492,8 @@ scored locally instead", and the local scores are still valid. To publish a run 
 | [apply-guardrail.py](../../scripts/apply-guardrail.py) | `livewell-guardrails` + blocklist from `guardrails.yaml`, and each deployment's guardrail (`Microsoft.DefaultV2`) (postprovision hook); `--check` |
 | [build-kb.py](../../scripts/build-kb.py) | Foundry IQ knowledge base `livewell-guides-kb` + its MCP connection; `--source onelake`, `--check` |
 | [connect-tools.py](../../scripts/connect-tools.py) | Activities MCP, Fabric IQ and specialist A2A connections, profile tool URL, access checks, Lab 3 spec block check; `--check` |
-| [sync-openapi-block.py](../../scripts/sync-openapi-block.py) | Writes the live profile OpenAPI spec into the Lab 3 copy-and-paste block (both pages); `--check`. Commit and push the pages after it changes them |
+| [sync-openapi-block.py](../../scripts/sync-openapi-block.py) | Writes the live profile OpenAPI spec into the canonical Lab 3 copy block; `--check`. Commit and push that page after it changes |
+| [sync-lab-blocks.py](../../scripts/sync-lab-blocks.py) | Renders canonical instruction, prompt, schema and attachment copies in participant pages; `--check` is offline and read-only |
 | [hosted-postdeploy.py](../../scripts/hosted-postdeploy.py) | Hosted agent: identity RBAC + guardrail (azd postdeploy hook); `--check`, `--verify` |
 | [gen-schemas.py](../../scripts/gen-schemas.py) | Navigator JSON schemas and the hosted agent's `livewell.json` from the prompts and `livewell_common.py`; `--check` |
 | [validate-builder-rail.py](../../scripts/validate-builder-rail.py) | Runs Labs 1–4 as `INITIALS=test` with `--cleanup`, checks the key signals (KB citation, injected flyer blocked, ≥ 2 tools, Fabric for Mei and not for Rahim, hosted agent) and that nothing is left behind (items an interrupted earlier run left are deleted first); `--labs`, `--fabric`, `--report`, `--verbose`. `make -C content/assets validate-rail` |
@@ -413,7 +508,7 @@ scored locally instead", and the local scores are still valid. To publish a run 
 | [smoke-test.py](../../scripts/smoke-test.py) | End-to-end check with temporary `livewell-smoke-*` agents: MCP, knowledge, guardrail, tools, Fabric, hosted agent, demo-memory residue, cost since provision; `--demo-agents`, `--no-fabric`, `--no-hosted`, `--since`, `--report` |
 | [create-demo-agents.py](../../demos/create-demo-agents.py) | The seven `livewell-demo-*` agents (one per lab, plus the Nutrition and Activity specialists with incoming A2A and an agent card) and the `livewell-eval` dataset; a new version only when the definition changed; `--check`, `--roles`, `--no-memory`, `--no-dataset` |
 | [portal.py](../../demos/portal.py) | Playwright helpers for the Foundry portal; `login`, `status`, `open <page>`, `shot <page>` |
-| [capture-screenshots.py](../../demos/capture-screenshots.py) | Navigator screenshot slots from the live portal; `--only`, `--list-missing`, `--link [--dry-run]`, `--headless` |
+| [capture-screenshots.py](../../demos/capture-screenshots.py) | Canonical Navigator screenshots from the live portal; select stale slots with `--only`; `--list-missing`, `--link [--dry-run]`, `--headless` |
 | [record-demos.py](../../demos/record-demos.py) | One captioned WebM per lab and the Bridge spotlight into `demos/videos/`; `--lab` |
 | [fabric-steps.py](../../demos/fabric-steps.py) | Bridge visualiser: the Fabric data agent's own run steps (rewrite, GQL, rows) for one question as an HTML page; `bridge`, `fit`, any question id; `--replay`, `--open`, `--save-sample` |
 | [record-terminal.py](../../demos/record-terminal.py) | Evidence recorder: runs any script, then saves its output with real timings (`.cast`) and a PNG in `demos/evidence/<date>/` and a replay WebM in `demos/videos/`; IDs, endpoints, e-mails and local paths redacted; `--title`, `--render`, `--idle`, `--no-video` |

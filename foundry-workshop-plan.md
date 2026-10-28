@@ -71,12 +71,17 @@ they can build and run agents but cannot deploy models, create connections or pu
 | Time | Beat | Who | Prompt(s) | Checkpoint |
 |---|---|---|---|---|
 | 4:35 | [Lab 3](content/labs/lab-03.md) core: profile tool, activities MCP with approval, memory, specialists | Everyone | `lab3_profile_tailored`, `lab3_hazy_indoor_signup`, `lab3_memory_set`, `lab3_memory_recall`, `lab3_specialists` | Compound question fires ≥ 2 tools/agents in the trace; reply fits Rahim's glucose; registration waits for approval ([answer key](content/answer-keys/lab-03.json)) |
-| 5:05 | [Fabric step](content/labs/fabric-step.md) (only if `fabric_bridge: true` and the room is on time) | Everyone, or facilitator on screen | `fabric_q_disengaged_regions`, then `lab1_prediabetes_eat` | Trace shows the Fabric IQ call for Mei's question and the KB for Rahim's; region order matches `scripts/r360.py`; no `resident_id` |
-| 5:15 | [Lab 4](content/labs/lab-04.md) demo: hosted agent with guardrails, called from curl | Facilitator | `lab4_week_plan_handoff`, `lab4_q_programmes_disengaged` | Endpoint returns valid JSON with a citation ([answer key](content/answer-keys/lab-04.json)) |
+| 5:05 | [Fabric step](content/labs/fabric-step.md) (only if `fabric_bridge: true` and the room is on time) | Everyone, or facilitator on screen | `lab3_programme_fit`, `fabric_q_disengaged_regions`, then `lab1_prediabetes_eat` | Profile precedes the age-band-only Fabric question; registration waits for approval. Mei uses Fabric; Rahim's food question does not. Reference figures match; no individual data leaves for Fabric |
+| 5:15 | [Lab 4](content/labs/lab-04.md): sequential/hand-off and hosted agent | Facilitator-led; participants can use browser DevUI and hosted chat | `lab4_week_plan_handoff`, `lab4_activity_only`, `lab4_q_programmes_disengaged` | Sequential/hosted returns cited evidence JSON; hand-off ends with Activity's answer and a visible route. Only the facilitator deploys ([answer key](content/answer-keys/lab-04.json)) |
 | 5:22 | [Bridge spotlight](content/labs/bridge-spotlight.md) + close on the ten patterns and the extended arc | Facilitator | `bridge_q_dropped_attended_heldin` (only if time) | — |
 
 Timing rule: if the room is more than 10 minutes behind at 5:05, run the Fabric step on screen and play the
 Lab 4 recording. The bridge spotlight is slides-only when the Fabric step ran live, and a full demo when it did not.
+
+The lab-page durations describe the full reference exercises, not additional agenda slots. Keep this fixed agenda:
+use the optional intake, A2A and browser orchestration sections as extensions or facilitated demonstrations when
+the room cannot complete them. State which outcomes were demonstrated rather than claiming every participant ran every optional path.
+Participants use one lab page per capability: the Navigator section now includes the screenshots and copy blocks.
 
 ## Demo prompts by lab
 
@@ -86,8 +91,8 @@ Lab 4 recording. The bridge spotlight is slides-only when the Fabric step ran li
 | 1 | `lab1_prediabetes_eat`, `lab1_supplement`, `lab1_activity_guideline`, `lab1_intake` |
 | 2 | `lab2_extreme_fasting`, `lab2_medication_double`, `lab2_injected_flyer`, `lab2_other_resident`, `lab2_skip_meals`, `lab2_benign_control`, `lab2_benign_dose_reminder` |
 | 3 | `lab3_profile_tailored`, `lab3_hazy_indoor_signup`, `lab3_memory_set`, `lab3_memory_recall`, `lab3_specialists` |
-| Fabric step | `fabric_q_disengaged_regions` |
-| 4 | `lab4_week_plan_handoff`, `lab4_q_programmes_disengaged` |
+| Fabric step | `lab3_programme_fit`, `lab3_programme_confirm`, `fabric_q_disengaged_regions`, `lab1_prediabetes_eat` |
+| 4 | `lab4_week_plan_handoff`, `lab4_activity_only`, `lab4_q_programmes_disengaged` |
 | Bridge | `bridge_q_dropped_attended_heldin` |
 
 Scripted runs prepend the `consent_line` from the prompt bank so the Lab 0 consent rule does not stall them.
@@ -103,13 +108,13 @@ Scripted runs prepend the `consent_line` from the prompt bank so the Lab 0 conse
 | Evaluators unavailable | Show the pre-captured evaluation run and trace from `demos/` |
 | Activities MCP down | Run `content/assets/mcp-activities/server.py` locally behind a tunnel, or show the recorded approval trace |
 | Fabric tool down, capacity paused, or data agent unpublished | Play the recorded Fabric-step answer; quote the region order from `python scripts/r360.py` |
-| Portal glitch in general | Pre-recorded demo videos and screenshots in `demos/` and the [Portal Track](content/labs/PORTAL-TRACK.md) |
+| Portal glitch in general | Use reviewed screenshots in the canonical lab's Navigator section or the facilitator recordings in `demos/`; do not present an older model configuration as current |
 
 ## RBAC gotchas
 
 - **Foundry User** (participants): create and run agents, use shared deployments, the shared KB and shared connections.
   Cannot deploy models, create connections, or publish hosted agents.
-- **Foundry Project Manager** (facilitator): everything above, plus connections and hosted deploy. Lab 4 is facilitator-only for this reason.
+- **Foundry Project Manager** (facilitator): everything above, plus connections and hosted deploy. Lab 4 deployment is facilitator-only; browser DevUI and hosted chat are participant activities. Accounts with broader permissions still follow that boundary.
 - The Fabric IQ tool uses identity passthrough: participants need **Viewer** (or read on the data agent) in the
   `HPB Resident 360` workspace, or the call fails with 403.
 - Never delete agents with the `livewell-demo-` or `livewell-workshop-` prefix.

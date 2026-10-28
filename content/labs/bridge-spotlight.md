@@ -4,6 +4,8 @@
 
 **You are here:** [Lab 0](lab-00.md) → [Lab 1](lab-01.md) → [Lab 2](lab-02.md) → [Lab 3](lab-03.md) ([Fabric step](fabric-step.md)) → [Lab 4](lab-04.md) → **Bridge spotlight** · [README](../../README.md)
 
+**Your path:** [Navigator / watch](#navigator) · [Builder reference](#builder) · [Checkpoint](#checkpoint) · [Troubleshooting](#troubleshooting)
+
 ## Shared objective
 
 > Know when to reach for Foundry IQ (documents and knowledge) versus Fabric IQ (governed business data and ontology), and how to connect them
@@ -25,6 +27,8 @@ Patterns: revisit #1-#10; this spotlight adds no new build checkpoint.
 
 ## 🟢 Navigator
 
+<a id="navigator"></a>
+
 This is a facilitator-led spotlight. Slides-only when the Lab 3 Fabric step ran live. When it was skipped, run the full demo: live if Fabric is up, otherwise from the saved run with `--replay` (no capacity needed).
 
 1. Start with their Fabric medallion estate:
@@ -45,7 +49,7 @@ This is a facilitator-led spotlight. Slides-only when the Lab 3 Fabric step ran 
    | Use | Foundry IQ | Fabric IQ |
    |---|---|---|
    | Best for | Documents, guides, policies, FAQs, unstructured knowledge | Governed business data, semantic models, ontology-backed aggregates |
-   | Example | Rahim asks what to eat and needs guide citations | Mei asks which regions or programmes need attention |
+   | Example | Rahim asks what to eat and needs guide citations | Mei asks which regions need attention; Rahim's programme-fit question uses an age-band aggregate |
    | Output | Cited answer from knowledge sources | Aggregate answer from Fabric under user permissions |
    | Avoid | Programme analytics and row-level business questions | Citizen self-care questions and individual profile lookups |
 
@@ -60,9 +64,11 @@ This is a facilitator-led spotlight. Slides-only when the Lab 3 Fabric step ran 
    Optional fourth path: function or OpenAPI tool over a Fabric ML `/score` endpoint when a scoring service exists.
 5. Send Mei's multi-hop question (`bridge_q_dropped_attended_heldin`) if doing the live demo:
 
+   <!-- copy:prompt bridge_q_dropped_attended_heldin -->
    ```text
    Among residents who dropped a programme, how many attended at least one event, broken down by the region where those events were held?
    ```
+   <!-- /copy -->
 
    The ontology traversal is Resident → `attended` → EventOccurrence → `heldIn` → Region, for residents who dropped a
    programme (`programmes_dropped ≥ 1` in the canonical GQL, or the `droppedOut` edge the live agent used). It keeps
@@ -75,7 +81,7 @@ This is a facilitator-led spotlight. Slides-only when the Lab 3 Fabric step ran 
    undercounts. When the agent says its result was cut off and declines to give counts, that is the behaviour you want
    from a governed agent: it does not guess.
 
-   ![Mei's multi-hop answer on livewell-demo-fabric: residents who dropped a programme, by event region](screenshots/bridge/01-mei-multi-hop-answer.png)
+   <!-- historical-screenshot: screenshots/bridge/01-mei-multi-hop-answer.png -->
 
    Open the trace and select the Fabric IQ span (`DataAgent_Resident360_Ontology_Agent`). What to observe:
 
@@ -83,7 +89,7 @@ This is a facilitator-led spotlight. Slides-only when the Lab 3 Fabric step ran 
    - **Duration:** a single tool call of 30-90 s. Everything the Fabric data agent does happens inside that one span.
    - **Output:** counts by the region where the events were held, never a list of residents.
 
-   ![Foundry trace: one Fabric IQ call with the aggregate userQuestion in and the answer out](screenshots/bridge/02-fabric-iq-trace.png)
+   <!-- historical-screenshot: screenshots/bridge/02-fabric-iq-trace.png -->
 6. Show what happened inside Fabric. The Foundry trace stops at the tool boundary: it cannot show how the data agent
    rewrote the question, which GQL it ran or which rows came back. The facilitator visualiser reads the data agent's
    own run steps (its Assistants endpoint, ⚠️ preview) and draws them as one HTML page:
@@ -119,7 +125,7 @@ This is a facilitator-led spotlight. Slides-only when the Lab 3 Fabric step ran 
    playground, the Fabric IQ trace, then the visualiser page. The file is `demos/videos/bridge-<YYYY-MM-DD>.webm`.
    Videos are git-ignored: the facilitator records them during the dry run and shares them with co-facilitators
    (see [ADMIN-SETUP](../admin/ADMIN-SETUP.md#t-1-dry-run)). Play it if the live demo is unavailable.
-7. Mention the optional Forgebook notebook by name: `Microsoft IQ in Foundry` on `microsoft-foundry.github.io/forgebook`.
+7. Mention the optional Forgebook notebook: [Microsoft IQ in Foundry](https://microsoft-foundry.github.io/forgebook/notebook/microsoft-iq-in-foundry/).
 8. Close on the extended arc: **Unify → Govern → Personalise → Converse → Coach & Act**.
 
 Facilitator close-out prompts:
@@ -130,6 +136,8 @@ Facilitator close-out prompts:
 - Which trace would you show an auditor first?
 
 ## 🔵 Builder
+
+<a id="builder"></a>
 
 This is a facilitator demo, not a participant build. The Builder view is the step 6 visualiser run from a terminal,
 plus a short walk through its code. It needs `az login` with access to the Fabric workspace and an Active capacity,
@@ -158,7 +166,7 @@ free text.
 
 [`demos/fabric-steps.py`](../../demos/fabric-steps.py) asks the data agent directly, reads its run steps, and draws
 them. The coach never uses this path: in Foundry it calls the data agent through the Fabric IQ tool
-([`fabric_tool`](../assets/common/livewell_common.py#L511-L515)) and the trace sees one call. This script is a lens on
+([`fabric_tool`](../assets/common/livewell_common.py#L540-L544)) and the trace sees one call. This script is a lens on
 what happens inside that call.
 
 | Step | Code | What it does |
@@ -203,9 +211,9 @@ document index can answer it. The Foundry trace shows that hop chain as one tool
 `resident360` in the tool chips and `personalisation_flags` that say aggregate only. In the trace, `userQuestion` is the
 aggregate question with no name or `resident_id`, and the call takes 30–90 s.
 
-![Mei's multi-hop question on livewell-demo-fabric: the aggregate JSON reply with resident360 in the tool chips](screenshots/bridge/01-mei-multi-hop-answer.png)
+<!-- historical-screenshot: screenshots/bridge/01-mei-multi-hop-answer.png -->
 
-![Foundry trace: one Fabric IQ call with the aggregate userQuestion in and the answer out](screenshots/bridge/02-fabric-iq-trace.png)
+<!-- historical-screenshot: screenshots/bridge/02-fabric-iq-trace.png -->
 
 **Inside Fabric.** The page from step 6. Look for the `attended` and `heldIn` edges highlighted, the dashed
 `livesIn` edge not used, one query card with its GQL and a bar per region, and **5/5** region counts ticked against
@@ -243,4 +251,4 @@ attended events in two regions.
 
 ## Where next
 
-Return to [README](../../README.md) for the full workshop map, or revisit [Lab 4](lab-04.md) to see how the bridge is protected when the agent is hosted.
+**Previous:** [Lab 4](lab-04.md) · **Finish:** [Workshop map and resources](../../README.md)
