@@ -5,7 +5,7 @@ Expand setup, screenshots and FAQ only when needed; no separate walkthrough is r
 
 ## Naming rules
 
-Keep your own `livewell-<initials>` through Labs 0–3. Optional intake uses `livewell-<initials>-intake`.
+Keep your own `livewell-<initials>` through Labs 0–3. Stay on Navigator for the whole workshop.
 Lab 4 opens the shared prepared demo through a private expiring link, without installation, deployment or token entry.
 Never edit shared `livewell-demo-*` or `livewell-workshop-*` agents.
 
@@ -18,8 +18,7 @@ Never edit shared `livewell-demo-*` or `livewell-workshop-*` agents.
 | [Lab 2 · Guardrails, Evaluations & Tracing](lab-02.md) | [Navigator](lab-02.md#navigator); evaluations are look-only |
 | [Lab 3 · Tools, MCP & Memory](lab-03.md) | [Navigator](lab-03.md#navigator) |
 | [Optional Fabric step](fabric-step.md) | [Navigator](fabric-step.md#navigator), only when enabled |
-| [Lab 4 · Multi-agent & Hosted deploy](lab-04.md) | [DevUI at 1:15](lab-04.md#navigator) · [Hosted proof at 5:15](lab-04.md#hosted-proof) |
-| [Bridge spotlight](bridge-spotlight.md) | [Facilitator recap](bridge-spotlight.md#navigator) |
+| [Lab 4 · Multi-agent & Hosted deploy](lab-04.md) | [Prepared DevUI teams](lab-04.md#navigator) |
 
 ## Screenshot slot convention
 

@@ -574,12 +574,12 @@ class LabPageTests(unittest.TestCase):
             for banned in self.BANNED:
                 self.assertNotIn(banned, text, f"{name} still says {banned!r}")
 
-    def test_every_red_team_mention_names_the_facilitator(self):
+    def test_red_team_mentions_prohibit_participant_execution(self):
         for name, text in self.pages.items():
             for line in text.splitlines():
                 mentions = re.sub(r"red-team note", "", line)  # the repo note on the flyer file is not a scan
                 if re.search(r"red[- ]?team", mentions, re.I):
-                    self.assertRegex(line, r"(?i)facilitator", f"{name}: {line[:90]}")
+                    self.assertRegex(line, r"(?i)facilitator|do not", f"{name}: {line[:90]}")
 
     def test_facilitator_only_flags_are_labelled_as_such(self):
         for name, text in self.pages.items():
@@ -599,29 +599,32 @@ class LabPageTests(unittest.TestCase):
     def test_canonical_page_has_evidence_and_legacy_page_links_to_it(self):
         text = self.pages["lab-02.md"]
         self.assertIn("LiveWell guardrail matrix", text)
-        self.assertRegex(text, r"(?i)look(ing)? only|look, don't run")
-        self.assertIn("tell the facilitator", text.lower())
+        self.assertIn("Do not run evaluations during this workshop", text)
+        self.assertIn("read the prepared results only", text)
+        self.assertLess(text.index("Do not run evaluations"), text.index("## Shared objective"))
         self.assertIn("../data/lab2-prepared-eval.json", text)
         self.assertIn("(lab-02.md#navigator)", self.pages["lab-02-portal.md"])
 
     def test_troubleshooting_row_for_a_missing_evaluation(self):
         text = self.pages["lab-02.md"]
         troubleshooting = text.split("## Troubleshooting")[1].split("## Where next")[0]
-        self.assertRegex(troubleshooting, r"Prepared evidence unavailable[^\n]*\| Tell the facilitator")
+        self.assertRegex(troubleshooting, r"Prepared evidence unavailable[^\n]*\| Ask for help")
 
     def test_checkpoint_is_the_new_look_only_checkpoint(self):
         checkpoint = self.pages["lab-02.md"].split("## Checkpoint")[1].split("## Troubleshooting")[0]
-        self.assertIn("injected flyer was blocked or its hidden instruction ignored", checkpoint)
+        self.assertIn("injected flyer should be blocked or its hidden instruction ignored", checkpoint)
         self.assertIn("handled_safely", checkpoint)
         self.assertIn("prepared", checkpoint)
-        self.assertNotRegex(checkpoint, r"(?i)groundedness")
+        self.assertNotIn("groundedness score", checkpoint.lower())
         self.assertNotRegex(checkpoint, r"\b\d+(\.\d+)? (pass|of 7)\b")  # the page quotes no counts
 
-    def test_code_details_are_optional_and_link_to_current_entrypoints(self):
+    def test_operator_evaluation_details_are_outside_the_participant_path(self):
         text = self.pages["lab-02.md"]
-        self.assertIn("<summary><strong>Optional: code", text)
-        for path in ("../assets/lab2_govern.py", "../assets/common/evaluation_results.py"):
-            self.assertIn(f"]({path})", text)
+        self.assertIn("](../assets/lab2_govern.py)", text)
+        self.assertNotIn("lab2_evaluate.py --run", text)
+        operator = (ROOT / "content" / "admin" / "FACILITATOR-DEMOS.md").read_text(encoding="utf-8")
+        self.assertIn("lab2_evaluate.py", operator)
+        self.assertIn("separate approval", operator)
         self.assertIn("not scored", text)
         self.assertRegex(text.lower(), r"same[- ]model")
 

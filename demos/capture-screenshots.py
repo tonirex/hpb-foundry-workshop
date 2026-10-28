@@ -8,14 +8,13 @@
     python demos/capture-screenshots.py --only lab-00/08       # retake a reviewed, outdated screenshot
     python demos/capture-screenshots.py --only lab-01          # one lab
     python demos/capture-screenshots.py --only lab-03/12 lab-03/13
-    python demos/capture-screenshots.py --only bridge          # Bridge spotlight (needs a saved fabric-steps run)
     python demos/capture-screenshots.py --link                 # turn filled slots into markdown images
 
 Prerequisites: `python demos/portal.py login` once (facilitator account), and the demo agents from
 `python demos/create-demo-agents.py`. Scenes chat with the livewell-demo-* agents and the hosted agent, open
 menus and dialogs and cancel them; nothing is saved. Tenant/subscription IDs, endpoints and e-mails are
 rewritten in the page and the account button is masked before each shot. Review every PNG before committing.
-PNGs go to content/labs/screenshots/lab-0N/ and screenshots/bridge/. Use --only for a selective refresh.
+PNGs go to content/labs/screenshots/lab-0N/. Use --only for a selective refresh.
 Unillustrated participant steps are text-only; do not create new captures just to fill them.
 DevUI screenshots are owned by demos/lab4-devui.py --capture, not portal scenes.
 """
@@ -69,7 +68,7 @@ def link(dry_run: bool = False) -> int:
 
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
-    ap.add_argument("--only", nargs="+", metavar="SLOT", help="lab-0N, lab-0N/NN, bridge or bridge/NN (several allowed)")
+    ap.add_argument("--only", nargs="+", metavar="SLOT", help="lab-0N or lab-0N/NN (several allowed)")
     ap.add_argument("--list-missing", action="store_true", help="print the slots without a PNG and exit")
     ap.add_argument("--list-outdated", action="store_true", help="list historical captures awaiting refresh/review")
     ap.add_argument("--link", action="store_true", help="convert filled slots into markdown images and exit")

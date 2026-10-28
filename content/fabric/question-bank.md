@@ -1,8 +1,8 @@
 # Fabric question bank — Mei Lin's questions and Rahim's cohort question
 
 LiveWell Coach calls Fabric for two reasons. Mei Lin (fictional HPB programme officer) asks exactly
-**three** programme questions, each tied to one lab checkpoint. Rahim never asks Fabric about himself, but
-in the Fabric step the coach asks **one** aggregate cohort question on his behalf ("people in my age band")
+**two** programme questions: one participant comparison and one optional specialist demonstration.
+Rahim never asks Fabric about himself, but an optional operator demonstration asks **one** aggregate cohort question ("people in my age band")
 to pick a programme he is likely to stick with. Every `fabric` beat in `content/narrative/rahim.md` points
 at one of these ids, and every id has a prompt in `content/prompts/test-prompts.json`. Reference answers
 are recomputed from the data by `scripts/validate-narrative.py` into `reference-answers.json` — never copy
@@ -11,18 +11,14 @@ numbers from a portal run.
 | question_id | Question (verbatim) | prompt_id | Where it is used | Traversal | Live gate |
 |---|---|---|---|---|---|
 | `q_disengaged_regions` | Which regions have the highest share of disengaged residents? | `fabric_q_disengaged_regions` | [Lab 3 Fabric step](../labs/fabric-step.md) checkpoint | Resident —livesIn→ Region (filter `is_disengaged = 1`) | **strict** — exact counts, top region ±1 rank |
-| `q_dropped_attended_heldin` | Among residents who dropped a programme, how many attended at least one event, broken down by the region where those events were held? | `bridge_q_dropped_attended_heldin` | [Bridge spotlight](../labs/bridge-spotlight.md) | Resident (`programmes_dropped ≥ 1`) —attended→ EventOccurrence —heldIn→ Region | **advisory** — multi-hop over a preview ontology (kit Lab 4 lesson) |
-| `q_programmes_disengaged_enrolled` | Which programmes have the most disengaged residents enrolled? | `lab4_q_programmes_disengaged` | [Lab 4](../labs/lab-04.md) Programme-Insights specialist | Resident (`is_disengaged = 1`) —enrolledIn→ Programme | **strict** — exact counts, top programme ±1 rank |
+| `q_programmes_disengaged_enrolled` | Which programmes have the most disengaged residents enrolled? | `lab4_q_programmes_disengaged` | [Facilitator demonstrations](../admin/FACILITATOR-DEMOS.md#optional-fabric-extensions) | Resident (`is_disengaged = 1`) —enrolledIn→ Programme | **strict** — exact counts, top programme ±1 rank |
 
 **Why would Mei ask Fabric here, and what does the coach do with the answer?** (the table-read test)
 
 1. `q_disengaged_regions` — Mei is deciding where to run the next re-engagement roadshow. Only the
    governed Resident 360 knows who is disengaged; the coach returns the ranked regions and suggests
    pairing the top region with indoor, hazy-day-friendly activities from the activities catalogue.
-2. `q_dropped_attended_heldin` — Mei wants to know whether people who drop programmes still turn up to
-   events, and where. It needs the ontology's named `heldIn` edge (event region ≠ home region); the coach
-   uses the answer to recommend running programme "come-back" booths at the busiest event regions.
-3. `q_programmes_disengaged_enrolled` — Mei is reviewing which programme teams to brief first. The
+2. `q_programmes_disengaged_enrolled` — Mei is reviewing which programme teams to brief first. The
    Programme-Insights specialist answers from Fabric; the coach turns it into a one-line brief per programme.
 
 ## Rahim's cohort question (citizen seat, aggregate only)
@@ -34,7 +30,7 @@ coach should send to Fabric, and it is the text the live layer asks the data age
 
 | question_id | Question the coach sends to Fabric (verbatim) | prompt_id | Where it is used | Traversal | Live gate |
 |---|---|---|---|---|---|
-| `q_programme_fit` | For residents in age band 60-64, how many enrolled in each programme and how many dropped out? | `lab3_programme_fit` | [Lab 3 Fabric step](../labs/fabric-step.md) Programme fit | Resident (`age_band`) —enrolledIn→ Programme, and —droppedOut→ Programme | **strict** — exact enrolled and dropped counts per programme (counts under 5 may show as "fewer than 5") |
+| `q_programme_fit` | For residents in age band 60-64, how many enrolled in each programme and how many dropped out? | `lab3_programme_fit` | [Facilitator demonstrations](../admin/FACILITATOR-DEMOS.md#optional-fabric-extensions) | Resident (`age_band`) —enrolledIn→ Programme, and —droppedOut→ Programme | **strict** — exact enrolled and dropped counts per programme (counts under 5 may show as "fewer than 5") |
 
 **Why would the coach ask Fabric for Rahim, and what does it do with the answer?** Rahim dropped out of
 Healthier SG. The guides tell him *what* helps with pre-diabetes. Only the governed Resident 360 knows

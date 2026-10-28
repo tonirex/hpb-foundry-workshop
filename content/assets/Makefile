@@ -4,7 +4,7 @@ PYTHON   ?= python
 ENV      ?=
 RUNS     ?= 3
 INITIALS ?=
-LABS     ?= 1,2,3,4
+LABS     ?= 0,1,2,3,4
 
 .PHONY: help validate validate-live fill notebooks validate-rail clean-agents
 
@@ -28,7 +28,7 @@ fill:
 	cd "$(ROOT)" && $(PYTHON) scripts/validate-narrative.py --layers static,data --fill --no-report
 
 notebooks:
-	$(PYTHON) -m jupytext --to ipynb lab1_knowledge.py lab2_govern.py lab2_evaluate.py lab3_tools.py lab4_multiagent.py
+	$(PYTHON) -m jupytext --to ipynb lab0_setup.py lab1_knowledge.py lab2_govern.py lab2_evaluate.py lab3_tools.py lab3_fabric.py lab4_multiagent.py
 
 validate-rail:
 	cd "$(ROOT)" && $(PYTHON) scripts/validate-builder-rail.py --labs $(LABS) $(if $(INITIALS),--initials $(INITIALS))

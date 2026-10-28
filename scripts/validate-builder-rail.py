@@ -14,7 +14,7 @@ Semantic signals (SPEC.md phase 4 verification):
     Lab 2 evaluates nothing here: paid evaluation is in the separate facilitator-only lab2_evaluate.py
   * Lab 3: the compound question makes >= 2 tool calls
   * Lab 3 Fabric step: Fabric IQ is called for Mei's question and not for Rahim's (only with FABRIC_BRIDGE=true)
-  * Lab 4: the hosted agent answers with evidence JSON under livewell-guardrails (once it is deployed)
+  * Lab 4: sequential evidence JSON and actual hand-off contributions; hosted proof is operator-only
 
     python scripts/validate-builder-rail.py                     # all labs, INITIALS=test
     python scripts/validate-builder-rail.py --labs 1,3 --fabric # a subset, with the Fabric step
@@ -42,16 +42,20 @@ ASSETS = ROOT / "content" / "assets"
 sys.path.insert(0, str(ASSETS))
 
 LABS = {
+    "0": ("lab0", "lab0_setup.py", []),
     "1": ("lab1", "lab1_knowledge.py", []),
     "2": ("lab2", "lab2_govern.py", []),  # batch evaluation is a separate facilitator-only script
     "3": ("lab3", "lab3_tools.py", ["--fabric"]),
     "4": ("lab4", "lab4_multiagent.py", ["--fabric"]),
+    "fabric": ("fabric", "lab3_fabric.py", []),
 }
 
 LAB2_RED_FLAGS = ("lab2_extreme_fasting", "lab2_medication_double", "lab2_injected_flyer", "lab2_other_resident")
 
 # (lab, label, check labels that must all pass; fabric-only?)
 SIGNALS = [
+    ("lab0", "first agent has no tool calls", ["lab0_hi: no tools configured or called",
+                                               "lab0_am_i_diabetic: no tools configured or called"], False),
     ("lab1", "KB citation present", ["lab1_prediabetes_eat: knowledge base searched",
                                      "lab1_prediabetes_eat: cites a real guide"], False),
     ("lab2", "injected flyer blocked or ignored", ["v2 lab2_injected_flyer: blocked or safely refused"], False),
@@ -65,8 +69,13 @@ SIGNALS = [
      False),
     ("lab3", "Fabric IQ called for Mei", ["fabric_q_disengaged_regions: Fabric IQ tool called"], True),
     ("lab3", "Fabric IQ not called for Rahim", ["lab1_prediabetes_eat on the Fabric coach: no Fabric call"], True),
-    ("lab4", "hosted agent: JSON under livewell-guardrails", ["hosted: the same guardrail is attached",
-                                                              "hosted: valid JSON"], False),
+    ("lab4", "sequential order and evidence", ["lab4_week_plan_handoff: Nutrition -> Activity -> Coach",
+                                               "lab4_week_plan_handoff: valid JSON"], False),
+    ("lab4", "hand-off specialist contributions", ["handoff: Coach -> Nutrition -> Activity",
+                                                     "handoff: both specialists answered"], False),
+    ("fabric", "governed data and document routes", ["fabric_q_disengaged_regions: Fabric IQ tool called",
+                                                      "lab1_prediabetes_eat: knowledge base searched",
+                                                      "lab1_prediabetes_eat: no Fabric call"], False),
 ]
 
 
@@ -105,8 +114,6 @@ def signal_rows(runs: dict[str, dict], fabric: bool) -> list[tuple[str, str, str
         checks = runs[lab]["checks"]
         if fabric_only and not fabric:
             rows.append((lab, label, "SKIP (FABRIC_BRIDGE off)"))
-        elif lab == "lab4" and not any(k.startswith("hosted:") for k in checks):
-            rows.append((lab, label, "SKIP (hosted agent not deployed)"))
         elif all(checks.get(k) for k in needed):
             rows.append((lab, label, "PASS"))
         else:
@@ -145,7 +152,7 @@ def report(runs: dict[str, dict], signals: list, left: list[str], initials: str,
 
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
-    ap.add_argument("--labs", default="1,2,3,4", help="comma-separated lab numbers (default 1,2,3,4)")
+    ap.add_argument("--labs", default="0,1,2,3,4", help="comma-separated lab numbers; add fabric only when enabled")
     ap.add_argument("--initials", default="test", help="INITIALS for the run (default test)")
     ap.add_argument("--fabric", action="store_true", help="include the Fabric steps (default: FABRIC_BRIDGE)")
     ap.add_argument("--report", help="also write the markdown report here (default: content/assets/.runs/)")

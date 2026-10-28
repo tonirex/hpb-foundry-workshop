@@ -1,7 +1,7 @@
 """Portal scenes shared by demos/capture-screenshots.py and demos/record-demos.py.
 
 A scene walks one part of the 🟢 Navigator portal track on a facilitator demo agent (livewell-demo-*,
-livewell-workshop-hosted). In "shots" mode it saves the numbered screenshots of the canonical lab pages, Fabric step and Bridge spotlight; in
+livewell-workshop-hosted). In "shots" mode it saves the numbered screenshots of the canonical lab pages and Fabric step; in
 "video" mode it shows captions and types slowly. Scenes never save an agent: menus and dialogs are opened,
 captured and cancelled, and the Lab 0 model switch is discarded by reloading the page.
 """
@@ -26,7 +26,7 @@ SIGNUP_YES = P.lw.prompt_text("lab3_signup_confirm")
 FIT = json.loads((ROOT / "content" / "fabric" / "reference-answers.json").read_text(encoding="utf-8"))["q_programme_fit"]
 PROGRAMME_YES = P.lw.prompt_text("lab3_programme_confirm")
 
-SLOT_ID = r"(?:lab-0\d|bridge)/\d\d[a-z]?"
+SLOT_ID = r"lab-0\d/\d\d[a-z]?"
 SLOT_RE = re.compile(rf"^(?P<indent>\s*)> 📸 \*\*Screenshot slot\*\* · `(?P<path>screenshots/(?P<id>{SLOT_ID})-[^`]+\.png)`"
                      r" · (?P<caption>.+?)\s*$")
 IMAGE_RE = re.compile(rf"^(?P<indent>\s*)!\[(?P<caption>[^\]]*)\]\((?P<path>screenshots/(?P<id>{SLOT_ID})-[^)]+\.png)\)\s*$")
@@ -70,7 +70,7 @@ class Slot:
 
 def slot_pages() -> list[pathlib.Path]:
     """Canonical pages only; legacy portal pages contain compatibility links."""
-    return [LABS / f"lab-0{n}.md" for n in range(5)] + [LABS / "fabric-step.md", LABS / "bridge-spotlight.md"]
+    return [LABS / f"lab-0{n}.md" for n in range(5)] + [LABS / "fabric-step.md"]
 
 
 def historical_paths() -> set[str]:
@@ -758,51 +758,6 @@ def hosted(run: Run) -> None:
         run.shot("lab-04/09")
 
 
-def fabric_steps():
-    """demos/fabric-steps.py as a module (the file name has a hyphen)."""
-    spec = importlib.util.spec_from_file_location("fabric_steps", ROOT / "demos" / "fabric-steps.py")
-    mod = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(mod)
-    return mod
-
-
-def bridge(run: Run) -> None:
-    """Bridge spotlight step 5: Mei's multi-hop question, its Foundry trace, then the data agent's own steps."""
-    run.goto("agent:livewell-demo-fabric", settle=5)
-    run.say("Bridge spotlight · Two IQs, one agent")
-    run.chat("bridge_q_dropped_attended_heldin", timeout=480)
-    run.say("Mei: residents who dropped a programme, by the region where their events were held")
-    run.shot("bridge/01")
-    with run.soft("bridge trace", "bridge/02"):
-        if run.trace(span=r"resident360|dataagent|fabric|mcp"):
-            P.trace_find(run.page, r"userQuestion")
-            run.say("The Foundry trace: one Fabric IQ call, an aggregate question in, an answer out")
-            run.shot("bridge/02")
-    run.escape()
-    if not run.wants("bridge/03", "bridge/04", "bridge/05"):
-        return
-    with run.soft("bridge visualiser", "bridge/03", "bridge/04", "bridge/05"):
-        try:
-            page = fabric_steps().replay_page("bridge")
-        except SystemExit as e:  # no saved run yet: skip these slots, not the whole capture
-            raise RuntimeError(f"{e}; run: python demos/fabric-steps.py bridge --save-sample") from None
-        run.log(f"  [page] {page.relative_to(ROOT)}")
-        run.page.goto(page.resolve().as_uri(), wait_until="load")
-        time.sleep(1.5)
-        run.say("Inside the data agent: the steps the Foundry trace does not show (demos/fabric-steps.py)", 4)
-        run.shot("bridge/03")
-        for sid, section, text in [
-            ("bridge/04", "queries", "Each query: the rewrite, the GQL it generated, the rows it read"),
-            ("bridge/05", "check", "Checked against the reference answer: 248 residents, Central first"),
-        ]:
-            run.page.evaluate("id => document.getElementById(id).scrollIntoView({block: 'start'})", section)
-            time.sleep(1)
-            run.say(text, 4)
-            run.shot(sid)
-        run.page.evaluate("document.getElementById('answer').scrollIntoView({block: 'start'})")
-        run.say("The answer the coach receives: aggregate only, event region kept apart from home region", 4)
-
-
 def lw_prompt_text(pid: str) -> str:
     """The prompt with its attachments inlined (the flyer), as the Builder scripts send it."""
     return P.lw.prompt_text(pid)
@@ -820,15 +775,13 @@ SCENES = {
     "tools-chat": (tools_chat, [f"lab-03/{n:02d}" for n in range(10, 16)]),
     "fabric": (fabric, [f"lab-03/{n:02d}" for n in range(16, 25)]),
     "hosted": (hosted, ["lab-04/02", "lab-04/03", "lab-04/04", "lab-04/05", "lab-04/06", "lab-04/09"]),
-    "bridge": (bridge, [f"bridge/{n:02d}" for n in range(1, 6)]),
 }
 
-# One Navigator-rail demo video per lab, plus the Bridge spotlight.
+# One Navigator-rail demo video per lab.
 VIDEOS = {
     "lab-00": ["tour", "lab0"],
     "lab-01": ["kb-config", "kb-chat"],
     "lab-02": ["kb-redflags", "guarded", "evals"],
     "lab-03": ["tools-config", "tools-chat", "fabric"],
     "lab-04": ["hosted"],
-    "bridge": ["bridge"],
 }

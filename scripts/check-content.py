@@ -55,8 +55,8 @@ LAB_SECTIONS = [
     "Troubleshooting",
     "Where next",
 ]
-LAB_PAGES = ["lab-00", "lab-01", "lab-02", "lab-03", "lab-04", "fabric-step", "bridge-spotlight"]
-COACH_BLOCKS = ["base", "knowledge", "intake", "safety", "tools", "fabric", "nutrition", "activity", "insights", "handoff", "merge"]
+LAB_PAGES = ["lab-00", "lab-01", "lab-02", "lab-03", "lab-04", "fabric-step"]
+COACH_BLOCKS = ["base", "knowledge", "intake", "safety", "tools", "fabric_read", "fabric", "nutrition", "activity", "insights", "handoff", "merge"]
 
 
 class Report:
@@ -357,8 +357,12 @@ def check_patterns(r: Report, cfg: dict) -> None:
     mapped = set()
     for lab in cfg.get("labs", []):
         mapped.update(lab.get("patterns", []))
-    if mapped != set(range(1, 11)):
-        problems.append(f"workshop.yaml labs[].patterns cover {sorted(mapped)}, expected 1..10")
+    reference_only = set(cfg.get("workshop", {}).get("reference_only_patterns", []))
+    if mapped & reference_only or mapped | reference_only != set(range(1, 11)):
+        problems.append("workshop.yaml must classify patterns 1..10 as exercised or reference-only, without overlap")
+    for number, _, lab in rows:
+        if int(number) in reference_only and lab.strip().lower() != "reference only":
+            problems.append(f"README pattern #{number} must be labelled Reference only, not a participant exercise")
     for lab in cfg.get("labs", []):
         page = ROOT / "content" / "labs" / f"{lab['id']}.md"
         if page.exists() and lab.get("patterns"):
@@ -366,7 +370,7 @@ def check_patterns(r: Report, cfg: dict) -> None:
             for n in lab["patterns"]:
                 if not re.search(rf"#{n}\b", text):
                     problems.append(f"{lab['id']}: pattern #{n} (from workshop.yaml) not mentioned on the page")
-    r.check("ten agentic patterns each mapped (README, workshop.yaml, lab pages)", problems)
+    r.check("agentic pattern coverage distinguishes exercises from reference-only concepts", problems)
 
 
 def check_prompts(r: Report, prompts: dict, contracts: set[str]) -> None:
@@ -374,7 +378,8 @@ def check_prompts(r: Report, prompts: dict, contracts: set[str]) -> None:
     ids = set(prompts)
     used = set()
     scan = [ROOT / "README.md", ROOT / "foundry-workshop-plan.md", ROOT / "content" / "narrative" / "rahim.md",
-            ROOT / "content" / "fabric" / "question-bank.md"]
+            ROOT / "content" / "fabric" / "question-bank.md",
+            ROOT / "content" / "admin" / "FACILITATOR-DEMOS.md"]
     scan += sorted((ROOT / "content" / "labs").glob("*.md"))
     for f in scan:
         text = f.read_text(encoding="utf-8")
@@ -481,7 +486,7 @@ def check_narrative(r: Report, prompts: dict) -> None:
         problems.append(f"question-bank.md has {len(cohort_q)} cohort questions (max 1)")
     if len(fabric_questions) > 3:
         problems.append(f"narrative uses {len(fabric_questions)} Mei questions (max 3)")
-    for ch in range(6):
+    for ch in range(5):
         if f"ch{ch}" not in chapters:
             problems.append(f"chapter {ch} has no beats")
     for m in re.finditer(r"RESIDENT_\d{5}", body):

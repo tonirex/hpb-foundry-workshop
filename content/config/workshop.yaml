@@ -28,6 +28,7 @@ workshop:
 
   rails: [navigator, builder]
   default_rail: navigator
+  reference_only_patterns: [1]      # the intake exercise is not part of this participant delivery
   devui_access:
     link_lifetime_hours: 10         # starts when the facilitator renders the private values sheet; maximum 12
   agent_naming:
@@ -257,13 +258,13 @@ labs:
   - id: lab-00
     title: "Setup & first agent"
     minutes: 15
-    rails: [navigator]
+    rails: [navigator, builder]
     patterns: [10]
   - id: lab-01
     title: "Agents & Knowledge — Foundry IQ"
     minutes: 35
     rails: [navigator, builder]
-    patterns: [1, 4]
+    patterns: [4]
   - id: lab-02
     title: "Guardrails, Evaluations & Tracing"
     minutes: 30
@@ -277,11 +278,7 @@ labs:
     optional_step: fabric-step
   - id: lab-04
     title: "Multi-agent & Hosted deploy"
-    minutes: 30
+    minutes: 25
     rails: [navigator, builder]
     facilitator_deploy_only: true
     patterns: [3, 9, 10]
-  - id: bridge-spotlight
-    title: "Two IQs, one agent"
-    minutes: 8
-    facilitator_only: true

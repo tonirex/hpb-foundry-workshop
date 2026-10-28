@@ -1330,3 +1330,27 @@ says so. The linear procedure is [HPB-DELIVERY-RUNBOOK.md](content/admin/HPB-DEL
   reopening remain explicit. No secret, launch link or local-only participant-review report is published.
 - **13.4** This publication performs offline integration checks only. It authorizes no new deployment,
   tenant/RBAC change, capacity action, model call, evaluation or full live lab sanity check.
+
+## Phase 14: concise independent participant tracks
+
+- **14.1 (user-directed, 2026-10-29)** Removed the optional intake exercise and separate closing spotlight
+  from active participant content, navigation, scheduling, slide generation and capture registries. Pattern #1
+  remains reference-only. Historical reports and reusable synthetic-data/graph fixtures are retained, not rewritten
+  to pretend the earlier workshops did not include them.
+- **14.2** Every participant page starts with track/stuck-help guidance, has inline Navigator screenshots,
+  and keeps Expected output and Troubleshooting collapsed. Operator-only demonstrations and setup explanations
+  are in `content/admin/FACILITATOR-DEMOS.md`. Track switching is discouraged; no Builder section depends on
+  completing a Navigator section.
+- **14.3** Added `lab0_setup.py` for a tool-free first Builder agent and `lab3_fabric.py` for the short read-only
+  source comparison. The latter uses a separate own-prefix agent, has no write/profile tools and does not rerun
+  Lab 3. Legacy programme-fit execution now requires explicit `--fabric` plus the configured flag; Lab 4's hosted
+  endpoint check is also opt-in. The default Lab 4 path still creates no Foundry agents or deployments.
+- **14.4** The user explicitly deferred live Fabric screenshots at the sign-in prerequisite. The existing F2 was
+  verified Paused by a subscription-scoped read. It was not resumed; no Fabric query or fabricated result capture
+  was used to close that gap. The guide identifies its computed reference separately from live evidence.
+- **14.5** Fresh-browser DevUI checks completed the week-plan and activity-only comparisons for both workflows.
+  The first sequential week-plan run failed on a 90-second knowledge-retrieval timeout; exactly one fresh-session
+  recovery completed. Actual function-call events proved two hand-offs for the week plan and Activity only for
+  the narrow request. A post-completion screenshot selector needed the Tools count badge; the successful
+  hand-off was not rerun for that automation issue. Five model-backed workflow submissions, no evaluations,
+  red teaming, deployment, identity/RBAC or capacity changes. Detailed provenance is in FACILITATOR-DEMOS.md.

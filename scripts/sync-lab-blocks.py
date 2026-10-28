@@ -30,8 +30,7 @@ REQUIRED = {
     "lab-01": {
         ("instructions", "knowledge"), ("schema", "lab1-answer"),
         ("prompt", "lab1_prediabetes_eat"), ("prompt", "lab1_supplement"),
-        ("prompt", "lab1_activity_guideline"), ("prompt", "lab1_intake"),
-        ("instructions", "base,intake"), ("schema", "lab1-intake"),
+        ("prompt", "lab1_activity_guideline"),
     },
     "lab-02": {("instructions", "safety")} | {
         ("prompt", pid) for pid in (
@@ -45,16 +44,14 @@ REQUIRED = {
             "lab3_memory_set", "lab3_memory_recall", "lab3_specialists", "lab3_activity_specialist_followup",
         )
     },
-    "fabric-step": {("instructions", "fabric")} | {
+    "fabric-step": {("instructions", "fabric_read")} | {
         ("prompt", pid) for pid in (
-            "lab3_programme_fit", "lab3_programme_confirm", "fabric_q_disengaged_regions", "lab1_prediabetes_eat",
+            "fabric_q_disengaged_regions", "lab1_prediabetes_eat",
         )
     },
     "lab-04": {
         ("request", "lab4_week_plan_handoff"), ("request", "lab4_activity_only"),
-        ("prompt", "lab4_q_programmes_disengaged"), ("prompt", "lab1_prediabetes_eat"),
     },
-    "bridge-spotlight": {("prompt", "bridge_q_dropped_attended_heldin")},
 }
 SCHEMAS = {"lab1-answer", "lab1-intake", "lab3-evidence"}
 

@@ -84,21 +84,19 @@ class CopyBlocksTests(unittest.TestCase):
                     with self.assertRaises(ValueError):
                         blocks.payload("schema", "lab1-answer")
 
-    def test_intake_is_not_the_coach_contract(self):
+    def test_retained_intake_contract_is_not_required_by_the_lab(self):
         _, body = blocks.payload("schema", "lab1-intake")
         self.assertEqual(set(json.loads(body)["schema"]["required"]),
                          {"screening", "activity", "preferences", "follow_up_flags"})
         self.assertNotEqual(blocks.lw.intake_schema(), blocks.lw.lab1_schema())
         page = (ROOT / "content" / "labs" / "lab-01.md").read_text(encoding="utf-8")
-        self.assertIn("livewell-<initials>-intake", page)
-        self.assertIn("Do not replace your coach's schema", page)
+        self.assertNotIn("livewell-<initials>-intake", page)
+        self.assertNotIn(("schema", "lab1-intake"), blocks.REQUIRED["lab-01"])
 
-    def test_intake_message_includes_both_whole_documents(self):
-        _, body = blocks.payload("prompt", "lab1_intake")
-        prompt = blocks.lw.prompt("lab1_intake")
-        self.assertTrue(body.startswith(prompt["text"]))
-        for ref in prompt["attachments_ref"]:
-            self.assertIn(blocks.lw.attachment_text(ref), body)
+    def test_removed_intake_prompt_is_not_regenerated(self):
+        self.assertNotIn(("prompt", "lab1_intake"), blocks.REQUIRED["lab-01"])
+        with self.assertRaises(KeyError):
+            blocks.payload("prompt", "lab1_intake")
 
     def test_flyer_retains_exact_tested_framing(self):
         _, body = blocks.payload("prompt", "lab2_injected_flyer")
@@ -251,20 +249,22 @@ class LinkAndJourneyTests(unittest.TestCase):
         self.assertEqual(content.SPEC_BLOCK_PAGES, {"content/labs/lab-03.md"})
         self.assertEqual(api.PAGES, [ROOT / "content" / "labs" / "lab-03.md"])
 
-    def test_rail_switching_requires_the_target_configuration(self):
+    def test_tracks_are_independent_and_midway_switching_is_discouraged(self):
         readme = (ROOT / "README.md").read_text(encoding="utf-8")
-        self.assertIn("Switching rails", readme)
+        self.assertIn("Stay on one track", readme)
+        self.assertIn("Do not switch midway", readme)
         self.assertIn("function tools need the", readme)
         self.assertIn("Python client", readme)
         for stem in ("lab-01", "lab-02", "lab-03"):
-            self.assertIn("../../README.md#switching-rails",
-                          (ROOT / "content" / "labs" / f"{stem}.md").read_text(encoding="utf-8"))
+            text = (ROOT / "content" / "labs" / f"{stem}.md").read_text(encoding="utf-8")
+            self.assertNotIn("../../README.md#switching-rails", text)
+            self.assertRegex(text, r"(?i)do not switch midway")
 
     def test_navigator_reuses_the_prepared_knowledge_connection(self):
         page = (ROOT / "content" / "labs" / "lab-01.md").read_text(encoding="utf-8")
         self.assertIn("Available knowledge bases", page)
         self.assertIn("livewell-guides-kb-mcp", page)
-        self.assertIn("not the default attendee route", page)
+        self.assertIn("do not create a connection", page.lower())
 
     def test_rail_picker_is_at_the_top_of_every_guide(self):
         for stem in blocks.REQUIRED:

@@ -12,7 +12,7 @@ and that every lab meets its stated objective on both rails: 🟢 Navigator (por
 
 | Source | What it gave us |
 |---|---|
-| Lab pages | [Lab 0](../content/labs/lab-00.md) to [Lab 4](../content/labs/lab-04.md), the `lab-0N-portal.md` walkthroughs, the [Fabric step](../content/labs/fabric-step.md), the [Bridge spotlight](../content/labs/bridge-spotlight.md) and [PORTAL-TRACK](../content/labs/PORTAL-TRACK.md) |
+| Lab pages | [Lab 0](../content/labs/lab-00.md) to [Lab 4](../content/labs/lab-04.md), the `lab-0N-portal.md` walkthroughs, the [Fabric step](../content/labs/fabric-step.md), the then-existing Bridge spotlight (retired 2026-10-29) and [PORTAL-TRACK](../content/labs/PORTAL-TRACK.md) |
 | Sources of truth | [workshop.yaml](../content/config/workshop.yaml), [coach-instructions.md](../content/prompts/coach-instructions.md), [test-prompts.json](../content/prompts/test-prompts.json), `content/answer-keys/`, [ASSUMPTIONS.md](../ASSUMPTIONS.md) |
 | Run of show | [foundry-workshop-plan.md](../foundry-workshop-plan.md) |
 | Builder evidence | Casts re-recorded on 2026-10-03 in `demos/evidence/2026-10-03/`; all exit 0 |

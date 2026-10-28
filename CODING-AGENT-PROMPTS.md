@@ -1,5 +1,5 @@
 LiveWell Foundry Workshop — prompts for the coding agent
-Current target: tonirex/hpb-foundry-workshop. The historical phase prompts below predate SPEC.md v1.2; follow the current SPEC when they disagree. Navigator now lives in each canonical lab page, old portal pages are compatibility links, and the optional citizen Fabric exercise is aggregate age-band-only. Do not recreate duplicate walkthroughs.
+Current target: tonirex/hpb-foundry-workshop. The phase prompts below are historical; SPEC.md A.14 takes precedence. Current participants choose one independent track, use inline Navigator screenshots and collapsed checkpoints/troubleshooting, and run no evaluations. Do not restore the retired intake exercise or closing spotlight. Operator demonstrations belong in content/admin/FACILITATOR-DEMOS.md.
 Use with SPEC.md (= LiveWell-Foundry-Workshop-SCOUT-BRIEF.md v1.1). Commit both at the root of tonirex/livewell-foundry-workshop. Send Prompt A once at the start of every session (or put it in AGENTS.md / the agent's custom instructions), then one Prompt B per phase. After each phase: review the PR → merge → send the next Prompt B. Never send two phases at once.
 
 Before Prompt 1: fill the placeholders in SPEC.md §16 — at minimum <PINNED_SHA> (the stellistic/resident-360-data-workshop commit to vendor) and the MCAPS subscription/tenant IDs — and create the empty private repo with SPEC.md, CODING-AGENT-PROMPTS.md, LICENSE (MIT) and .gitignore committed.
@@ -50,7 +50,7 @@ Do Phase 1 only (SPEC.md §15, row "1 Spec & content"), then stop and report.
 Deliver on branch phase-1-content:
 - foundry-workshop-plan.md: facilitator run-of-show mapped minute-by-minute to the agenda in SPEC.md §4,
   with a checkpoint-to-move-on gate per block and the backup plans from §12.1; demo prompts by prompt_id.
-- README.md: one-line pitch; "Start here" Labs table (Lab 0–4, Fabric step, bridge spotlight) first; rail
+- README.md: one-line pitch; "Start here" Labs table (Lab 0–4 and the optional Fabric step) first; rail
   picker; the ten-patterns table from SPEC.md §3.4; everything else collapsed in <details>; logistics
   (personal laptops, guest Wi-Fi, Authenticator).
 - content/config/workshop.yaml (names from SPEC.md §8.3 and §16 placeholders) and content/config/glossary.yaml.
@@ -71,7 +71,7 @@ Deliver on branch phase-1-content:
 - content/prompts/test-prompts.json: single source of truth for every canned and red-flag prompt with
   prompt_id, seat, expected route/flags/tool.
 - content/answer-keys/lab-00.json … lab-04.json (server-side validators referencing prompt_ids).
-- content/labs/lab-00.md … lab-04.md, fabric-step.md, bridge-spotlight.md, PORTAL-TRACK.md and
+- content/labs/lab-00.md … lab-04.md, fabric-step.md, PORTAL-TRACK.md and
   lab-0N-portal.md with screenshot slots. Each lab page: shared objective (verbatim from SPEC.md §5.1),
   Foundry features, story chapter, Navigator section, Builder section (script command first, "or run the
   same file cell by cell" second), checkpoint, troubleshooting, "Where next" footer.

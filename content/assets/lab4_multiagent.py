@@ -12,10 +12,10 @@
 # * A HAND-OFF workflow: the Coach triages, hands off to Nutrition, and Nutrition hands off to Activity.
 # * Optional facilitator-only Programme-Insights: creates a Foundry agent with the Fabric IQ tool
 #   only with both `--fabric` and FABRIC_BRIDGE=true. The default run creates no Foundry agents.
-# * A smoke test of the facilitator's hosted agent, `livewell-workshop-hosted`, once it is deployed.
+# * Optional operator endpoint proof with --hosted; no hosted call in the participant default.
 #
 # Run it all:  `python content/assets/lab4_multiagent.py` (INITIALS and endpoint from content/assets/.env)
-# Flags:       `--fabric`, `--no-handoff`, `--verbose` (each agent's full answer), `--cleanup`.
+# Flags:       `--no-handoff`, `--verbose`, `--cleanup`; operator extensions: `--fabric`, `--hosted`.
 #
 # Lines marked `# 👉` are the ones to retype during the lab.
 
@@ -40,6 +40,7 @@ def _flags(p):
     p.add_argument("--fabric", action="store_true",
                    help="facilitator only: create/run Programme-Insights (needs FABRIC_BRIDGE=true and active Fabric)")
     p.add_argument("--no-handoff", action="store_true", help="skip the hand-off workflow")
+    p.add_argument("--hosted", action="store_true", help="optional operator check of the existing hosted endpoint")
 
 
 args = lw.lab_args("Lab 4 - multi-agent and hosted deploy", _flags)
@@ -252,7 +253,7 @@ else:
     lw.say("Programme-Insights skipped (facilitator-only --fabric; core Lab 4 needs no Fabric)")
 
 # %% [markdown]
-# ## 7. The hosted agent (facilitator deploys, everyone smoke-tests)
+# ## 7. Optional operator check of the existing hosted agent (--hosted)
 #
 # `content/assets/hosted-agent-example/` packages this sequential team as a hosted agent. Publishing needs Foundry
 # Project Manager, so the facilitator deploys `livewell-workshop-hosted`. Its `rai_config` points at the same
@@ -260,21 +261,25 @@ else:
 # agent answers on its own endpoint (`.../agents/<name>/endpoint/protocols/openai`); `lw.ask` picks it for you.
 
 # %%
-lw.say(f"rai_config for the hosted agent: {{'rai_policy_name': '{lw.rai_policy_id(GUARDRAIL)}'}}")
 hosted_result: dict = {}
-hosted = lw.agent_by_name(HOSTED)
-if hosted is None:
-    lw.say(f"{HOSTED} is not deployed yet: watch the facilitator's demo, then re-run this cell")
+hosted, smoke = None, None
+if args.hosted:
+    lw.say(f"rai_config for the hosted agent: {{'rai_policy_name': '{lw.rai_policy_id(GUARDRAIL)}'}}")
+    hosted = lw.agent_by_name(HOSTED)
+    if hosted is None:
+        lw.say(f"{HOSTED} is unavailable; the optional hosted check cannot run.")
+        lw.expect("hosted: existing agent available", False, HOSTED)
+    else:
+        policy = lw.rai_policy_of(hosted)
+        lw.say(f"{HOSTED} version {hosted.version} ({hosted.definition.kind}), guardrail: {policy or '(deployment default)'}")
+        lw.expect("hosted: the same guardrail is attached", policy == GUARDRAIL, policy)
+        try:
+            smoke = lw.ask(HOSTED, prompt_id="lab4_week_plan_handoff", consent=False)  # 👉
+        except openai.APIStatusError as e:
+            lw.say(f"the hosted endpoint did not answer ({lw._trunc(str(e), 200)}): see the hosted agent README > Troubleshooting")
+            lw.expect("hosted: the endpoint answered", False, e.status_code)
 else:
-    policy = lw.rai_policy_of(hosted)
-    lw.say(f"{HOSTED} version {hosted.version} ({hosted.definition.kind}), guardrail: {policy or '(deployment default)'}")
-    lw.expect("hosted: the same guardrail is attached", policy == GUARDRAIL, policy)
-    try:
-        smoke = lw.ask(HOSTED, prompt_id="lab4_week_plan_handoff", consent=False)  # 👉
-    except openai.APIStatusError as e:  # still failing after the retries, e.g. 424 session_not_ready
-        smoke = None
-        lw.say(f"the hosted endpoint did not answer ({lw._trunc(str(e), 200)}): see the hosted agent README > Troubleshooting")
-        lw.expect("hosted: the endpoint answered", False, e.status_code)
+    lw.say("Hosted endpoint check skipped; core Lab 4 compares the two Agent Framework workflows.")
 if hosted is not None and smoke is not None:
     lw.show_run(smoke, verbose=args.verbose)
     try:

@@ -21,7 +21,7 @@ fifth step: **Coach & Act** — the agent that *talks to* him.
   drifting, rarely logs meals, skips outdoor events on hazy days, dropped a programme, and his last
   screening showed elevated glucose. He asks citizen questions only. When he asks which programme to try
   next, the coach asks Fabric one aggregate question about his age band for him, never about him.
-- **Mei Lin**, HPB programme officer (fictional) — `seat: officer`. She asks three programme-level questions,
+- **Mei Lin**, HPB programme officer (fictional) — `seat: officer`. She asks two programme-level questions,
   and every one of them goes to Fabric.
 
 ---
@@ -46,11 +46,6 @@ practical hawker swaps, and cites the pre-diabetes eating guide. Its reply is ma
 **[ch1.2 · seat: citizen · source: kb · prompt: lab1_supplement]** He asks which supplement to take. The
 guides are silent, so the coach says so, cites nothing, and routes him to his doctor or pharmacist —
 refusal on absence, not invention.
-
-**[ch1.3 · seat: citizen · source: kb · prompt: lab1_intake]** He pastes his screening summary and a week of
-his activity diary in the optional separate intake agent. It combines two documents into one record without
-changing the main coach's answer schema: glucose in the
-pre-diabetes range, risk band High, a sedentary week with hazy days at home, a preference for mornings.
 
 ## Chapter 2 — A flyer with a hidden message (Lab 2 · Guardrails, Evaluations & Tracing)
 
@@ -123,16 +118,6 @@ disengaged residents enrolled. Skip this beat when Fabric is paused. It answers 
 Fabric: <!--ref:q_programmes_disengaged_enrolled.top_programme-->Healthier SG<!--/ref--> has the most
 (<!--ref:q_programmes_disengaged_enrolled.top_disengaged_enrolled-->82<!--/ref-->). The coach drafts a one-line brief for that
 programme team. Same agent, two doors: the portal for people, the endpoint for systems.
-
-## Chapter 5 — Two IQs, one agent (Bridge spotlight)
-
-**[ch5.1 · seat: officer · source: fabric · prompt: bridge_q_dropped_attended_heldin]** To close, Mei asks the
-multi-hop question the cohort first met in their Fabric workshop: among residents who dropped a programme,
-how many still attended an event, by the region where the event was held? Ontology context explains the
-relationships and the distinction between home and event region. The current runtime queries the underlying source;
-<!--ref:q_dropped_attended_heldin.distinct_residents-->248<!--/ref--> residents qualify, with
-<!--ref:q_dropped_attended_heldin.top_region-->Central<!--/ref--> hosting the most. The coach suggests "come-back" booths at the
-busiest event regions.
 
 **The extended arc.** Unify → Govern → Personalise → Converse → **Coach & Act**. Foundry IQ grounds the coach in
 documents; Fabric IQ grounds it in governed business data. Mei uses Fabric to plan for whole regions; Rahim gets

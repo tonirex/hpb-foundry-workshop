@@ -110,13 +110,13 @@ class ApprovalTests(unittest.TestCase):
 class ParticipantContentTests(unittest.TestCase):
     def test_required_reading_is_bounded_and_details_default_closed(self):
         labs = ROOT / "content" / "labs"
-        for name in ("lab-00", "lab-01", "lab-02", "lab-03", "fabric-step", "bridge-spotlight"):
+        for name in ("lab-00", "lab-01", "lab-02", "lab-03", "lab-04", "fabric-step"):
             with self.subTest(lab=name):
                 text = (labs / f"{name}.md").read_text(encoding="utf-8")
                 self.assertLessEqual(len(visible_text(text).split()), 1100)
                 self.assertNotRegex(text, r"<details\b[^>]*\bopen\b")
 
-    def test_intake_has_an_isolated_generated_schema_and_return_path(self):
+    def test_retained_intake_schema_is_not_a_participant_exercise(self):
         spec = importlib.util.spec_from_file_location("schemas_for_learning_test", ROOT / "scripts" / "gen-schemas.py")
         module = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(module)
@@ -126,9 +126,10 @@ class ParticipantContentTests(unittest.TestCase):
         self.assertIn("screening", actual["schema"]["properties"])
         self.assertNotIn("answer", actual["schema"]["properties"])
         text = (ROOT / "content" / "labs" / "lab-01.md").read_text(encoding="utf-8")
-        self.assertIn("Do not replace your coach's schema", text)
-        self.assertIn("livewell-<initials>-intake", text)
-        self.assertIn("Return to **`livewell-<initials>`** for Lab 2", text)
+        self.assertNotIn("intake", text.lower())
+        script = (ROOT / "content" / "assets" / "lab1_knowledge.py").read_text(encoding="utf-8")
+        self.assertNotIn("--intake", script)
+        self.assertNotIn('create_agent(\n        "intake"', script)
 
     def test_openapi_generated_blocks_remain_intact(self):
         path = ROOT / "content" / "labs" / "lab-03.md"

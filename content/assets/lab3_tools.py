@@ -31,11 +31,14 @@ from common import livewell_common as lw  # noqa: E402
 
 
 def _flags(p):
-    p.add_argument("--fabric", action="store_true", help="run the Fabric step (needs FABRIC_BRIDGE=true)")
+    p.add_argument("--fabric", action="store_true",
+                   help="facilitator programme-fit extension (needs FABRIC_BRIDGE=true); participants use lab3_fabric.py")
     p.add_argument("--no-memory", action="store_true", help="skip memory (preview)")
 
 
 args = lw.lab_args("Lab 3 - tools, MCP and memory", _flags)
+if args.fabric and not lw.fabric_enabled():
+    raise SystemExit("--fabric requires FABRIC_BRIDGE=true; omit it for the core Lab 3 exercise.")
 GUARDRAIL = lw.NAMES["rai_policy"]
 lw.heading(f"Lab 3 for {lw.agent_name('coach')}")
 
@@ -287,7 +290,7 @@ lw.record("lab3_specialists", plans)
 
 # %%
 fabric_result: dict = {}
-if lw.fabric_enabled(args.fabric):
+if args.fabric:
     fabric_coach = lw.create_agent(
         "coach", lw.load_instructions(*blocks, "fabric"),  # 👉
         tools=tools + [lw.fabric_tool()],  # 👉

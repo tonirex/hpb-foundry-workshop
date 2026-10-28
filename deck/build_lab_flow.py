@@ -75,7 +75,7 @@ LABS = [
         "kind": "lab",
         "when": "Morning · Micro-lab",
         "level": "L100",
-        "rails": "Navigator",
+        "rails": "Navigator + Builder",
         "gain": "Configure intended behaviour\ninspect one execution",
         "story_prompts": [("Rahim", "lab0_am_i_diabetic")],
         "story_note": "The coach must answer kindly without diagnosing.",
@@ -171,11 +171,11 @@ LABS = [
         "level": "L200 · preview",
         "rails": "Navigator + Builder",
         "gain": "Fabric IQ\ngoverned population evidence",
-        "story_prompts": [("Rahim", "lab3_programme_fit"), ("Mei Lin", "fabric_q_disengaged_regions")],
+        "story_prompts": [("Mei Lin", "fabric_q_disengaged_regions")],
         "story_note": "",
         "steps": [
             "Only when ready: attach **Configured → livewell-fabric-resident360**. Skip if paused.",
-            "Append the `fabric` instruction block.",
+            "Append the `fabric_read` instruction block; Builder uses `lab3_fabric.py`.",
             "Inspect the outgoing aggregate question and returned evidence; no personal record goes to Fabric.",
             "As Mei, send `fabric_q_disengaged_regions`: the trace shows the Fabric IQ call.",
             "As Rahim, send `lab1_prediabetes_eat`: answered from the guides, with no Fabric call.",
@@ -188,7 +188,7 @@ LABS = [
         "short": "Lab 4",
         "title": "Multi-agent & Hosted deploy",
         "kind": "lab",
-        "when": "1:15 comparison · 5:15 hosted proof",
+        "when": "1:15 · workflow comparison",
         "level": "L200 · optional code L300",
         "rails": "Shared browser · optional Builder",
         "gain": "Choose a pattern\nexplain the execution evidence",
@@ -200,36 +200,14 @@ LABS = [
             "**Sequential** ends with Coach-merged JSON; **hand-off** ends with Activity's answer.",
             "Inspect **Output** and **Tools**: hand-off calls, not graph edges, prove control transferred.",
             "Try `lab4_activity_only`: hand-off should skip Nutrition. Compare routes, not promised speed.",
-            "At 5:15 inspect the already-hosted sequential team. Fabric is an optional separate extension.",
+            "Builder runs `lab4_multiagent.py`; the hosted-agent tutorial is optional further learning.",
         ],
-        "shot": ("lab-04/11-devui-handoff-annotated.png", (0.0, 0.0, 1.0, 1.0)),
-        "caption": "Graph ≠ execution. Read outputs and hand-off calls; two calls plus two results make four Tools entries.",
-    },
-    {
-        "id": "bridge-spotlight",
-        "short": "Bridge",
-        "title": "Two IQs, one agent",
-        "kind": "led",
-        "when": "Close · spotlight",
-        "level": "L200",
-        "rails": "Facilitator-led",
-        "gain": "Foundry IQ vs Fabric IQ\nchoose the grounding path",
-        "story_prompts": [("Mei Lin", "bridge_q_dropped_attended_heldin")],
-        "story_note": "",
-        "steps": [
-            "Start from the Fabric estate: `resident_360`, semantic model, `resident_ontology`, data agents.",
-            "Bridge it to Foundry: Foundry IQ for guides, Fabric IQ for programme questions.",
-            "Explain our source choices, not exclusive product capabilities.",
-            "Ontology context guides source-native SQL, KQL or DAX; the source executes it.",
-            "Use captured evidence; legacy GQL replay is historical, not current runtime proof.",
-            "Close on Unify → Govern → Personalise → Converse → Coach & Act.",
-        ],
-        "shot": ("bridge/01-mei-multi-hop-answer.png", (0.505, 0.205, 0.995, 0.66)),
-        "caption": "Mei's multi-hop question: Resident → attended → EventOccurrence → heldIn → Region.",
+        "shot": ("lab-04/16-handoff-activity-current.png", (0.0, 0.0, 1.0, 1.0)),
+        "caption": "Activity-only request: one actual hand-off call plus its result. Green nodes alone are not invocation proof.",
     },
 ]
 
-LAB_PATTERNS_EXTRA = {"fabric-step": [2, 3, 6, 8, 9], "bridge-spotlight": []}
+LAB_PATTERNS_EXTRA = {"fabric-step": [2]}
 FABRIC_FOCUS = "Use governed cohort evidence when guidance alone cannot answer a question, and inspect exactly what information the coach sends to Fabric"
 KIND_FILL = {"lab": (NAVY, WHITE), "optional": (TEAL, WHITE), "led": (MID, NAVY)}
 
@@ -257,7 +235,7 @@ def load_content(root: Path) -> tuple[dict, dict, dict]:
         for _, pid in lab["story_prompts"]:
             assert pid in prompts, f"unknown prompt id {pid}"
         for step in lab["steps"]:
-            for pid in re.findall(r"`((?:lab\d|fabric|bridge)_[a-z0-9_]+)`", step):
+            for pid in re.findall(r"`((?:lab\d|fabric_q)_[a-z0-9_]+)`", step):
                 assert pid in prompts, f"unknown prompt id {pid} in {lab['id']} steps"
     return cfg, prompts, {lab["id"]: lab for lab in LABS}
 
@@ -463,7 +441,7 @@ def stack_slide(prs, titles: list[str]):
     )
     layers = [
         ("Lab 4 · Choose a route", "lab",
-         "Compare prebuilt sequential and hand-off teams in DevUI; inspect the already-hosted sequential team. No participant provisioning."),
+         "Compare sequential and hand-off execution. No participant provisioning; hosted-agent learning is optional."),
         ("Fabric step · Evidence", "optional",
          "Fabric IQ tool → `Resident360 Ontology Agent`; `fabric` block; aggregate questions only."),
         ("Lab 3 · Act", "lab",
@@ -586,7 +564,7 @@ def lab_page_slide(prs, titles: list[str]):
             ("One script per lab in `content/assets/`:", {"size": 12, "space_after": 4}),
             ("`lab1_knowledge.py`", {"size": 11.5, "space_after": 1}),
             ("`lab2_govern.py` (no batch evaluation)", {"size": 11.5, "space_after": 1}),
-            ("`lab3_tools.py` (`--fabric` for the Fabric step)", {"size": 11.5, "space_after": 1}),
+            ("`lab3_tools.py`; optional `lab3_fabric.py`", {"size": 11.5, "space_after": 1}),
             ("`lab4_multiagent.py`", {"size": 11.5, "space_after": 5}),
             ("Each prints a CHECKPOINT and saves the run under `content/assets/.runs/`.", {"size": 12}),
         ],
@@ -605,7 +583,7 @@ def lab_page_slide(prs, titles: list[str]):
         fill=WHITE, line=TEAL,
     )
     add_text(slide, 0.5, 5.6, 12.3, 0.5,
-             "Lab pages live in content/labs/: lab-00.md to lab-04.md, fabric-step.md and bridge-spotlight.md.",
+             "Choose one track and stay on it. Labs 0-4 and the optional Fabric step are in content/labs/.",
              size=11.5, color=BODY)
 
 
@@ -728,7 +706,7 @@ def orchestration_slide(prs, titles: list[str]):
         "compare fixed stages with model-selected hand-offs among permitted targets. This hand-off example stops at Activity "
         "rather than merging JSON, so it is not an equal-output speed comparison. Use DevUI outputs and hand-off calls as "
         "execution evidence; its Tools panel does not show Foundry-hosted MCP calls. Hosting changes where a workflow runs, "
-        "not its orchestration pattern. The hosted sequential team is already deployed.",
+        "not its orchestration pattern. The hosted-agent tutorial is optional further learning.",
         titles,
     )
     lanes = [
@@ -840,7 +818,7 @@ def close_slide(prs, titles: list[str]):
     slide = content_slide(
         prs,
         "What to take away",
-        "Close on the four takeaways and the extended arc. The arc is the same one the bridge spotlight ends on: Fabric "
+        "Close on the four takeaways and the extended arc: Fabric "
         "unifies and governs the data; Foundry personalises, converses and acts on it.",
         titles,
     )
