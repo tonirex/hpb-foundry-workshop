@@ -12,7 +12,9 @@ workshop**. Fabric built the Resident 360 that sees Rahim; today Foundry builds 
 
 ## 👉 Start here
 
-**Everyone starts at Lab 0.** Pick a rail inside each lab; [check prerequisites before switching](#switching-rails). The facilitator previews Lab 4's shared workflows at 1:15, then shows the hosted proof at 5:15; no participant provisioning is needed.
+**Start at Lab 0, choose Navigator or Builder, and stay on that track.** Each track is self-contained.
+If you get stuck, open that lab's **Checkpoint → Expected output (open after you have tried it)** for examples
+and ask for help rather than retry repeatedly. Navigator screenshots sit beside the matching instructions.
 
 | Lab | Title | What you build | Time |
 |-----|-------|----------------|------|
@@ -21,8 +23,7 @@ workshop**. Fabric built the Resident 360 that sees Rahim; today Foundry builds 
 | [Lab 2](content/labs/lab-02.md) | Guardrails, Evaluations & Tracing | Compare controls; read prepared evaluation verdicts and errors (look-only) | 30 min |
 | [Lab 3](content/labs/lab-03.md) | Tools, MCP & Memory: hyper-personalisation | Read a profile, approve or deny an action, inspect memory evidence | 30 min |
 | [Fabric step](content/labs/fabric-step.md) | Add the Fabric IQ tool (optional) | Aggregate versus guide question; programme fit is a further extension | 10 min guided |
-| [Lab 4](content/labs/lab-04.md) | Multi-agent & Hosted deploy *(private browser link, no token entry)* | Compare prepared workflows, explain execution, inspect the pre-deployed hosted team | 25 + 5 min |
-| [Bridge spotlight](content/labs/bridge-spotlight.md) | Two IQs, one agent *(facilitator, no build)* | Choose evidence sources and explain tool boundaries | 8 min |
+| [Lab 4](content/labs/lab-04.md) | Multi-agent & Hosted deploy *(private browser link, no token entry)* | Compare workflow execution; optional Builder hosted-agent tutorial | 25 min |
 
 **Pick your rail** (every lab has 🟢 Navigator and 🔵 Builder sections):
 
@@ -36,32 +37,32 @@ workshop**. Fabric built the Resident 360 that sees Rahim; today Foundry builds 
 > 🔵 **Builder: skim [Builder setup](#-builder-setup) below, then start Lab 0.**
 
 Read each lab's objective and story, then use its **Navigator / Builder** links to choose your section.
-Copy prompts, instructions and schemas with the code block's top-right **Copy** button. Keep the same coach between
-labs; the optional intake uses its own agent. Follow **Where next** rather than searching for another file.
+Copy prompts, instructions and schemas with the code block's top-right **Copy** button. Keep your own track's coach
+between labs. Follow **Where next** rather than searching for another file.
 
 Outdated portal captures are not displayed in the participant guides. Those steps use complete text instructions
 and inline copy blocks instead; the retained illustrations remain alongside the relevant steps. Original captures
 are preserved in the repository for facilitator maintenance, not presented as current evidence.
 
-### Switching rails
+<a id="switching-rails"></a>
+### Stay on one track
 
 The two rails reach the same learning outcomes, but **do not edit the same agent**. Navigator extends
 `livewell-<initials>`; Builder creates `livewell-<initials>-coach` and its own specialists.
 
-| Switch | Before continuing |
+| Track | Your starting point |
 |---|---|
-| Navigator → Builder | Complete [Builder setup](#-builder-setup), then follow the target lab's script instructions. Scripts construct the Builder configuration; they do not import your portal edits. |
-| Builder → Navigator | Open your original `livewell-<initials>` portal agent and complete any earlier Navigator setup it has not received. Lab 2 needs the knowledge base and answer schema; Lab 3 additionally needs safety instructions. The Fabric step needs the full Navigator Lab 3 configuration. |
+| Navigator | Create `livewell-<initials>` in Lab 0, then follow only Navigator instructions. |
+| Builder | Complete [Builder setup](#-builder-setup), run `lab0_setup.py`, then follow only Builder instructions. No Navigator agent is required. |
 
-Do not use the Builder Lab 3 coach directly in the portal: its profile and specialist **function tools need the
-Python client** to answer calls. Navigator uses OpenAPI and A2A instead. Lab 4's shared DevUI and hosted agent are
-separate from both personal coaches and can be used from either rail.
+**Do not switch midway.** Configurations and conversations do not transfer. Builder Lab 3 function tools need the
+Python client; Navigator uses OpenAPI/A2A. Lab 4's prepared DevUI teams are separate from personal coaches.
 
 ### The ten agentic patterns in LiveWell
 
 | # | Pattern | Lab | What you see |
 |---|---------|-----|--------------|
-| 1 | Multi-Document Understanding | 1 (optional) | Rahim's screening summary + activity diary → structured JSON intake in a separate agent |
+| 1 | Multi-Document Understanding | Reference only | Not a hands-on exercise in this delivery |
 | 2 | Evidence-Based Decision Support | 3 | `{advice, confidence, supporting_guides[], rationale, personalisation_flags[]}` |
 | 3 | Workflow Orchestration | 3 / 4 | Coach orchestrator → Nutrition + Activity specialists |
 | 4 | Knowledge Retrieval | 1 | Foundry IQ knowledge base; citations mandatory |
@@ -89,9 +90,9 @@ separate from both personal coaches and can be used from either rail.
   temporary password instead of a TAP, you are on the older sponsor flow: change the password and register
   Microsoft Authenticator at first sign-in.)*
 - Use a private or guest browser window so your work account does not interfere.
-- **Builder rail only:** you also need a GitHub account that can open this **private** repository. Your workshop
-  account does not give you GitHub access: send your GitHub username to the facilitator before the day to be
-  invited, or ask for the release ZIP. Navigator needs only a browser.
+- **Lab-page access:** this repository is private. Use your GitHub invitation or the supplied handout; an Azure
+  workshop account does not grant GitHub access. Builders additionally need the repository in Codespaces or
+  a local copy. Resolve missing access before the day.
 
 </details>
 
@@ -212,6 +213,7 @@ tool connections and the two model deployments, and prints what to fix:
   models and quota with the T-3 re-check, one resource group, tenant and TAP steps, approval gates, rehearsal,
   workshop day, teardown including Fabric and temporary identities).
 - [Facilitator run of show](foundry-workshop-plan.md): the 9:00–5:30 agenda, checkpoint gates, backup plans and demo prompts.
+- [Facilitator demonstrations](content/admin/FACILITATOR-DEMOS.md): operator-only explanations, optional demonstrations and setup references, separate from participant tasks.
 - [Admin setup](content/admin/ADMIN-SETUP.md) and [Tenant bootstrap](content/admin/TENANT-BOOTSTRAP.md): earlier reference
   material (sponsor delivery); where they differ from the runbook, the runbook wins.
 - Scripts: [preflight](scripts/preflight.sh), [provision](scripts/provision.sh), [cost guardrails](scripts/cost-guardrails.sh),
@@ -241,7 +243,7 @@ content/
   config/         workshop.yaml (names, models, modes, IDs) + glossary.yaml
   data/           resident360/ (kit data + generated), citizens.json, activities.json, intake/, flyer-injected.md
   knowledge/      livewell-guides/ (11 guides, markdown + PDF) for Foundry IQ
-  labs/           unified lab pages, Fabric step, bridge spotlight; old portal filenames are compatibility links
+  labs/           Labs 0-4 and the optional Fabric step; old portal filenames are compatibility links
   narrative/      rahim.md
   prompts/        test-prompts.json, coach-instructions.md
   answer-keys/    facilitator reference answers per checkpoint

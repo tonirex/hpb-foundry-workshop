@@ -1,10 +1,11 @@
 # Lab 0 · Setup & first agent
 
-**15 min · 10:15–10:30** · **Level:** L100 · **Rails:** everyone starts in the browser · **Pattern:** #10 Governance & Safety
+**15 min · Level L100 · Pattern #10 Governance & Safety**
 
-**You are here:** **Lab 0** → [Lab 1](lab-01.md) → [Lab 2](lab-02.md) → [Lab 3](lab-03.md) → [Lab 4](lab-04.md) · [README](../../README.md)
+> **Choose one track:** Navigator or Builder. Stay on that track throughout the workshop; the agents are separate.
+> **Stuck?** Go to [Checkpoint](#checkpoint) and expand **Expected output (open after you have tried it)**. Use the examples to follow the lesson and ask for help rather than retry repeatedly.
 
-**Your path:** [Navigator](#navigator) · [Builder setup](#builder) · [Checkpoint](#checkpoint) · [Troubleshooting](#troubleshooting)
+**Your path:** [Navigator](#navigator) · [Builder](#builder) · [Checkpoint](#checkpoint) · [Troubleshooting](#troubleshooting)
 
 ## Shared objective
 
@@ -12,28 +13,40 @@
 
 ## Foundry features covered
 
-Prompt agents · shared model deployments · instructions · saved versions · playground · response traces.
+Model + instructions · saved agent versions · playground or Python · response traces.
 
 ## Story chapter
 
-Rahim greets the coach, then asks whether he has diabetes. [Chapter 0](../narrative/rahim.md#chapter-0--rahim-opens-the-coach-for-the-first-time-lab-0--setup--first-agent) introduces a boundary: the coach provides general guidance, not a diagnosis. Lab 2 examines further controls.
+Rahim greets the coach, then asks whether he has diabetes. The coach should offer general guidance, not a diagnosis.
 
 ## 🟢 Navigator
 
 <a id="navigator"></a>
 
-**Already prepared:** the project and model deployments. You create an **agent configuration**, not a model or Azure resource. Use only your workshop account and synthetic examples.
+### 1. Open the project and create your agent
 
-### 1. Configure
+Use your personal laptop and an InPrivate window. Open the supplied project link, sign in with your workshop username and **Temporary Access Pass**, and select **`livewell-workshop`**.
 
-1. On a personal laptop, open the values sheet's project link in an **InPrivate** window. Sign in with your workshop username and **Temporary Access Pass (TAP)** from the sign-in card. Open **`livewell-workshop`**.
-2. **Build → Agents → New agent → Build an agent**. Name it **`livewell-<initials>`**, keep **Text**, and select **Create agent and open playground**. Do not edit another participant's agent.
-3. In the playground, select **Model → `gpt-5-mini`**. Open **Parameters** (sliders beside Model) → **Reasoning effort → Low**.
-4. Under **Tools**, remove **Web search** if the template added it. This exercise needs **no tools**.
-5. Expand the block below, use its **Copy** button, and **replace** the example Instructions. Select **Save** and note your agent name and version.
+![Select the shared project](screenshots/lab-00/03-open-livewell-project.png)
+
+Select **Build → Agents → New agent → Build an agent**.
+
+![Choose Build an agent](screenshots/lab-00/05-new-agent-menu.png)
+
+Name it **`livewell-<initials>`**, keep **Text**, then select **Create agent and open playground**. Screenshots use `livewell-wxyz`; edit only your own agent.
+
+![Create your agent with Text interaction mode](screenshots/lab-00/06-create-agent.png)
+
+### 2. Set its behaviour
+
+Select **Model → `gpt-5-mini`**. Open **Parameters** (sliders beside Model) → **Reasoning effort → Low**. Remove **Web search** under Tools if the template added it.
+
+![Low reasoning effort and no tools](screenshots/lab-00/06b-reasoning-low-no-tools.png)
+
+Replace the example **Instructions** with this block, then **Save**:
 
 <details>
-<summary><strong>Required copy block: base instructions</strong></summary>
+<summary><strong>Copy the base instructions</strong></summary>
 
 <!-- copy:instructions base -->
 ```text
@@ -66,9 +79,9 @@ Glossary (use these words exactly):
 
 </details>
 
-### 2. Predict → chat
+![Base instructions saved on the practice agent](screenshots/lab-00/07-base-instructions-saved.png)
 
-**Predict:** should an agent with no health record diagnose Rahim?
+### 3. Chat, then inspect
 
 Send `lab0_hi`:
 
@@ -78,7 +91,9 @@ Hi
 ```
 <!-- /copy -->
 
-Then send `lab0_am_i_diabetic`:
+![The coach introduces itself and states its limits](screenshots/lab-00/08-lab0-hi.png)
+
+Send `lab0_am_i_diabetic`:
 
 <!-- copy:prompt lab0_am_i_diabetic -->
 ```text
@@ -86,103 +101,73 @@ Am I diabetic?
 ```
 <!-- /copy -->
 
-**Observe:** an introduction, a statement that it is not a doctor, and a refusal to diagnose with a suggestion to speak to a doctor. Wording can differ.
+![The coach declines to diagnose](screenshots/lab-00/09-lab0-am-i-diabetic.png)
 
-### 3. Inspect → explain
+Open the diagnosis response's **Traces → Conversation → Response**. Inspect its **Invoke Agent** and `chat` spans: model, instructions and tokens, with no tool calls. The conversation includes both turns; inspect the refusal's response, not the combined call count.
 
-Open **Response metrics → Traces → Conversation → Response** for the diagnosis question. Inspect that response's **Invoke Agent** entry and its model `chat` span, instructions and token counts. There should be no tool calls. The conversation contains two turns; do not mistake its two chat calls for two calls in one answer.
+![The response trace shows the model call without tools](screenshots/lab-00/10-refusal-trace.png)
 
-**Explain:** instructions describe intended behaviour; the trace records this execution. Neither one good answer nor one refusal establishes safety in every situation.
-
-Keep your **agent name and saved version** for Labs 1–3. Help a neighbour rather than create more agents.
-
-<details>
-<summary><strong>Setup screenshots and FAQ</strong></summary>
-
-Screenshots use the practice agent `livewell-wxyz`; use your own initials. Version numbers can differ.
-
-![Project picker with livewell-workshop selected](screenshots/lab-00/03-open-livewell-project.png)
-
-![Foundry navigation and the shared agent list](screenshots/lab-00/04-portal-tour-build.png)
-
-![New agent menu with Build an agent selected](screenshots/lab-00/05-new-agent-menu.png)
-
-![Create an agent with your initials and Text interaction mode](screenshots/lab-00/06-create-agent.png)
-
-![gpt-5-mini with Low reasoning effort and no tools](screenshots/lab-00/06b-reasoning-low-no-tools.png)
-
-![Base instructions saved on the practice agent](screenshots/lab-00/07-base-instructions-saved.png)
-
-**Agent versus model:** many agents can share a model deployment. Their instructions, tools and saved configurations distinguish them. Saving creates a version; it does not retrain the model.
-
-**Why Low?** It is the workshop's tested setting, not a safety guarantee. Leave model changes to the facilitator if capacity is constrained.
-
-**Permissions:** Foundry User lets you build and run your agent. Shared connections, model deployment and hosted publishing belong to the facilitator. Do not use the portal **Workflows** item.
-
-Further reading: [Foundry agents](https://learn.microsoft.com/azure/foundry/agents/overview).
-
-</details>
+Keep your agent for Navigator Lab 1.
 
 ## 🔵 Builder
 
 <a id="builder"></a>
 
-Complete the same browser exercise. [Builder setup](../../README.md#-builder-setup) is preparation for Lab 1, not a second Lab 0 task.
+**Before starting:** use the prepared Codespace or your local environment from [Builder setup](../../README.md#-builder-setup). Set your initials and supplied project endpoint in `content/assets/.env`. No Navigator agent is needed.
 
-<details>
-<summary><strong>Optional: prepare Python before the afternoon</strong></summary>
+1. Check readiness:
 
-Use Codespaces or your local virtual environment. Follow Builder setup for sign-in and `content/assets/.env`, then run:
+   ```bash
+   python content/assets/check_setup.py
+   ```
 
-```bash
-python content/assets/check_setup.py
-```
+   Continue when it says **All set**; ask for help with remaining FIX lines.
+2. Create and test your own model-and-instructions agent:
 
-Stop at **All set**; ask the facilitator about remaining FIX lines. Leave `FABRIC_BRIDGE=false`.
+   ```bash
+   python content/assets/lab0_setup.py --verbose
+   ```
 
-Builder scripts are canonical `# %%` files. They use **`livewell-<initials>-coach`**, distinct from Navigator's **`livewell-<initials>`**. [Switching rails](../../README.md#switching-rails) does not transfer configurations, versions or conversations.
+   Alternatively, open [`lab0_setup.py`](../assets/lab0_setup.py) and run its `# %%` cells in order.
+3. Inspect the printed introduction and diagnosis reply, model details and empty tool lists. To inspect the service trace, open your Builder agent **`livewell-<initials>-coach` → Traces** and locate the response ID printed in the terminal.
 
-</details>
+The script uses a shared model deployment, creates no model resources, and keeps your Builder coach for Lab 1. Do not run Navigator's creation steps or use `--cleanup` between labs.
 
 ## Checkpoint
 
-✅ **Built** a prompt-agent configuration using a shared model and your instructions.
+✅ **Built** your own agent configuration with a model and instructions.
 
-✅ **Did** two short chats and inspected one response's model call.
+✅ **Did** an introduction, a diagnosis question and an execution inspection.
 
-✅ **Learned** that intended behaviour and a successful example are not a safety guarantee.
-
-Nothing to submit: explain the difference between a model and your agent to a neighbour.
+✅ **Learned** that intended behaviour and one successful example are not a safety guarantee.
 
 <details>
-<summary><strong>Expected output</strong></summary>
+<summary><strong>Expected output (open after you have tried it)</strong></summary>
 
-![LiveWell Coach introduces itself and states that it is not a doctor](screenshots/lab-00/08-lab0-hi.png)
+The coach introduces itself, says it is not a doctor, and declines to diagnose. Wording varies.
 
-![The coach refuses to diagnose and suggests speaking to a doctor](screenshots/lab-00/09-lab0-am-i-diabetic.png)
+![Example refusal, not a safety certification](screenshots/lab-00/09-lab0-am-i-diabetic.png)
 
-![Inspect the refusal's model span and instructions](screenshots/lab-00/10-refusal-trace.png)
-
-A refusal is the model's response, not automatically a guardrail block.
+Builder prints the two responses and a `CHECKPOINT` block. Its agent is `livewell-<initials>-coach`; Navigator's is `livewell-<initials>`. Both have no tools in this lab.
 
 </details>
 
 ## Troubleshooting
 
 <details>
-<summary><strong>Sign-in, missing model or unexpected answers</strong></summary>
+<summary><strong>Troubleshooting</strong></summary>
 
-| Symptom | What to do |
+| Problem | Next action |
 |---|---|
-| TAP rejected or sign-in setup requested | Check the card's expiry, personal laptop and InPrivate window; ask the facilitator. Do not register Authenticator or change tenant settings. |
-| Project, agent creation or model missing | Reopen the shared project link and tell the facilitator. Do not deploy a replacement. |
-| Quota / 429 | Wait, then retry once; ask before changing models. |
-| Web citations or `web_search` in the trace | Remove Web search under Tools and save. |
-| The agent diagnoses | Check the copied base block and saved version, and report the response. Do not treat repeated retries as safety proof. |
-| Trace missing | Allow ingestion time and reopen it, or use the captured example. Do not resend a successful request just to obtain telemetry. |
+| Sign-in rejected or extra registration requested | Check your workshop account and pass expiry; ask for help. Do not change sign-in settings. |
+| Project/model missing | Reopen the supplied project link; do not deploy a replacement. |
+| Web citations appear | Remove Web search and save. |
+| The coach diagnoses | Check the copied instructions and saved version; report the answer. |
+| Trace missing | Allow ingestion time and reopen it. Use the expected-output example if still unavailable. |
+| 429 | Wait and retry once, then ask for help. |
 
 </details>
 
 ## Where next
 
-[Lab 1 · Agents & Knowledge](lab-01.md) adds evidence to the same Navigator coach. The facilitator previews Lab 4's prepared workflows at 1:15.
+[Lab 1 · Agents & Knowledge](lab-01.md)—continue on the same track.

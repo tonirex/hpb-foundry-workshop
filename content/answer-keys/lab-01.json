@@ -13,12 +13,6 @@
       "validation_type": "A_paste_output",
       "notes": "Paste the JSON. route = clinician; cited_sources empty; the reply says the guides do not cover supplements; recommends no product. intent may be out_of_scope or nutrition.",
       "expected_ref": "prompts/test-prompts.json#/prompts/lab1_supplement/expected"
-    },
-    {
-      "prompt_id": "lab1_intake",
-      "validation_type": "A_paste_output",
-      "notes": "Optional (pattern #1), on livewell-<initials>-intake with lab1-intake.schema.json; leave the main coach unchanged. Compare both input documents against screening/activity/preferences. Missing fields stay null, no diagnosis. Return to the main coach for Lab 2.",
-      "expected_ref": "prompts/test-prompts.json#/prompts/lab1_intake/expected"
     }
   ]
 }

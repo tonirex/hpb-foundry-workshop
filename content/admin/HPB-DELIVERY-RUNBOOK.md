@@ -271,11 +271,12 @@ as a collaborator (Read) or give the release ZIP; an Entra account does not gran
   affected agents to the other deployment, per the run of show.
 - Facilitators run the pre-run evaluation, the red-team scan and demos; participants only explore results.
 
-Participant guides now fit the scheduled 35/30/30-minute build/govern/extend slots. Keep optional intake,
-specialists and programme fit outside the core timing. Lab 3 approval requires a real terminal decision or
+Participant guides target the scheduled 35/30/30-minute build/govern/extend slots; timed attendee rehearsal is still needed.
+Intake is removed. Keep optional specialists outside the core timing and programme-fit demonstrations in
+[FACILITATOR-DEMOS.md](FACILITATOR-DEMOS.md). Lab 3 approval requires a real terminal decision or
 explicit UI callback; non-interactive input denies. `LIVEWELL_AUTO_APPROVE=1` is labelled automated rehearsal
-and must not be treated as evidence that a participant approved. The bridge is a no-build recap, with legacy
-GQL replay clearly labelled historical; it does not require resuming Fabric.
+and must not be treated as evidence that a participant approved. There is no separate closing spotlight module.
+Use the released time for questions; do not resume Fabric for an unplanned demonstration.
 
 ## 10. Teardown (one runbook for Azure, Fabric and the temporary identities)
 

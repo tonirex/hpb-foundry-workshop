@@ -49,7 +49,6 @@ facilitator) reaches it without help.
 | Lab 3 Tools, MCP, memory | 🔵 Builder | 40 min | | ☐ | |
 | Fabric step (optional) | both | 15 min | | ☐ | |
 | Lab 4 Multi-agent & hosted (demo) | facilitator | 30 min | | ☐ | |
-| Bridge spotlight (demo) | facilitator | 10 min | | ☐ | |
 
 ## 3. Things only a dry run can answer
 

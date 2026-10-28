@@ -4,6 +4,20 @@ All notable changes to this workshop. One entry per phase PR.
 
 ## [Unreleased]
 
+### Participant simplification and inline screenshots (2026-10-29)
+
+- Removed intake from Lab 1 and retired the closing spotlight from active workshop content and tooling.
+  Kept historical files and image assets; pattern #1 is explicitly reference-only.
+- Made each track self-contained, added a first-agent Builder entry point and a short read-only Fabric entry
+  point, restored inline Navigator screenshots, and standardised the opening help and collapsed checkpoints/troubleshooting.
+- Made Lab 2's no-evaluation instruction prominent. Moved operator demonstrations to FACILITATOR-DEMOS.md
+  and linked the requested hosted-agent tutorial as optional Builder further learning.
+- Restored Lab 4's shared explanation of Agent Framework, Foundry and DevUI before both tracks, with a
+  collapsed developer FAQ. The guide explains why we chose this stack without presenting DevUI as mandatory or production-ready.
+- Captured current DevUI access, inputs, outputs and routing. Four comparisons completed, with one recorded
+  fresh-session recovery after a real retrieval timeout. Fabric live screenshots were deferred by the user;
+  capacity stayed untouched. No deployment, evaluation, red-team run or permission change was performed.
+
 ### Integrated GitHub publication (2026-10-29)
 
 - Combined the approved MCAPS infrastructure, prepared evaluation evidence and private DevUI access with

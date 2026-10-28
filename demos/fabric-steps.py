@@ -9,11 +9,11 @@ It writes a self-contained HTML page (no CDN): ontology path with the traversed 
 one card per query (rewrite -> GQL -> rows with bars), a check against content/fabric/reference-answers.json and
 the answer the coach receives.
 
-    python demos/fabric-steps.py bridge --open             # the Bridge question (q_dropped_attended_heldin)
+    python demos/fabric-steps.py regions --open            # a legacy diagnostic, not a participant lab
     python demos/fabric-steps.py fit --open                # Rahim's programme-fit cohort question (q_programme_fit)
     python demos/fabric-steps.py q_disengaged_regions      # any question-bank id, test-prompt id or free text
-    python demos/fabric-steps.py --replay bridge --open    # no capacity needed: latest saved run, else demos/samples/
-    python demos/fabric-steps.py bridge --save-sample      # also refresh demos/samples/fabric-steps-<id>.json
+    python demos/fabric-steps.py --replay q_dropped_attended_heldin --open  # historical saved sample; no capacity
+    python demos/fabric-steps.py regions --save-sample     # also refresh demos/samples/fabric-steps-<id>.json
 
 Runs are saved to demos/runs/ (git-ignored) as JSON + HTML. Workspace and artifact ids are stripped before saving.
 Needs your az login with access to the Fabric workspace, an Active capacity and the azd env (FABRIC_* values).
@@ -624,7 +624,7 @@ def summary(data: dict) -> None:
 def main() -> int:
     sys.stdout.reconfigure(encoding="utf-8")
     ap = argparse.ArgumentParser(description=__doc__.split("\n\n")[0], formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("question", nargs="?", help="bridge | fit | question-bank id | test-prompt id | free text")
+    ap.add_argument("question", nargs="?", help="regions | fit | question-bank id | test-prompt id | free text")
     ap.add_argument("--replay", metavar="JSON|ID|latest", help="re-render a saved run instead of asking Fabric")
     ap.add_argument("--env", default=default_env(), help="azd env name (default: AZURE_ENV_NAME or azd default)")
     ap.add_argument("--open", action="store_true", help="open the HTML page in the default browser")
@@ -632,7 +632,7 @@ def main() -> int:
     ap.add_argument("--quiet", action="store_true", help="do not print the steps to the console")
     a = ap.parse_args()
     if not a.question and not a.replay:
-        ap.error("give a question (bridge, fit, an id or text) or --replay")
+        ap.error("give a question (regions, fit, an id or text) or --replay")
     stamp = dt.datetime.now().strftime("%Y%m%d-%H%M%S")
     if a.replay:
         data, src, out = load_replay(a.replay)

@@ -1,6 +1,6 @@
 # Lab 1 · Agents & Knowledge — portal walkthrough
 
-The portal walkthrough is now inside the main lab. Reuse the prepared knowledge connection; the optional intake uses a separate agent.
+The portal walkthrough is inside the main lab, with screenshots beside each action. Reuse the prepared knowledge connection and stay on Navigator.
 
 **[Open Lab 1](lab-01.md)** · [Jump to Navigator](lab-01.md#navigator) · [Workshop home](../../README.md)
 

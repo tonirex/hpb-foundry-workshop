@@ -242,7 +242,7 @@ def agenda_slide(prs: Presentation, titles: list[str]):
         ["9:00", "What is Microsoft Foundry (30)", "Unified platform: models, agents, tools, observability, governance", "Portal tour; Fabric arc + today we add Coach & Act"],
         ["9:30", "Foundry Models (20)", "Catalogue, Global Standard deployments, quota, reasoning effort, model × tool support", "Why two models: gpt-5-mini (Labs 0-2) and gpt-4.1-mini (tools from Lab 3); read model and tokens in the trace"],
         ["9:50", "Foundry Agent Service (40)", "Model + instructions + tools; runtime; multi-agent; memory; frameworks", "Create LiveWell Coach; structured output"],
-        ["10:15", "Micro-Lab 0 (15)", "First agent", "Everyone ships livewell-<initials>"],
+        ["10:15", "Micro-Lab 0 (15)", "First agent", "Choose Navigator or Builder and stay on that track"],
         ["10:45", "Tools & Knowledge (30)", "Foundry IQ knowledge base; connectors; MCP; Fabric IQ tool", "Two IQs on Rahim: guide citation; Mei region question"],
         ["11:15", "Control Plane - CIO lab (40)", "Guardrails, tracing, monitoring, evaluation, red teaming, identity, cost", "Trip guardrail; trace; eval scorecard; policy checkpoint"],
         ["11:55", "Platform architecture (20)", "Runtime / tools + knowledge / app layer; identity + observability", "Two IQs, one agent diagram"],
@@ -252,7 +252,7 @@ def agenda_slide(prs: Presentation, titles: list[str]):
         ["2:50", "Evaluation, Guardrails & Security (40)", "Built-in + custom evaluators, continuous eval, runtime controls", "Lab 2 walkthrough; compare versions"],
         ["3:30", "Part A Build (35)", "Hands-on build", "Lab 1"],
         ["4:05", "Part B Govern (30)", "Hands-on governance", "Lab 2"],
-        ["4:35", "Part C Extend (55)", "Hands-on extension", "Lab 3; optional Fabric; Lab 4 pre-deployed hosted proof at 5:15; close"],
+        ["4:35", "Part C Extend (55)", "Hands-on extension", "Lab 3; optional Fabric; questions and wrap-up"],
     ]
     slide = content_slide(
         prs,
@@ -345,7 +345,6 @@ def human_thread_slide(prs: Presentation, titles: list[str]):
         ["2", "Rahim", "A hidden flyer and medication question test Prompt Shields, blocklists, traces and evaluators."],
         ["3", "Rahim + Mei Lin", "Rahim gets hazy-day activities with approval, then asks which programme people his age stick with (one age-band Fabric question); Mei asks the region question."],
         ["4", "Rahim + Mei Lin", "The hosted agent handles Rahim's week plan and Mei's programme-insights question through the right route."],
-        ["5", "Mei Lin", "The bridge closes on multi-hop aggregate reasoning and why Fabric IQ only ever receives aggregate questions."],
     ]
     slide = content_slide(
         prs,
@@ -454,7 +453,7 @@ OBJECTIVES = {
     "lab-02": "Compare safety layers using traces and prepared evaluation results; distinguish a refusal, a block, an over-block and an unavailable verdict",
     "lab-03": "An agent that acts: personalise on governed data, take real actions with a human in the loop, delegate to specialists, and route each kind of question to the right tool",
     "fabric-step": "Use governed cohort evidence when guidance alone cannot answer a question, and inspect exactly what information the coach sends to Fabric",
-    "lab-04": "Choose between one agent, sequential and hand-off workflows; use execution evidence to explain the route, then inspect the pre-deployed hosted team",
+    "lab-04": "Choose between one agent, sequential and hand-off workflows; use execution evidence to explain the route",
 }
 
 MODULES = [
@@ -474,7 +473,7 @@ MODULES = [
         "level": "Core build · Navigator + Builder",
         "story": "Rahim asks what to eat after a high-glucose screening result.",
         "features": "Foundry IQ KB; Azure AI Search; agentic retrieval; citations; MCP connection; structured JSON output.",
-        "checkpoint": "Connect a food-advice claim to a retrieved passage; explain the no-source clinician route. Optional intake uses its own agent/schema.",
+        "checkpoint": "Connect a food-advice claim to a retrieved passage; explain the no-source clinician route.",
     },
     {
         "id": "lab-02",
@@ -512,8 +511,8 @@ MODULES = [
         "capability": "Multi-agent & Hosted deploy",
         "level": "Guided browser comparison · optional Builder appendix",
         "story": "Rahim's week plan and activity-only request reveal different routing choices.",
-        "features": "Prebuilt Agent Framework teams; DevUI graph, outputs and hand-off calls; existing hosted trace and guardrail proof. Fabric specialist optional.",
-        "checkpoint": "Explain when one agent is enough, identify a hand-off call and the final answerer, and recognise the hosted sequential team. No participant provisioning.",
+        "features": "Agent Framework teams; DevUI graph, outputs and hand-off calls; optional Builder hosted-agent tutorial.",
+        "checkpoint": "Explain when one agent is enough, identify an actual hand-off and final answerer. No participant provisioning.",
     },
 ]
 
@@ -555,88 +554,6 @@ def module_slide(prs: Presentation, cfg: dict, module: dict, titles: list[str]):
     for (label, body), height in zip(fields, heights):
         add_field(slide, 0.78, y, label, body, width=11.65, height=height, size=12.2)
         y += height + 0.22
-
-
-def bridge_estate_slide(prs: Presentation, titles: list[str]):
-    slide = content_slide(
-        prs,
-        "Two IQs, one agent — their estate → Foundry",
-        "This is the bridge from the prior Fabric workshop into today's Foundry agent. "
-        "The left side is the data estate they already understand; the right side is the agent control surface they build today. "
-        "Use the arrow to explain that Foundry does not replace Fabric; it calls the right Fabric surface for governed business questions. "
-        "Gate: move on when the room can place Foundry IQ and Fabric IQ on different sides of the bridge.",
-        titles,
-    )
-    left = ["resident_360", "semantic model", "ontology", "data agents", "ML endpoint"]
-    right = ["Foundry IQ", "Fabric IQ tool", "profile + activities tools", "memory", "guardrails", "evaluations", "hosted deploy"]
-    add_box(slide, 0.75, 1.15, 4.25, 0.6, "Their Fabric estate", fill=NAVY, line=NAVY, size=15, color=WHITE, bold=True)
-    add_bullets(slide, 1.0, 2.0, 3.7, 3.1, left, size=15, bullet="✓")
-    add_box(slide, 8.35, 1.15, 4.25, 0.6, "Foundry agent estate", fill=TEAL, line=TEAL, size=15, color=WHITE, bold=True)
-    add_bullets(slide, 8.6, 2.0, 3.7, 3.1, right, size=15, bullet="✓")
-    add_line(slide, 5.35, 3.35, 7.95, 3.35, color=TEAL, width=3, arrow=True)
-    add_box(slide, 5.0, 4.05, 3.35, 0.8, "Connect only through governed tools and identity", fill=PALE_TEAL, line=TEAL, size=13.5, color=NAVY, bold=True)
-
-
-def iq_comparison_slide(prs: Presentation, titles: list[str]):
-    rows = [
-        ["Primary job", "Ground answers in curated documents and knowledge.", "Answer governed business-data questions through Fabric data agents and ontology."],
-        ["Best data", "Guides, policies, FAQs, PDFs, indexed files and knowledge sources.", "Lakehouse, semantic model, ontology, aggregate business facts and relationships."],
-        ["Question shape", "What should Rahim do? What does the guide say?", "Which regions, programmes or cohorts need attention?"],
-        ["Identity", "Project connection and knowledge permissions.", "Same tenant, user identity passthrough, Fabric permissions."],
-        ["Output", "Cited answer or structured JSON with source documents.", "Aggregate answer from published Fabric data agent; no resident_id leakage."],
-        ["Use when", "The answer should be evidence-backed by written guidance.", "The answer depends on governed enterprise data or ontology relationships."],
-    ]
-    slide = content_slide(
-        prs,
-        "Foundry IQ vs Fabric IQ — when to use",
-        "Do not present these as competing products. "
-        "These are the workshop's design choices, not exclusive product capabilities. Fabric ontology supplies context; the underlying source executes SQL, KQL or DAX. "
-        "Use the examples row to show that Rahim's guidance stays in Foundry IQ; Fabric only answers aggregate questions, from Mei Lin or from Rahim's one age-band cohort question. "
-        "Gate: move on when participants can choose the correct IQ for a new prompt.",
-        titles,
-    )
-    add_table(
-        slide,
-        0.55,
-        1.1,
-        12.25,
-        5.65,
-        ["Decision", "Foundry IQ", "Fabric IQ"],
-        rows,
-        col_widths=[1.75, 5.1, 5.4],
-        font_size=10.6,
-        header_size=11.5,
-    )
-
-
-def fabric_paths_slide(prs: Presentation, titles: list[str]):
-    rows = [
-        ["Fabric IQ tool", "Published data agent via OneLake Catalog; same tenant; user identity passthrough; F2+ paid capacity; Foundry Project Manager creates the connection.", "Programme-level aggregate questions through the Resident360 Ontology Agent."],
-        ["OneLake / Fabric as Foundry IQ source (preview)", "Indexed knowledge source over Fabric / OneLake content; preview limits labelled; use when documents or files are the grounding source.", "Treat curated Fabric files as knowledge, not as live ontology reasoning."],
-        ["Ontology MCP server (preview)", "MCP server fronts ontology/data-agent calls; approval and audit posture defined by the server.", "Advanced custom tool path when portal Fabric IQ is not enough."],
-        ["Function/OpenAPI over Fabric ML /score", "Fabric ML endpoint exposed as a normal callable tool; schema, auth and throttling handled like any other tool.", "Score or classify a request without exposing the model endpoint on slides."],
-    ]
-    slide = content_slide(
-        prs,
-        "Three Fabric integration paths",
-        "Use this as the implementation decision slide for architects. "
-        "The Fabric IQ tool is the workshop path because it is closest to the cohort's published data agent. "
-        "The OneLake knowledge-source and ontology MCP paths are preview options, so label them and avoid promising production behaviour. "
-        "Gate: move on after naming the prerequisites for the path Antonia will demo.",
-        titles,
-    )
-    add_table(
-        slide,
-        0.55,
-        1.05,
-        12.25,
-        5.7,
-        ["Path", "Prerequisites", "Best fit"],
-        rows,
-        col_widths=[2.3, 6.25, 3.7],
-        font_size=9.9,
-        header_size=11,
-    )
 
 
 def guardrail_slide(prs: Presentation, cfg: dict, titles: list[str]):
@@ -767,7 +684,7 @@ def resources_slide(prs: Presentation, cfg: dict, titles: list[str]):
 
 def close_slide(prs: Presentation, titles: list[str]):
     rows = [
-        ["1", "Multi-Document Understanding", "1", "Structured intake of screening summary + activity diary -> JSON"],
+        ["1", "Multi-Document Understanding", "Reference", "Not exercised in this delivery"],
         ["2", "Evidence-Based Decision Support", "3", "{advice, confidence, guides, rationale, personalisation_flags}"],
         ["3", "Workflow Orchestration", "3/4", "Coach orchestrator -> Nutrition + Activity specialists"],
         ["4", "Knowledge Retrieval", "1", "Foundry IQ KB with citations mandatory"],
@@ -838,9 +755,6 @@ def build_deck(root: Path, out_path: Path) -> list[str]:
     foundry_features_slide(prs, titles)
     for module in MODULES:
         module_slide(prs, cfg, module, titles)
-    bridge_estate_slide(prs, titles)
-    iq_comparison_slide(prs, titles)
-    fabric_paths_slide(prs, titles)
     guardrail_slide(prs, cfg, titles)
     cost_slide(prs, cfg, titles)
     resources_slide(prs, cfg, titles)
@@ -849,7 +763,7 @@ def build_deck(root: Path, out_path: Path) -> list[str]:
     out_path.parent.mkdir(parents=True, exist_ok=True)
     prs.save(out_path)
     normalize_zip_timestamps(out_path)
-    validate_pptx(out_path)
+    validate_pptx(out_path, min_slides=17)
     return titles
 
 

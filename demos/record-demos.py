@@ -1,10 +1,9 @@
 #!/usr/bin/env python3
-"""Record one 🟢 Navigator demo video per lab (and the Bridge spotlight) from the live portal (headed Edge, 1440x900 WebM).
+"""Record one 🟢 Navigator demo video per lab from the live portal (headed Edge, 1440x900 WebM).
 
     python demos/record-demos.py --lab lab-00            # one lab
     python demos/record-demos.py --lab lab-00 lab-01 lab-02 lab-03
-    python demos/record-demos.py --lab bridge             # Bridge spotlight: Fabric IQ trace + fabric-steps.py page
-    python demos/record-demos.py                          # all five labs and the Bridge (~70 min)
+    python demos/record-demos.py                          # all five labs; live model calls
 
 Output: demos/videos/<lab>-<YYYY-MM-DD>.webm (git-ignored; share the files with the co-facilitators). The
 videos walk the facilitator demo agents (livewell-demo-*, livewell-workshop-hosted) with captions at the
@@ -33,7 +32,6 @@ TITLES = {
     "lab-02": "Lab 2 · Red flags, guardrails and evaluation",
     "lab-03": "Lab 3 · Profile tool, activities MCP, memory and Fabric IQ",
     "lab-04": "Lab 4 · The hosted LiveWell Coach team",
-    "bridge": "Bridge spotlight · Inside the Fabric data agent",
 }
 
 

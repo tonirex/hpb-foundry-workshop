@@ -318,13 +318,9 @@ python scripts/gen-citizens.py --from-onelake --check    # citizens.json agrees 
      `demos/.playwright/` (git-ignored), and later runs pick the account by themselves.
   2. `python demos/capture-screenshots.py` (≈ 30 min, or `--only lab-01 lab-03/12`), then review every PNG in
      `content/labs/screenshots/` against its slot caption. `--list-missing` lists the slots still empty, and
-     `--link` turns filled slots into images on the portal lab pages and the Bridge spotlight. The Bridge slots
-     (`--only bridge`) also screenshot the `demos/fabric-steps.py` page. It shows the newest saved run, else the
-     committed sample `demos/samples/fabric-steps-q_dropped_attended_heldin.json` (captured live on F4,
-     2026-10-01), which is also what `--replay` shows on the day if the capacity is throttled. After a data or
-     prompt change, refresh it with `python demos/fabric-steps.py bridge --save-sample` and commit it.
-  3. `python demos/record-demos.py` (≈ 70 min, or `--lab lab-02`): one captioned WebM per lab, plus `bridge`
-     (Mei's multi-hop question, its Fabric IQ trace and the fabric-steps.py page), in `demos/videos/` (git-ignored).
+     `--link` turns filled slots into images beside their matching instructions on the canonical lab pages.
+     Use the [separate facilitator notes](FACILITATOR-DEMOS.md) for demonstrations outside the participant path.
+  3. `python demos/record-demos.py` (or `--lab lab-02`): one captioned WebM per lab in `demos/videos/` (git-ignored).
      Watch each once before sharing; they are the backup for a stuck portal step.
 
   Both only chat with the `livewell-demo-*` agents and the hosted agent, open and cancel dialogs, and never save.
@@ -337,7 +333,7 @@ python scripts/gen-citizens.py --from-onelake --check    # citizens.json agrees 
 ### T-0: workshop day
 
 ```bash
-bash scripts/capacity.sh resume mcaps                    # ~1 min; Fabric step + bridge spotlight need it
+bash scripts/capacity.sh resume mcaps                    # only when the optional Fabric step is approved
 MCP_MIN_REPLICAS=1 DEVUI_MIN_REPLICAS=1 bash scripts/provision.sh mcaps --skip-preflight   # no MCP or Lab 4 DevUI cold starts
 python scripts/render-values.py mcaps                    # values sheet -> content/config/values.md (hooks also refresh it)
 python scripts/apply-guardrail.py                        # AFTER 09:30 SGT: restores livewell-guardrails (reset daily ~09:15)
@@ -656,7 +652,7 @@ never commit those credential-bearing PDFs.
 | [create-demo-agents.py](../../demos/create-demo-agents.py) | The seven `livewell-demo-*` agents (one per lab, plus the Nutrition and Activity specialists with incoming A2A and an agent card) and the `livewell-eval` dataset; a new version only when the definition changed; `--check`, `--roles`, `--no-memory`, `--no-dataset` |
 | [portal.py](../../demos/portal.py) | Playwright helpers for the Foundry portal; `login`, `status`, `open <page>`, `shot <page>` |
 | [capture-screenshots.py](../../demos/capture-screenshots.py) | Canonical Navigator screenshots from the live portal; select stale slots with `--only`; `--list-missing`, `--link [--dry-run]`, `--headless` |
-| [record-demos.py](../../demos/record-demos.py) | One captioned WebM per lab and the Bridge spotlight into `demos/videos/`; `--lab` |
+| [record-demos.py](../../demos/record-demos.py) | One captioned WebM per lab into `demos/videos/`; `--lab` |
 | [fabric-steps.py](../../demos/fabric-steps.py) | Bridge visualiser: the Fabric data agent's own run steps (rewrite, GQL, rows) for one question as an HTML page; `bridge`, `fit`, any question id; `--replay`, `--open`, `--save-sample` |
 | [record-terminal.py](../../demos/record-terminal.py) | Evidence recorder: runs any script, then saves its output with real timings (`.cast`) and a PNG in `demos/evidence/<date>/` and a replay WebM in `demos/videos/`; IDs, endpoints, e-mails and local paths redacted; `--title`, `--render`, `--idle`, `--no-video` |
 | [teardown.sh](../../scripts/teardown.sh) | Fabric workspace → `azd down --purge` → verify; `--pause-only` |

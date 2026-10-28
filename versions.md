@@ -29,6 +29,12 @@ Older GQL-based teaching examples describe the legacy path and need a table-read
 
 ## Participant / facilitator tooling
 
+Participant simplification (2026-10-29): no dependency or deployed-image upgrade. The supplied
+[Foundry Toolkit hosted-agent tutorial](https://learn.microsoft.com/en-us/azure/foundry/how-to/develop/vs-code-agents-workflow-pro-code)
+was checked and linked as optional Builder learning. DevUI captures use the existing pinned version below.
+Fresh workflow checks include one documented recovery after a 90-second Foundry IQ timeout; Fabric live
+screenshots were deferred and no capacity state was changed. See ASSUMPTIONS.md Phase 14.
+
 Integration for GitHub publication (2026-10-29): retained the same deployed DevUI pins and added the
 environment-aware configuration loader to its build context. The separate default-inactive evaluator from
 main coexists with the prepared matrix's schema-2 reader; no new evaluation or runtime deployment was started.

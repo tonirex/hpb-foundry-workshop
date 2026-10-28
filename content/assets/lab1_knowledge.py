@@ -7,8 +7,7 @@
 #
 # Run it all:            `python content/assets/lab1_knowledge.py` (INITIALS and endpoint from content/assets/.env)
 # Or cell by cell:       open this file in VS Code / Codespaces and use "Run Cell" on each `# %%`.
-# Flags:                 `--verbose` (tool calls, citations, response ids), `--intake` (optional pattern #1
-#                        step), `--cleanup` (delete the agents this run created when it finishes).
+# Flags:                 `--verbose` (tool calls, citations, response ids), `--cleanup`.
 #
 # Lines marked `# 👉` are the ones to retype during the lab.
 
@@ -21,8 +20,7 @@ _here = (pathlib.Path(globals()["__file__"]).resolve().parent if "__file__" in g
 sys.path.insert(0, str(_here))
 from common import livewell_common as lw  # noqa: E402
 
-args = lw.lab_args("Lab 1 - knowledge-grounded coach",
-                   lambda p: p.add_argument("--intake", action="store_true", help="also run the optional lab1_intake step"))
+args = lw.lab_args("Lab 1 - knowledge-grounded coach")
 lw.heading(f"Lab 1 for {lw.agent_name('coach')} on {lw.endpoint()}")
 
 # %% [markdown]
@@ -95,43 +93,13 @@ lw.expect("lab1_supplement: says the guides don't cover it",
 lw.record("lab1_supplement", supp)
 
 # %% [markdown]
-# ## 5. Optional - pattern #1 multi-document intake (`lab1_intake`, run with `--intake`)
+# ## 5. Checkpoint
 #
-# A second agent, **livewell-<INITIALS>-intake**, reads Rahim's screening summary and activity diary and
-# fills one intake JSON. Missing values stay `null`; nothing is diagnosed.
-
-# %%
-intake_json = None
-if args.intake:
-    intake_agent = lw.create_agent(
-        "intake",
-        lw.load_instructions("base", "intake"),
-        schema=lw.intake_schema(),  # 👉
-        rai_policy=lw.DEFAULT_RAI_POLICY,
-        description="LiveWell Coach - Lab 1 structured intake (pattern #1)",
-    )
-    intake = lw.ask(intake_agent, prompt_id="lab1_intake")
-    lw.show_run(intake, verbose=args.verbose)
-    intake_json = intake.json() if not intake.blocked else {}
-    screening, activity = intake_json.get("screening", {}), intake_json.get("activity", {})
-    prefs = lw.ascii_safe(intake_json.get("preferences", {})).lower()
-    lw.expect("lab1_intake: fasting glucose 6.4", screening.get("fasting_glucose_mmol") == 6.4, screening.get("fasting_glucose_mmol"))
-    lw.expect("lab1_intake: risk band High", str(screening.get("risk_band", "")).lower() == "high", screening.get("risk_band"))
-    lw.expect("lab1_intake: ~3,100 steps a day", abs((activity.get("avg_daily_steps") or 0) - 3100) <= 100, activity.get("avg_daily_steps"))
-    lw.expect("lab1_intake: morning + no swimming", "morning" in prefs and "swim" in prefs, prefs)
-    lw.record("lab1_intake", intake)
-else:
-    lw.say("(optional intake step skipped; re-run with --intake to try it)")
-
-# %% [markdown]
-# ## 6. Checkpoint
-#
-# The two JSON replies (and the intake JSON if you ran it) in one place. Compare them with Expected output
+# The two JSON replies in one place. Compare them with Expected output
 # under Checkpoint on the lab page; there is nothing to submit.
 
 # %%
-lw.checkpoint("Lab 1", {"lab1_prediabetes_eat": eat_json, "lab1_supplement": supp_json,
-                        **({"lab1_intake": intake_json} if intake_json is not None else {})})
+lw.checkpoint("Lab 1", {"lab1_prediabetes_eat": eat_json, "lab1_supplement": supp_json})
 lw.say(f"results saved to {lw.save_results('lab1')}")
 if args.cleanup:
     lw.cleanup()
