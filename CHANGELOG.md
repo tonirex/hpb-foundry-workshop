@@ -12,6 +12,8 @@ All notable changes to this workshop. One entry per phase PR.
   point, restored inline Navigator screenshots, and standardised the opening help and collapsed checkpoints/troubleshooting.
 - Made Lab 2's no-evaluation instruction prominent. Moved operator demonstrations to FACILITATOR-DEMOS.md
   and linked the requested hosted-agent tutorial as optional Builder further learning.
+- Restored Lab 4's shared explanation of Agent Framework, Foundry and DevUI before both tracks, with a
+  collapsed developer FAQ. The guide explains why we chose this stack without presenting DevUI as mandatory or production-ready.
 - Captured current DevUI access, inputs, outputs and routing. Four comparisons completed, with one recorded
   fresh-session recovery after a real retrieval timeout. Fabric live screenshots were deferred by the user;
   capacity stayed untouched. No deployment, evaluation, red-team run or permission change was performed.

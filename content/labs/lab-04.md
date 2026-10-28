@@ -15,6 +15,33 @@
 
 Microsoft Agent Framework · sequential versus hand-off orchestration · outputs and tool-call evidence · DevUI (**pre-release development sample**).
 
+### What are Agent Framework, Foundry and DevUI?
+
+| Component | Its role in this lab |
+|---|---|
+| **Microsoft Agent Framework** | Microsoft's open-source SDK for building agents and workflows in code. Its Python implementation coordinates our specialist team. |
+| **Microsoft Foundry** | Provides the model deployments and invokes connected knowledge/activity tools server-side. |
+| **DevUI** | A browser-based development sample for running registered Agent Framework workflows and inspecting their execution. It does not replace the framework. |
+
+**Why use Agent Framework here?** It provides explicit execution paths, state management and telemetry for coordinating agents/functions instead of hand-building that plumbing. Microsoft positions it as the [successor to Semantic Kernel and AutoGen](https://learn.microsoft.com/agent-framework/overview/#why-agent-framework). It fits code-first orchestration; start with one agent when that is enough.
+
+**Why visualise with DevUI?** A final answer hides who contributed, which route ran and where it failed. DevUI exposes the graph, intermediate outputs and hand-off calls during development, before integrating the workflow into an application. **It is optional, not a production UI.** Our prepared browser app avoids participant installation or deployment.
+
+<details>
+<summary><strong>Developer FAQ: execution, visualisation and alternatives</strong></summary>
+
+**Where is the orchestration defined?** In Python: `SequentialBuilder` fixes the order; `HandoffBuilder` defines permitted transfers that the model selects. DevUI runs and displays those workflows—it is not where we author the routing.
+
+**Must a developer use DevUI?** No. Framework code runs without it. [Agent Inspector](https://learn.microsoft.com/azure/foundry/how-to/develop/vs-code-agent-inspector) supports compatible local development diagnostics; [Foundry tracing](https://learn.microsoft.com/azure/foundry/observability/how-to/trace-agent-framework) covers instrumented cloud execution. Choose the view that fits where your code runs.
+
+**Can it visualise any deployed Foundry agent automatically?** No. Our app registers the prepared workflow objects; it is not a generic viewer attached to your Lab 3 agent. A remote Responses endpoint alone does not provide a workflow graph.
+
+**Why are some tools missing from its Tools panel?** This app shows local hand-offs there. Knowledge retrieval and activity lookup execute server-side through Foundry; inspect their server-side traces where available. A graph edge or token count is not tool-call evidence.
+
+Further reading: [Agent Framework overview](https://learn.microsoft.com/agent-framework/overview/) · [DevUI development sample](https://learn.microsoft.com/agent-framework/integrations/by-component/ui/devui/).
+
+</details>
+
 ## Story chapter
 
 Rahim needs food advice and an indoor activity. Compare two ways to coordinate Nutrition and Activity specialists—not prove that every question needs multiple agents.
@@ -32,7 +59,7 @@ Click **Lab 4 private launch link (no token entry)** in the private workshop mes
 
 ![Prepared sequential graph without a token-entry form](screenshots/lab-04/12-private-link-ready.png)
 
-The graph shows possible structure, not proof of execution. DevUI helps connect a final answer to **who ran, what they returned and which hand-off tools were called**.
+The graph shows possible structure, not proof of execution. Inspect outputs and actual calls as you run.
 
 | Approach | Use when… |
 |---|---|

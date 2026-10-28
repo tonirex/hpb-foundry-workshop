@@ -98,6 +98,22 @@ class ParticipantContentTests(unittest.TestCase):
         self.assertEqual(self.page.count("<details>"), self.page.count("</details>"))
         self.assertNotRegex(self.page, r"<details\b[^>]*\bopen\b")
 
+    def test_stack_rationale_is_visible_before_both_tracks(self):
+        shared = self.page.split("## 🟢 Navigator", 1)[0]
+        visible = re.sub(r"<details\b[^>]*>.*?</details>", "", shared, flags=re.S)
+        for phrase in ("Microsoft Agent Framework", "open-source SDK", "Microsoft Foundry",
+                       "DevUI", "state management", "Why visualise with DevUI?",
+                       "optional, not a production UI"):
+            self.assertIn(phrase, visible)
+        self.assertIn("start with one agent when that is enough", visible.lower())
+
+    def test_developer_detail_is_collapsed_and_explains_visibility_limits(self):
+        shared = self.page.split("## 🟢 Navigator", 1)[0]
+        faq = re.search(r"<details>\s*<summary><strong>Developer FAQ:.*?</details>", shared, re.S)
+        self.assertIsNotNone(faq)
+        for phrase in ("Agent Inspector", "Foundry tracing", "not a generic viewer", "server-side"):
+            self.assertIn(phrase, faq.group())
+
     def test_copy_ready_requests_match_the_prompt_bank(self):
         visible = re.sub(r"<details\b[^>]*>.*?</details>", "", self.page, flags=re.S)
         requests = re.findall(r"```text\n.*?\n\n(.*?)\n```", visible, flags=re.S)
