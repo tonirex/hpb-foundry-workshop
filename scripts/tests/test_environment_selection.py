@@ -83,25 +83,46 @@ class EnvironmentSelectionTests(unittest.TestCase):
                 def run(cmd):
                     if cmd[:3] == ["az", "account", "show"]:
                         return json.dumps({"user": {"type": kind, "name": "selected-app"}})
-                    if cmd[:2] == ["az", "ad"]:
-                        return "selected-principal"
                     if cmd[:3] == ["azd", "env", "set"]:
                         return ""
                     self.fail(f"Unexpected command: {cmd}")
 
                 with patch.object(select_params, "INFRA", infra), patch.dict(os.environ, env, clear=True):
                     with patch.object(sys, "argv", ["select-params.py"]):
-                        with patch.object(select_params, "run", side_effect=run) as calls:
+                        with (patch.object(select_params, "run", side_effect=run) as calls,
+                              patch.object(select_params, "Api") as api):
+                            api.return_value.get.return_value = {"id": "selected-principal"}
                             with patch.object(select_params.secrets, "token_urlsafe") as token:
                                 with contextlib.redirect_stdout(io.StringIO()) as output:
                                     self.assertEqual(select_params.main(), 1)
                                 token.assert_not_called()
                                 self.assertIn("Restore its token privately", output.getvalue())
+                            api.assert_called_once_with("graph", subscription="selected-subscription")
+                            expected_path = ("/v1.0/servicePrincipals(appId='selected-app')?$select=id"
+                                             if kind == "servicePrincipal" else "/v1.0/me?$select=id")
+                            api.return_value.get.assert_called_once_with(expected_path)
                             commands = [call.args[0] for call in calls.call_args_list]
                             for cmd in (cmd for cmd in commands if cmd[0] == "az"):
                                 self.assertEqual(cmd[cmd.index("--subscription") + 1], env["AZURE_SUBSCRIPTION_ID"])
                             self.assertIn(["azd", "env", "set", "AZURE_PRINCIPAL_ID", "selected-principal"], commands)
                             self.assertFalse(any("LIVEWELL_DEVUI_TOKEN" in cmd for cmd in commands))
+
+    def test_missing_graph_identity_stops_before_writing_environment(self):
+        with tempfile.TemporaryDirectory() as directory:
+            infra = Path(directory).resolve()
+            (infra / "env").mkdir()
+            (infra / "env" / "mcaps.bicepparam").write_text("using '../main.bicep'\n", encoding="utf-8")
+            env = {"AZURE_ENV_NAME": "mcaps", "AZURE_SUBSCRIPTION_ID": "selected-subscription"}
+            with patch.object(select_params, "INFRA", infra), patch.dict(os.environ, env, clear=True):
+                with patch.object(sys, "argv", ["select-params.py"]):
+                    with (patch.object(select_params, "run", return_value='{"user":{"type":"user"}}') as run,
+                          patch.object(select_params, "Api") as api):
+                        api.return_value.get.return_value = {}
+                        with contextlib.redirect_stdout(io.StringIO()) as output:
+                            self.assertEqual(select_params.main(), 1)
+                        self.assertIn("returned no principal ID", output.getvalue())
+                        self.assertEqual(run.call_count, 1)
+                        self.assertNotIn("AZURE_PRINCIPAL_ID", os.environ)
 
     def test_fabric_check_uses_selected_subscription_and_surfaces_failure(self):
         with patch.dict(os.environ, {"FABRIC_BRIDGE": "true"}, clear=True):

@@ -1037,8 +1037,25 @@ Where an entry changes something SPEC.md states, it says so.
   `AzureCliCredential(subscription=...)`. `--parameters-only` never creates access or resources. A restored
   environment with an existing DevUI but no local token stops normal provisioning rather than rotating the token.
   Account creation remains the user's separate task; no attendee seeding or RBAC operation was run.
-- **11.17 (remaining live readiness finding)** Read-only `apply-guardrail.py --check` on the corrected MCAPS
-  target found drift in `livewell-guardrails`: its mode, blocking filters and custom-blocklist attachment differ
-  from `guardrails.yaml`. The four blocklist items and deployment-level policies match. Lab 2 is **not** signed
-  off as ready until an authorized operator reapplies the policy and the check passes. No cloud policy was changed
-  during this validation, and no model-behaviour run or screenshot retake is claimed.
+- **11.17 (initial readiness finding; resolved in 11.18)** Read-only `apply-guardrail.py --check` on the corrected
+  MCAPS target found drift in `livewell-guardrails`: its mode, blocking filters and custom-blocklist attachment
+  differed from `guardrails.yaml`. The four blocklist items and deployment-level policies matched. That initial
+  validation did not change the cloud policy or claim a model-behaviour run; the user subsequently authorized
+  the targeted repair below.
+- **11.18 (user-directed guardrail repair, 2026-10-28)** Reapplied the canonical `livewell-guardrails` policy on
+  `aif-hpb-livewell-mcaps` with `scripts/apply-guardrail.py`. Only the policy changed: the four existing blocklist
+  items and all deployment-level policies were already correct. The subsequent `--check` reports zero drift
+  across Blocking mode, all 13 configured filters and the prompt-side blocking attachment to
+  `livewell-medication-dosage`. On existing `livewell-demo-guarded` version 1, `lab2_medication_double` was blocked
+  by `custom_blocklists`, `lab2_skip_meals` was blocked by `self_harm`, and `lab2_benign_control` was allowed with
+  `route=self_care`, knowledge retrieval and citations. This resolves the specific guardrail readiness blocker;
+  it is not a full new Lab 2 evaluation or screenshot run. No accounts, roles, agent versions, model deployments
+  or capacity settings were changed. The activity log shows an external-tenant application writing this policy
+  on 2026-10-27 at 09:19 SGT; its display name could not be resolved in the workshop tenant. That writer was not
+  disabled or modified. Keep the existing day-of/pre-Lab-2 drift check: this repair is not a permanent exemption
+  from tenant governance.
+- **11.19 (principal lookup compatibility)** Verification exposed that `az ad` does not accept `--subscription`
+  on this installed CLI. `select-params.py` now uses the existing subscription-scoped Graph helper for `/me`
+  and service-principal lookup by app ID, rather than relying on the global CLI account or passing unsupported
+  flags. The helper also avoids Windows command-shell interpretation of Graph alternate-key URLs. Both lookup
+  shapes were verified read-only; missing principal IDs stop before any local identity value is written.

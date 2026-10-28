@@ -132,8 +132,16 @@ PTU deployments and partner models are never used.
   resources now match Python/Bicep configuration and local azd metadata. The browser canvas opens its project
   with the existing MCAPS session. Fabric is **Active F2**, and its Resident 360 workspace assignment is verified.
   The Lab 3 OpenAPI block was regenerated from this target. Models, demo schemas, connections and endpoints were
-  checked read-only; `livewell-guardrails` still has policy drift, so Lab 2 is not signed off as ready.
+  checked read-only. The policy drift found during that check was repaired with the user's authorization below.
 - API compatibility: [AzureCliCredential](https://learn.microsoft.com/python/api/azure-identity/azure.identity.azureclicredential)
   and the [Azure Identity 1.20 release notes](https://github.com/Azure/azure-sdk-for-python/blob/main/sdk/identity/azure-identity/CHANGELOG.md#1200-2025-02-11)
   document the subscription parameter. The CLI's mutually exclusive subscription/tenant token flags were also
   verified live. No SDK workaround, new sign-in, account creation, deployment or permission change was used.
+- **Guardrail repair (2026-10-28):** the canonical Blocking policy, 13 filters and prompt-side custom-blocklist
+  attachment are restored on the selected MCAPS account; `apply-guardrail.py --check` reports zero drift.
+  Existing guarded-agent probes confirm medication blocklist enforcement, self-harm blocking and an allowed
+  benign control with retrieval/citations. No model or agent version changed, and no full evaluation was run.
+  An external-tenant application wrote the policy on the previous day, so retain the day-of drift check.
+- Principal lookup uses the shared subscription-scoped Graph REST helper, not unsupported `az ad --subscription`
+  flags. The [service-principal alternate-key lookup](https://learn.microsoft.com/graph/api/serviceprincipal-get)
+  and `/me` were verified read-only; no dependency version changed for this compatibility fix.

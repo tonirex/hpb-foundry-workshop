@@ -27,7 +27,14 @@ All notable changes to this workshop. One entry per phase PR.
   explicit private restore instead of silent rotation.
 - Regenerated Lab 3's OpenAPI copy block from the correct MCAPS endpoint. Read-only checks confirm the model
   deployments, demo schemas, connections, endpoints and Resident 360 workspace on **Active F2**. The canvas
-  opens the correct project. **Lab 2 guardrail policy drift remains**, with no cloud policy or account changes made.
+  opens the correct project. The initial read-only audit found Lab 2 guardrail drift; it did not change cloud policy.
+- **Guardrail blocker repaired with user authorization (2026-10-28).** Reapplied only `livewell-guardrails` on the
+  correct MCAPS account. Configuration now has zero drift; the existing guarded agent blocks the medication and
+  self-harm probes while allowing the benign control with retrieval/citations. No accounts, roles, agents,
+  model deployments or capacity settings changed. Retain the day-of check because an external application
+  previously overwrote the policy.
+- Corrected principal discovery to use subscription-scoped Graph requests instead of unsupported
+  `az ad --subscription` flags; covered both identity types and fail-fast handling for an absent object ID.
 
 ### Sponsor environment (2026-10-04)
 

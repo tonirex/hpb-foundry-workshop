@@ -34,6 +34,8 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 INFRA = ROOT / "infra"
+sys.path.insert(0, str(ROOT / "scripts" / "lib"))
+from azrest import Api  # noqa: E402
 
 
 def run(cmd: list[str], check: bool = True) -> str:
@@ -106,11 +108,16 @@ def main() -> int:
     else:
         account = json.loads(run(["az", "account", "show", "--subscription", sub, "-o", "json"]))
         if account.get("user", {}).get("type") == "servicePrincipal":
-            pid = run(["az", "ad", "sp", "show", "--id", account["user"]["name"], "--subscription", sub, "--query", "id", "-o", "tsv"])
+            principal_path = f"/v1.0/servicePrincipals(appId='{account['user']['name']}')?$select=id"
             ptype = "ServicePrincipal"
         else:
-            pid = run(["az", "ad", "signed-in-user", "show", "--subscription", sub, "--query", "id", "-o", "tsv"])
+            principal_path = "/v1.0/me?$select=id"
             ptype = "User"
+        principal = Api("graph", subscription=sub).get(principal_path)
+        pid = principal.get("id") if principal else None
+        if not isinstance(pid, str) or not pid:
+            print("[select-params] Microsoft Graph returned no principal ID; refusing to set an empty identity.")
+            return 1
         run(["azd", "env", "set", "AZURE_PRINCIPAL_ID", pid])
         run(["azd", "env", "set", "AZURE_PRINCIPAL_TYPE", ptype])
         os.environ["AZURE_PRINCIPAL_ID"] = pid
