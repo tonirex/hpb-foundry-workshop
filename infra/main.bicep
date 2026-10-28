@@ -146,7 +146,9 @@ param storageNetworkDefaultAction string = 'Allow'
 // as parameters that infra/env/<env>.bicepparam reads from the same file, so a template never carries another
 // environment's identifiers.
 
-var names = loadYamlContent('../content/config/workshop.yaml', '$.names')
+var baseNames = loadYamlContent('../content/config/workshop.yaml', '$.names')
+var environments = loadYamlContent('../content/config/workshop.yaml', '$.environments')
+var names = union(baseNames, environments[environmentName].?names ?? {})
 var models = loadYamlContent('../content/config/workshop.yaml', '$.models')
 var n = {
   foundryAccount: replace(names.foundry_account, '<env>', environmentName)

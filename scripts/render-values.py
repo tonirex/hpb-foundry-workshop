@@ -73,7 +73,9 @@ def main() -> int:
 
     def portal_link() -> str:
         pid = v.get("AZURE_AI_PROJECT_ID")
-        return f"https://ai.azure.com/resource/overview?wsid={pid}" if pid else MISSING
+        tenant = v.get("AZURE_TENANT_ID")
+        suffix = f"&tid={tenant}" if tenant else ""
+        return f"https://ai.azure.com/resource/overview?wsid={pid}{suffix}" if pid else MISSING
 
     def hosted() -> str:
         # Name only: the postdeploy hook publishes a newer version than the one azd records in .env.
@@ -113,10 +115,14 @@ def main() -> int:
         ("Tools model deployment (Lab 3 coach on)", models["tools"]),
         ("Embedding deployment", models["embeddings"]),
         ("Knowledge base", names["knowledge_base"]),
+        ("Knowledge-base project connection", names["kb_mcp_connection"]),
         ("Search service", g("AZURE_SEARCH_SERVICE_NAME")),
         ("Activities MCP server", g("MCP_URL")),
         ("MCP project connection", names["mcp_connection"]),
         ("Profile OpenAPI spec URL (Lab 3)", g("PROFILE_OPENAPI_URL")),
+        ("Profile OpenAPI project connection", names["profile_openapi_connection"]),
+        ("Profile OpenAPI connection target (API root)",
+         v["MCP_URL"].rsplit("/mcp", 1)[0] if v.get("MCP_URL") else MISSING),
         ("Fabric workspace", f"{names['fabric_workspace']} — {fabric_ws_url}"),
         ("Fabric data agent", names["data_agent"]),
         ("Fabric IQ connection", v.get("FABRIC_IQ_CONNECTION_ID") and names["fabric_connection"] or MISSING),

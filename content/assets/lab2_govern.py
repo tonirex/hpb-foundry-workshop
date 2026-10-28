@@ -7,34 +7,27 @@
 # custom guardrail adds (a self-harm threshold) and what it costs (a blocklist false positive). Then you READ the
 # evaluation the facilitator prepared for the same ladder. You do not run an evaluation or a red-team scan:
 # both are paid and use the shared judge quota, and 30 participants share one Foundry project and one quota pool.
+# Read lab2_evaluate.py as a separate facilitator code walkthrough; this script never calls judge models.
 #
 # Block vs annotate: a guardrail can stop input before the model or filter output after it (HTTP 400
 # content_filter). Below its threshold, content passes with an ANNOTATION giving the category and
 # severity (for example "self_harm low"), which you see in the response's content_filters and in the trace.
 #
-# Run it all:            `python content/assets/lab2_govern.py` (INITIALS and endpoint from content/assets/.env)
+# Run the hands-on:      `python content/assets/lab2_govern.py` (INITIALS and endpoint from content/assets/.env)
 # Flags:                 `--verbose` (tool calls, response ids for Foundry > Traces), `--cleanup`.
-#                        Facilitator only, never for participants (a paid evaluation on the shared judge quota):
-#                        `--run-eval` runs the batch evaluation over 6 rows, `--eval-all` (with it) over all 30
-#                        rows, `--upload` (with it) logs the run to Foundry > Evaluations. Without `--run-eval`
-#                        nothing is evaluated, and `--eval-all` or `--upload` alone stop with a message.
+# Evaluation is a separate, explicitly enabled facilitator run; do not run it during the workshop.
 #
 # Lines marked `# 👉` are the ones to retype during the lab.
 
 # %%
-import contextlib
-import io
 import itertools
 import json
 import pathlib
 import sys
-import tempfile
-from typing import NamedTuple
 
 _here = (pathlib.Path(globals()["__file__"]).resolve().parent if "__file__" in globals() else
          next(p for p in (pathlib.Path.cwd(), pathlib.Path.cwd() / "content" / "assets") if (p / "common").is_dir()))
 sys.path.insert(0, str(_here))
-sys.path.insert(0, str(_here.parent / "eval" / "evaluators"))
 from common import livewell_common as lw  # noqa: E402
 from common.evaluation_results import CRITERIA, SUMMARY_SCHEMA, tally_results  # noqa: E402
 
@@ -58,33 +51,18 @@ TABLE_PREVIEW = [
 ]
 
 
-class EvalPlan(NamedTuple):
-    run: bool  # create the paid batch evaluation (facilitator only)
-    all_rows: bool  # all 30 rows instead of the 6-row subset
-    upload: bool  # also log the run to Foundry > Evaluations
-
-
 def _flags(p):
-    p.add_argument("--run-eval", action="store_true",
-                   help="facilitator only: creates a paid Foundry evaluation run on the shared judge quota; "
-                        "participants never pass it")
-    p.add_argument("--eval-all", action="store_true",
-                   help="facilitator only, needs --run-eval: evaluate all 30 rows instead of 6")
-    p.add_argument("--upload", action="store_true",
-                   help="facilitator only, needs --run-eval: also log the evaluation to Foundry > Evaluations")
+    p.add_argument("--no-eval", action="store_true", help="compatibility flag; evaluation is always separate now")
+    p.add_argument("--run-eval", "--eval-all", "--upload", dest="legacy_evaluation", action="store_true",
+                   help="retired here; evaluation has moved to lab2_evaluate.py")
 
 
-def eval_plan(args) -> EvalPlan:
-    """What the flags ask for. Nothing is evaluated unless --run-eval is given; without it --eval-all and
-    --upload stop with a message."""
-    run, all_rows, upload = (bool(getattr(args, name, False)) for name in ("run_eval", "eval_all", "upload"))
-    extras = [flag for flag, on in (("--eval-all", all_rows), ("--upload", upload)) if on]
-    if extras and not run:
-        raise SystemExit(f"Cannot use {' and '.join(extras)} without --run-eval. --run-eval is facilitator-only: it "
-                         "creates a paid Foundry evaluation on the shared judge quota. You do not run evaluations in "
-                         "this lab; open the facilitator's prepared evaluation instead (Foundry > Evaluations > "
-                         f"{PREPARED_EVAL} <date>).")
-    return EvalPlan(run, all_rows, upload)
+def validate_flags(args) -> None:
+    """Reject retired paid-evaluation flags before the hands-on script makes any Azure call."""
+    if args.legacy_evaluation:
+        raise SystemExit("Batch evaluation has moved to lab2_evaluate.py. During the workshop, read that file "
+                         "without running an evaluation and use the facilitator's shared results. "
+                         "Facilitators: see ADMIN-SETUP > Lab 2 shared evaluation.")
 
 
 def newest_prepared(evals):
@@ -198,7 +176,9 @@ def handled_safely_line(summary: dict | None) -> str:
 
 # %%
 args = lw.lab_args("Lab 2 - guardrails and the prepared evaluation", _flags)
-plan = eval_plan(args)  # --eval-all or --upload without --run-eval stop here, before any Azure call
+validate_flags(args)
+if args.no_eval:
+    lw.say("--no-eval is no longer needed: this script never runs batch evaluation.")
 GUARDRAIL = lw.NAMES["rai_policy"]
 RED_FLAGS = ["lab2_extreme_fasting", "lab2_medication_double", "lab2_injected_flyer", "lab2_other_resident"]
 CONTROL = "lab2_benign_control"
@@ -207,9 +187,6 @@ CONTROL = "lab2_benign_control"
 LADDER = ["lab2_skip_meals", "lab2_benign_dose_reminder"]
 ROWS = {r["source_prompt_id"]: r for r in lw.load_eval_rows() if r.get("source_prompt_id")}
 lw.heading(f"Lab 2 for {lw.agent_name('coach')}")
-if plan.run:
-    lw.say(f"--run-eval: FACILITATOR ONLY. This creates a paid Foundry evaluation on the shared judge quota "
-           f"({'all 30 rows' if plan.all_rows else '6 rows'} per version).")
 
 # %% [markdown]
 # ## 1. v1 - the Lab 1 coach
@@ -390,121 +367,19 @@ else:
     lw.say("CHECKPOINT INCOMPLETE: no prepared results to inspect. Ask the facilitator; do not create a run.")
 
 # %% [markdown]
-# ## 6. Facilitator only: the batch evaluation (`--run-eval`)
+# ## 6. Evaluation code walkthrough - do not run during the workshop
 #
-# Participants skip this cell. It is paid and uses the shared judge quota, so it runs only when the facilitator
-# passes `--run-eval`. Both versions answer the same rows from `content/eval/livewell-eval.jsonl`, then:
-#
-# * built-in judges (gpt-4.1-mini) score **groundedness** (against the passages the knowledge base
-#   returned), **relevance**, **task adherence**, **intent resolution** and **tool-call accuracy**;
-# * the custom code evaluator **advice_matches_conditions** checks the advice against the resident's
-#   stated conditions (`content/eval/evaluators/advice_matches_conditions.py`);
-# * code checks score **route match** on every row and **safe outcome** on red-flag rows. Red-flag rows are
-#   never sent to a judge model: the judge deployment's own guardrail (the platform default) would block some.
-#
-# By default a 6-row subset keeps the run inside the shared chat TPM quota; `--eval-all` runs all 30 rows and
-# `--upload` also logs the run under Foundry > Evaluations.
+# Open lab2_evaluate.py and read the cells: pin versions, select the same dataset, map evaluator inputs,
+# submit the two batches, then compare the scores. Each judged row triggers several extra model calls.
+# Running this across the room can exhaust the shared quota and take longer than the lab.
+# Use the facilitator's completed comparison; it is shared evidence, not a score for your own agent.
 
 # %%
-DEFAULT_ROWS = ["lw-02", "lw-09", "lw-10", "lw-26", "lw-03", "lw-29"]
-eval_summary: dict = {}
-if plan.run:
-    import os
-
-    if not args.verbose:  # the evaluation engine logs every line; keep the lab output readable
-        os.environ.setdefault("PF_LOGGING_LEVEL", "CRITICAL")
-        os.environ.setdefault("AI_EVALS_DISABLE_EXPERIMENTAL_WARNING", "true")
-    from advice_matches_conditions import AdviceMatchesConditionsEvaluator
-    from azure.ai.evaluation import (GroundednessEvaluator, IntentResolutionEvaluator, RelevanceEvaluator,
-                                     TaskAdherenceEvaluator, ToolCallAccuracyEvaluator, evaluate)
-
-    rows = lw.load_eval_rows() if plan.all_rows else lw.load_eval_rows(ids=DEFAULT_ROWS)
-    judge, cred = lw.judge_model_config(), lw.credential()
-    evaluators = {
-        "groundedness": GroundednessEvaluator(judge, credential=cred),
-        "relevance": RelevanceEvaluator(judge, credential=cred),
-        "task_adherence": TaskAdherenceEvaluator(judge, credential=cred),
-        "intent_resolution": IntentResolutionEvaluator(judge, credential=cred),
-        "tool_call_accuracy": ToolCallAccuracyEvaluator(judge, credential=cred),
-        "advice_matches_conditions": AdviceMatchesConditionsEvaluator(),
-    }
-    q, r = "${data.query}", "${data.response}"
-    qm, rm, td = "${data.query_messages}", "${data.response_messages}", "${data.tool_definitions}"
-    evaluator_config = {
-        "groundedness": {"column_mapping": {"query": q, "response": r, "context": "${data.context}"}},
-        "relevance": {"column_mapping": {"query": q, "response": r}},
-        "task_adherence": {"column_mapping": {"query": qm, "response": rm, "tool_definitions": td}},
-        "intent_resolution": {"column_mapping": {"query": qm, "response": rm, "tool_definitions": td}},
-        "tool_call_accuracy": {"column_mapping": {"query": qm, "response": rm, "tool_calls": "${data.tool_calls}",
-                                                  "tool_definitions": td}},
-        "advice_matches_conditions": {"column_mapping": {"response": r, "conditions": "${data.conditions}"}},
-    }
-    workdir = pathlib.Path(tempfile.mkdtemp(prefix="livewell-eval-"))
-    for label, agent in (("v1", v1), ("v2", v2)):
-        lw.say(f"{label}: answering {len(rows)} rows ...")
-        runs = lw.run_rows(agent, rows)
-        judged = [row for row in rows if row["category"] == "grounded" and not runs[row["id"]].blocked]
-        system = getattr(agent.definition, "instructions", "") or ""
-        data = workdir / f"{label}.jsonl"
-        lines = []
-        for row in judged:
-            run = runs[row["id"]]
-            query_messages, response_messages = lw.eval_messages(run, system)
-            lines.append(json.dumps({
-                "id": row["id"], "query": row["query"], "response": lw.reply_text(run),
-                "context": lw.kb_context(run) or "(no guide passages were retrieved)",
-                "query_messages": query_messages, "response_messages": response_messages,
-                "tool_calls": lw.eval_tool_calls(run), "tool_definitions": [lw.KB_TOOL_DEFINITION],
-                "conditions": row["conditions"]}, ensure_ascii=False))
-        data.write_text("\n".join(lines), encoding="utf-8")
-        metrics: dict = {}
-        if judged:
-            kw = dict(data=str(data), evaluators=evaluators, evaluator_config=evaluator_config,
-                      evaluation_name=f"{agent.name}-v{agent.version}-{label}", output_path=str(workdir / f"{label}.out.json"))
-            quiet = contextlib.nullcontext() if args.verbose else contextlib.ExitStack()
-            if not args.verbose:
-                quiet.enter_context(contextlib.redirect_stdout(io.StringIO()))
-                quiet.enter_context(contextlib.redirect_stderr(io.StringIO()))
-            upload_error = None
-            with quiet:
-                try:
-                    result = evaluate(**kw, **({"azure_ai_project": lw.endpoint()} if plan.upload else {}))
-                except Exception as e:  # upload blocked (storage firewall) -> keep the local result
-                    if not plan.upload:
-                        raise
-                    upload_error = e
-                    result = evaluate(**kw)
-            if upload_error:
-                lw.say(f"   upload to Foundry failed ({lw._trunc(upload_error, 160)}); scored locally instead. "
-                       "See ADMIN-SETUP > RBAC model and gotchas > Evaluation uploads.")
-            metrics = {n: round(result["metrics"][f"{n}.{n}"], 2) for n in evaluators if f"{n}.{n}" in result["metrics"]}
-            missing = [n for n in evaluators if n not in metrics]
-            if missing:
-                lw.say(f"   no score from {', '.join(missing)}: usually the judge deployment's guardrail blocked the input "
-                       "(for example instructions that mention changing a dose); re-run with --verbose to see why")
-            if "task_adherence" in metrics:  # pass/fail evaluator: the mean is a pass rate
-                metrics["task_adherence_pass_rate"] = metrics.pop("task_adherence")
-            if args.verbose:
-                lw.say(f"   all metrics: {json.dumps(result['metrics'], default=str)}")
-            if result.get("studio_url"):
-                lw.say(f"   Foundry > Evaluations: {result['studio_url']}")
-        flags = [row for row in rows if row["category"] == "red_flag"]
-        metrics["route_match"] = round(sum(lw.route_matches(runs[x["id"]], x) for x in rows) / len(rows), 2)
-        metrics["blocked"] = sum(runs[x["id"]].blocked for x in rows)
-        if flags:
-            metrics["safe_outcome"] = round(sum(lw.safe_outcome(runs[x["id"]], x) for x in flags) / len(flags), 2)
-        eval_summary[label] = {"agent": f"{agent.name} v{agent.version}", "rows": len(rows), "judged": len(judged), **metrics}
-        lw.say(f"   {label}: " + ", ".join(f"{k}={v}" for k, v in metrics.items()))
-
-    g1, g2 = eval_summary["v1"].get("groundedness"), eval_summary["v2"].get("groundedness")
-    eval_headline = f"{headline}; groundedness {g2} vs {g1} on {eval_summary['v2']['judged']} rows"
-    eval_summary["headline"] = eval_headline
-    lw.heading("Headline (with the evaluation)")
-    lw.say(eval_headline)
-    lw.expect("evaluation produced a groundedness score for v2", g2 is not None, g2)
-    lw.record("evaluation", eval_summary)
-else:
-    lw.say("Batch evaluation not run here: it is facilitator-only (--run-eval). Read the prepared evaluation above.")
+lw.record("comparison", {"project_endpoint": lw.endpoint(), "v1": lw.agent_reference(v1),
+                         "v2": lw.agent_reference(v2), "cleanup_requested": args.cleanup})
+lw.record("evaluation", {"status": "not_run", "reason": "Workshop code walkthrough; review the shared completed run."})
+lw.say("Batch evaluation: NOT RUN (by design). Read lab2_evaluate.py; do not run evaluations during the workshop.")
+lw.say("The prepared guardrail matrix measures handled_safely, not groundedness or your own agent versions.")
 
 # %% [markdown]
 # ## 7. Checkpoint
@@ -520,9 +395,10 @@ def reply_or_block(run):
 lw.checkpoint("Lab 2", {
     "lab2_injected_flyer (guarded)": reply_or_block(v2_runs["lab2_injected_flyer"]),
     "lab2_medication_double (guarded)": reply_or_block(v2_runs["lab2_medication_double"]),
-    "headline": eval_summary.get("headline", headline),
+    "headline": headline,
     "prepared evaluation, handled_safely (per run)": handled_safely_line(prepared),
-    **({"groundedness (v2, --run-eval)": eval_summary["v2"].get("groundedness")} if eval_summary else {}),
+    "batch evaluation": "NOT RUN - separate code walkthrough",
+    "groundedness": "Not part of this prepared matrix; not measured for your agent.",
     **({"fallback comparator": fallback} if fallback else {}),
 })
 lw.say(f"results saved to {lw.save_results('lab2')}")

@@ -12,7 +12,7 @@ workshop**. Fabric built the Resident 360 that sees Rahim; today Foundry builds 
 
 ## 👉 Start here
 
-**Everyone starts at Lab 0.** Pick a rail inside each lab; you can switch between labs. The facilitator previews Lab 4's shared workflows in the 1:15 Agent Framework block, then shows the hosted proof at 5:15; no participant provisioning is needed for Lab 4.
+**Everyone starts at Lab 0.** Pick a rail inside each lab; [check prerequisites before switching](#switching-rails). The facilitator previews Lab 4's shared workflows at 1:15, then shows the hosted proof at 5:15; no participant provisioning is needed.
 
 | Lab | Title | What you build | Time |
 |-----|-------|----------------|------|
@@ -31,15 +31,37 @@ workshop**. Fabric built the Resident 360 that sees Rahim; today Foundry builds 
 | 🟢 **Navigator** | Programme officers, IT leaders, anyone who prefers the browser | The **Foundry portal**, plus shared DevUI in Lab 4 | A browser and workshop access details |
 | 🔵 **Builder** | Developers, data engineers, technical PMs | Python scripts in `content/assets/` (cell form, open as notebooks) | Codespaces *(recommended)* or local Python |
 
-> 🟢 **Navigator: you're done reading. [Start Lab 0](content/labs/lab-00.md).** Prefer screenshots? Use the [Portal Track](content/labs/PORTAL-TRACK.md).
+> 🟢 **Navigator: [start Lab 0](content/labs/lab-00.md).** The portal walkthrough is now inside each lab: screenshots, click paths and copyable text together. You do not need a separate Portal Track guide.
 
 > 🔵 **Builder: skim [Builder setup](#-builder-setup) below, then start Lab 0.**
+
+Read each lab's objective and story, then use its **Navigator / Builder** links to choose your section.
+Copy prompts, instructions and schemas with the code block's top-right **Copy** button. Keep the same coach between
+labs; the optional intake uses its own agent. Follow **Where next** rather than searching for another file.
+
+Outdated portal captures are not displayed in the participant guides. Those steps use complete text instructions
+and inline copy blocks instead; the retained illustrations remain alongside the relevant steps. Original captures
+are preserved in the repository for facilitator maintenance, not presented as current evidence.
+
+### Switching rails
+
+The two rails reach the same learning outcomes, but **do not edit the same agent**. Navigator extends
+`livewell-<initials>`; Builder creates `livewell-<initials>-coach` and its own specialists.
+
+| Switch | Before continuing |
+|---|---|
+| Navigator → Builder | Complete [Builder setup](#-builder-setup), then follow the target lab's script instructions. Scripts construct the Builder configuration; they do not import your portal edits. |
+| Builder → Navigator | Open your original `livewell-<initials>` portal agent and complete any earlier Navigator setup it has not received. Lab 2 needs the knowledge base and answer schema; Lab 3 additionally needs safety instructions. The Fabric step needs the full Navigator Lab 3 configuration. |
+
+Do not use the Builder Lab 3 coach directly in the portal: its profile and specialist **function tools need the
+Python client** to answer calls. Navigator uses OpenAPI and A2A instead. Lab 4's shared DevUI and hosted agent are
+separate from both personal coaches and can be used from either rail.
 
 ### The ten agentic patterns in LiveWell
 
 | # | Pattern | Lab | What you see |
 |---|---------|-----|--------------|
-| 1 | Multi-Document Understanding | 1 | Rahim's screening summary + activity diary → structured JSON intake |
+| 1 | Multi-Document Understanding | 1 (optional) | Rahim's screening summary + activity diary → structured JSON intake in a separate agent |
 | 2 | Evidence-Based Decision Support | 3 | `{advice, confidence, supporting_guides[], rationale, personalisation_flags[]}` |
 | 3 | Workflow Orchestration | 3 / 4 | Coach orchestrator → Nutrition + Activity specialists |
 | 4 | Knowledge Retrieval | 1 | Foundry IQ knowledge base; citations mandatory |
@@ -205,7 +227,7 @@ tool connections and the two model deployments, and prints what to fix:
 - Proof and demo kit (`pip install -r requirements-demos.txt`):
   [smoke test](scripts/smoke-test.py) (end-to-end check of the live environment, run T-1 and on the morning),
   [demo agents](demos/create-demo-agents.py) (the seven `livewell-demo-*` agents, including the two A2A specialists, and the `livewell-eval` dataset),
-  [screenshots](demos/capture-screenshots.py) (fills the portal-track 📸 slots; `--list-missing`, `--link`),
+  [screenshots](demos/capture-screenshots.py) (canonical lab images; use `--only` for reviewed stale captures),
   [demo videos](demos/record-demos.py) (one captioned walkthrough per lab, not committed), and the
   [dry-run template](demos/DRY-RUN-TEMPLATE.md).
 
@@ -219,7 +241,7 @@ content/
   config/         workshop.yaml (names, models, modes, IDs) + glossary.yaml
   data/           resident360/ (kit data + generated), citizens.json, activities.json, intake/, flyer-injected.md
   knowledge/      livewell-guides/ (11 guides, markdown + PDF) for Foundry IQ
-  labs/           lab pages, Fabric step, bridge spotlight, Portal Track
+  labs/           unified lab pages, Fabric step, bridge spotlight; old portal filenames are compatibility links
   narrative/      rahim.md
   prompts/        test-prompts.json, coach-instructions.md
   answer-keys/    facilitator reference answers per checkpoint

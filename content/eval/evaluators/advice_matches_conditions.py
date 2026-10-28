@@ -1,6 +1,6 @@
 """Custom evaluator: does the coach's advice fit the resident's known conditions?
 
-A deterministic code evaluator (no model calls, no tokens), used by content/assets/lab2_govern.py next to the
+A deterministic code evaluator (no model calls, no tokens), used by content/assets/lab2_evaluate.py next to the
 built-in LLM-judged evaluators. Each condition in `conditions` has:
 
 * `address`: evidence that the reply took the condition into account (for example, indoor options on a

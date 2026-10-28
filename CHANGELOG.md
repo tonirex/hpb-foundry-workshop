@@ -4,6 +4,16 @@ All notable changes to this workshop. One entry per phase PR.
 
 ## [Unreleased]
 
+### Integrated GitHub publication (2026-10-29)
+
+- Combined the approved MCAPS infrastructure, prepared evaluation evidence and private DevUI access with
+  main's canonical Navigator guides, fresh screenshots, inline copy blocks and connection prerequisites.
+- Retained the separate default-inactive evaluator, read-only prepared-matrix reader, explicit human approval
+  and discovery-before-write safeguards. The participant checkpoint does not require another paid evaluation.
+- Kept concept-first core steps and expandable setup/FAQ, updated both decks, and preserved the local-only
+  review and all private access material outside version control. No cloud redeployment or full live sanity
+  check was part of this publication.
+
 ### Lab 4 private launch access (2026-10-28)
 
 - Added expiring private launch links that open the prepared sequential demo without token entry or participant
@@ -92,6 +102,67 @@ and no evaluation, red-team, compatibility or load test was run; the workshop is
   changed; red-flag round 2 workers; retry jitter).
 - **Docs.** New [HPB delivery runbook](content/admin/HPB-DELIVERY-RUNBOOK.md); README, ADMIN-SETUP, TENANT-BOOTSTRAP,
   the run of show, `versions.md` and both decks aligned. Offline tests: `python -m unittest discover -s tests`.
+### Lab 2 evaluation pacing and Navigator validation
+
+- Split the Builder exercise into `lab2_govern.py` (guardrail ladder and traces, no batch evaluation)
+  and `lab2_evaluate.py` (read-only code walkthrough by default; paid calls require explicit terminal `--run`).
+  Plain execution and notebook Run All do not enable evaluation; legacy evaluation flags on the hands-on
+  script stop with migration guidance.
+- Pin the two compared agent versions and project binding in the hands-on result. The separate evaluation
+  reuses them without recreating agents, saves its own evidence, and never automatically repeats a batch
+  after an upload error.
+- Align the lab, checkpoint, specification, narrative, facilitator runbook and decks: participants read
+  the evaluation code and shared completed results, not run batches or wait for personal scores.
+  The old combined-output screenshot is a linked historical example only.
+- Add offline regression coverage for default execution, notebook cells, opt-in evaluation, version
+  provenance and failure paths. The script-split verification did not launch live evaluations or change cloud configuration.
+- Follow up with the requested fresh `livewell-wxyz` browser-canvas walkthrough of Labs 0-3, including
+  separate intake, the full guardrail ladder, approval, memory and optional specialist routing.
+  Replace archived core screenshots with genuine captures and preserve diagnostic failures separately.
+- Prefer the already-prepared KB entry for attendees; retain Search-connection selection only for the
+  facilitator's Connect alternative. Correct JSON citation navigation, the guardrail Assign/Save distinction,
+  exact MCP approval fields and current Memory Add flow. Add a configurable facilitator-prepared
+  Anonymous OpenAPI connection, private values and read-only readiness validation.
+- Make discovery explicitly read profile/knowledge/activities before a separate confirmation; Builder
+  denies unsolicited discovery approvals and requires retrieval before continuing. Add a copied Activity
+  follow-up for the observed Nutrition-only route. Keep source evidence and one-object JSON requirements
+  distinct from automatic quality badges.
+- Document the repeated-JSON failure, source-skipping recovery attempt, delayed memory retry and two-turn
+  specialist evidence honestly. No additional batch evaluation, red-team scan, user/RBAC change, model
+  deployment or capacity change was made. Attendee-only permissions and the optional Fabric step are not
+  newly certified by the facilitator-account walkthrough.
+
+### Participant journey consolidation
+
+- One canonical lab page per capability: screenshot-led Navigator steps, Builder, checkpoints and navigation
+  together. Old portal URLs remain compatibility links; participant entry links point to `tonirex/hpb-foundry-workshop`.
+- Source-backed inline copy blocks for instructions, complete JSON schemas, prompts, confirmations and attachments.
+  `sync-lab-blocks.py --check` detects drift; the endpoint-bearing OpenAPI block keeps its dedicated generator.
+- Fixed the optional Navigator intake schema mismatch using a separate intake agent. Clarified Lab 4's sequential
+  JSON versus hand-off output and participant versus facilitator roles. Retained the aggregate-only Fabric cohort exercise.
+- Rebuilt both decks and expanded offline content/regression checks, including filename casing and image decoding.
+- **Approved text-only fallback for outdated illustrations.** Existing images all load, and 50 archived captures
+  are no longer rendered in participant guides; complete instructions and copy blocks remain, with text-only deck
+  reference cards. No PNGs were changed or live retakes claimed. Hidden metadata preserves the optional retake
+  inventory; the five uncaptured steps also remain text-only.
+- Added `--outdated-only` and an offline capture `--dry-run`, with regression coverage preventing an empty filtered
+  selection from becoming a blanket capture. Verified live sponsor demo models/schema shapes read-only; prepared an
+  isolated x64 capture runtime. These initial sponsor/legacy-MCAPS checks were not validation of the user's current target.
+- **Corrected MCAPS binding.** Replaced stale subscription/tenant settings with the user's explicitly selected
+  environment and its existing HPB-prefixed resources. Python/Bicep name overrides preserve sponsor. CLI/SDK/REST
+  authentication is subscription-scoped, portal links carry the tenant, and parameter-only inspection cannot
+  create resources or tokens. Azure Identity's minimum is now 1.20. Missing restored DevUI tokens require an
+  explicit private restore instead of silent rotation.
+- Regenerated Lab 3's OpenAPI copy block from the correct MCAPS endpoint. Read-only checks confirm the model
+  deployments, demo schemas, connections, endpoints and Resident 360 workspace on **Active F2**. The canvas
+  opens the correct project. The initial read-only audit found Lab 2 guardrail drift; it did not change cloud policy.
+- **Guardrail blocker repaired with user authorization (2026-10-28).** Reapplied only `livewell-guardrails` on the
+  correct MCAPS account. Configuration now has zero drift; the existing guarded agent blocks the medication and
+  self-harm probes while allowing the benign control with retrieval/citations. No accounts, roles, agents,
+  model deployments or capacity settings changed. Retain the day-of check because an external application
+  previously overwrote the policy.
+- Corrected principal discovery to use subscription-scoped Graph requests instead of unsupported
+  `az ad --subscription` flags; covered both identity types and fail-fast handling for an absent object ID.
 
 ### Sponsor environment (2026-10-04)
 

@@ -19,6 +19,7 @@ help:
 validate:
 	cd "$(ROOT)" && $(PYTHON) scripts/check-content.py
 	cd "$(ROOT)" && $(PYTHON) scripts/validate-narrative.py --layers static,data --check --no-report
+	cd "$(ROOT)" && $(PYTHON) -m unittest discover -s scripts/tests -p "test_*.py"
 
 validate-live:
 	cd "$(ROOT)" && $(PYTHON) scripts/validate-narrative.py --layers all --runs $(RUNS) $(if $(ENV),--env $(ENV))
@@ -27,7 +28,7 @@ fill:
 	cd "$(ROOT)" && $(PYTHON) scripts/validate-narrative.py --layers static,data --fill --no-report
 
 notebooks:
-	$(PYTHON) -m jupytext --to ipynb lab1_knowledge.py lab2_govern.py lab3_tools.py lab4_multiagent.py
+	$(PYTHON) -m jupytext --to ipynb lab1_knowledge.py lab2_govern.py lab2_evaluate.py lab3_tools.py lab4_multiagent.py
 
 validate-rail:
 	cd "$(ROOT)" && $(PYTHON) scripts/validate-builder-rail.py --labs $(LABS) $(if $(INITIALS),--initials $(INITIALS))

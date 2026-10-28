@@ -105,9 +105,7 @@ intake_json = None
 if args.intake:
     intake_agent = lw.create_agent(
         "intake",
-        lw.load_instructions("base") + "\n\nIntake rules:\n- Combine every document the resident pastes into ONE"
-        " intake record in the JSON schema.\n- Copy values exactly; use null when a value is not in the documents."
-        "\n- Do not diagnose and do not add advice.",
+        lw.load_instructions("base", "intake"),
         schema=lw.intake_schema(),  # 👉
         rai_policy=lw.DEFAULT_RAI_POLICY,
         description="LiveWell Coach - Lab 1 structured intake (pattern #1)",

@@ -10,8 +10,8 @@ interrupted earlier run left are deleted before the labs start and don't count).
 Semantic signals (SPEC.md phase 4 verification):
   * Lab 1: the knowledge base is cited
   * Lab 2: the injected flyer is blocked or ignored, the four red flags are blocked or safely refused on v2, and the
-    look-only prepared-evaluation cell finishes (the table, the captured copy, or one calm "not available" line).
-    Lab 2 evaluates nothing here: --run-eval is facilitator-only and paid, and this script never passes it
+    look-only prepared-evaluation cell has completed evidence to inspect (live or captured).
+    Lab 2 evaluates nothing here: paid evaluation is in the separate facilitator-only lab2_evaluate.py
   * Lab 3: the compound question makes >= 2 tool calls
   * Lab 3 Fabric step: Fabric IQ is called for Mei's question and not for Rahim's (only with FABRIC_BRIDGE=true)
   * Lab 4: the hosted agent answers with evidence JSON under livewell-guardrails (once it is deployed)
@@ -22,6 +22,8 @@ Semantic signals (SPEC.md phase 4 verification):
 
 Needs the facilitator's azd env (AZURE_ENV_NAME) or content/assets/.env, and the shared resources: the
 knowledge base, the MCP app, the tool connections and livewell-guardrails. Takes about 15-20 minutes.
+Lab 2 covers the hands-on guardrail ladder only: batch evaluation is a separate, opt-in facilitator run
+in content/assets/lab2_evaluate.py, never part of this participant-path validation.
 Exit code 1 if any check fails, a lab crashes, or agents are left behind.
 """
 from __future__ import annotations
@@ -41,7 +43,7 @@ sys.path.insert(0, str(ASSETS))
 
 LABS = {
     "1": ("lab1", "lab1_knowledge.py", []),
-    "2": ("lab2", "lab2_govern.py", []),  # never --run-eval: the batch evaluation is facilitator-only and paid
+    "2": ("lab2", "lab2_govern.py", []),  # batch evaluation is a separate facilitator-only script
     "3": ("lab3", "lab3_tools.py", ["--fabric"]),
     "4": ("lab4", "lab4_multiagent.py", ["--fabric"]),
 }
@@ -57,7 +59,9 @@ SIGNALS = [
      [f"v2 {pid}: blocked or safely refused" for pid in LAB2_RED_FLAGS], False),
     ("lab2", "prepared evaluation: evidence available",
      ["prepared evaluation: results available for the look-only checkpoint"], False),
-    ("lab3", "compound question >= 2 tool calls", ["lab3_hazy_indoor_signup: >= 2 tools (profile + find_activities)"],
+    ("lab3", "compound question >= 2 tool calls", ["lab3_hazy_indoor_signup: >= 2 tools (profile + find_activities)",
+                                                 "lab3_hazy_indoor_signup: discovery is read-only",
+                                                 "lab3_hazy_indoor_signup: knowledge base searched"],
      False),
     ("lab3", "Fabric IQ called for Mei", ["fabric_q_disengaged_regions: Fabric IQ tool called"], True),
     ("lab3", "Fabric IQ not called for Rahim", ["lab1_prediabetes_eat on the Fabric coach: no Fabric call"], True),

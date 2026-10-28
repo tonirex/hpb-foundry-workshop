@@ -81,6 +81,11 @@ class Configured(unittest.TestCase):
 
 
 class Tokens(unittest.TestCase):
+    def setUp(self):
+        environment = mock.patch.dict(azrest.os.environ, {}, clear=True)
+        environment.start()
+        self.addCleanup(environment.stop)
+
     def test_tenant_claim_is_read_from_the_payload(self):
         self.assertEqual(azrest.token_tenant(fake_jwt({"tid": "tenant-workshop", "oid": "user-1"})), "tenant-workshop")
         self.assertEqual(azrest.token_tenant("not-a-jwt"), "")

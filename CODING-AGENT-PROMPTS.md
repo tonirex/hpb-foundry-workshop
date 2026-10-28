@@ -1,4 +1,5 @@
 LiveWell Foundry Workshop — prompts for the coding agent
+Current target: tonirex/hpb-foundry-workshop. The historical phase prompts below predate SPEC.md v1.2; follow the current SPEC when they disagree. Navigator now lives in each canonical lab page, old portal pages are compatibility links, and the optional citizen Fabric exercise is aggregate age-band-only. Do not recreate duplicate walkthroughs.
 Use with SPEC.md (= LiveWell-Foundry-Workshop-SCOUT-BRIEF.md v1.1). Commit both at the root of tonirex/livewell-foundry-workshop. Send Prompt A once at the start of every session (or put it in AGENTS.md / the agent's custom instructions), then one Prompt B per phase. After each phase: review the PR → merge → send the next Prompt B. Never send two phases at once.
 
 Before Prompt 1: fill the placeholders in SPEC.md §16 — at minimum <PINNED_SHA> (the stellistic/resident-360-data-workshop commit to vendor) and the MCAPS subscription/tenant IDs — and create the empty private repo with SPEC.md, CODING-AGENT-PROMPTS.md, LICENSE (MIT) and .gitignore committed.

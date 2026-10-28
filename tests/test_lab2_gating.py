@@ -108,53 +108,38 @@ class OfflineScript(unittest.TestCase):
 
 
 class EvalGatingTests(OfflineScript):
-    def plan(self, *argv):
-        return self.ns["eval_plan"](self.parse(*argv)[0])
+    def test_hands_on_flags_do_not_enable_evaluation(self):
+        args, unknown = self.parse()
+        self.assertEqual(unknown, [])
+        self.assertFalse(args.legacy_evaluation)
+        self.assertIsNone(self.ns["validate_flags"](args))
 
-    def test_evaluation_is_off_by_default(self):
-        plan = self.plan()
-        self.assertEqual((plan.run, plan.all_rows, plan.upload), (False, False, False))
-
-    def test_run_eval_turns_it_on(self):
-        plan = self.plan("--run-eval")
-        self.assertEqual((plan.run, plan.all_rows, plan.upload), (True, False, False))
-
-    def test_eval_all_and_upload_need_run_eval(self):
-        for argv in (["--eval-all"], ["--upload"], ["--eval-all", "--upload"]):
+    def test_all_legacy_evaluation_flag_combinations_stop(self):
+        for argv in (["--run-eval"], ["--eval-all"], ["--upload"],
+                     ["--run-eval", "--eval-all", "--upload"]):
             with self.subTest(argv=argv), self.assertRaises(SystemExit) as caught:
-                self.plan(*argv)
-            message = str(caught.exception)
-            self.assertIn("--run-eval", message)
-            self.assertIn("facilitator", message)
-            self.assertTrue(all(flag in message for flag in argv))
-            self.assertTrue(message.isascii())
+                self.ns["validate_flags"](self.parse(*argv)[0])
+            self.assertIn("moved to lab2_evaluate.py", str(caught.exception))
+            self.assertIn("facilitator", str(caught.exception))
+            self.assertTrue(str(caught.exception).isascii())
 
-    def test_eval_all_and_upload_pass_with_run_eval(self):
-        plan = self.plan("--run-eval", "--eval-all", "--upload")
-        self.assertEqual((plan.run, plan.all_rows, plan.upload), (True, True, True))
-        self.assertEqual(tuple(self.plan("--run-eval", "--eval-all")), (True, True, False))
-        self.assertEqual(tuple(self.plan("--run-eval", "--upload")), (True, False, True))
-
-    def test_no_eval_is_gone(self):
+    def test_legacy_no_eval_is_harmless(self):
         args, unknown = self.parse("--no-eval")
-        self.assertIn("--no-eval", unknown)  # lab_args ignores unknown flags, so an old habit is harmless
-        self.assertFalse(hasattr(args, "no_eval"))
-        self.assertNotIn("--no-eval", self.source)
+        self.assertEqual(unknown, [])
+        self.assertTrue(args.no_eval)
+        self.assertIsNone(self.ns["validate_flags"](args))
 
-    def test_run_eval_help_says_facilitator_only(self):
+    def test_help_directs_paid_evaluation_to_the_separate_script(self):
         parser = argparse.ArgumentParser()
         self.ns["_flags"](parser)
         help_text = " ".join(parser.format_help().split())
-        self.assertIn("facilitator only: creates a paid Foundry evaluation run on the shared judge quota; "
-                      "participants never pass it", help_text)
-        for flag in ("--eval-all", "--upload"):
-            self.assertRegex(help_text, rf"{flag}\s+facilitator only, needs --run-eval")
+        self.assertIn("retired here; evaluation has moved to lab2_evaluate.py", help_text)
 
-    def test_script_reads_the_plan_not_the_raw_flags(self):
-        for stale in ("args.no_eval", "args.eval_all", "args.upload", "args.run_eval"):
-            self.assertNotIn(stale, self.source)
-        self.assertIn("plan = eval_plan(args)", self.source)
-        self.assertIn("if plan.run:", self.source)
+    def test_hands_on_has_no_paid_evaluation_engine(self):
+        self.assertIn("validate_flags(args)", self.source)
+        self.assertNotIn("from azure.ai.evaluation", self.source)
+        self.assertNotIn("evaluate(", self.source)
+        self.assertNotIn("lw.run_rows(", self.source)
 
     def test_red_flag_round_runs_two_at_a_time(self):
         self.assertEqual(self.ns["RED_FLAG_WORKERS"], 2)
@@ -162,7 +147,7 @@ class EvalGatingTests(OfflineScript):
         self.assertNotIn("max_workers=7", self.source)
 
     def test_offline_cells_define_what_the_script_needs(self):
-        for name in ("eval_plan", "read_prepared_evaluation", "find_prepared_evaluation", "eval_table_lines",
+        for name in ("validate_flags", "read_prepared_evaluation", "find_prepared_evaluation", "eval_table_lines",
                      "handled_safely_line", "load_captured_eval", "tally_results", "TABLE_PREVIEW", "CRITERIA"):
             self.assertIn(name, self.ns)
         self.assertEqual(list(self.ns["CRITERIA"]), ["guardrail_blocked", "handled_safely", "self_harm"])
@@ -576,9 +561,9 @@ class ValidatorAndMatrixTests(unittest.TestCase):
 
 class LabPageTests(unittest.TestCase):
     BANNED = ("--no-eval", "Create evaluation", "groundedness score pasted", "Evaluations → Create",
-              "Evaluations -> Create", "Existing dataset", "Field mapping", "valuation wizard", "Red team (Preview tab)",
+              "Evaluations -> Create", "Existing dataset", "Field mapping", "Red team (Preview tab)",
               "Evaluations → Red team", "red-teaming wizard", "red teaming wizard", "lite scan")
-    ALLOWED_FLAGS = {"--verbose", "--cleanup", "--run-eval", "--eval-all", "--upload", "--cloud", "--save"}
+    ALLOWED_FLAGS = {"--verbose", "--cleanup", "--run", "--run-eval", "--eval-all", "--upload", "--cloud", "--save"}
 
     @classmethod
     def setUpClass(cls):
@@ -611,26 +596,24 @@ class LabPageTests(unittest.TestCase):
             self.assertIn(f'"{flag}"', script)
         self.assertIn('"--save"', MATRIX.read_text(encoding="utf-8"))
 
-    def test_both_pages_send_participants_to_the_prepared_evaluation(self):
-        for name, text in self.pages.items():
-            self.assertIn("LiveWell guardrail matrix", text, name)
-            self.assertRegex(text, r"(?i)look(ing)? only|look, don't run", name)
-            self.assertIn("tell the facilitator", text.lower(), name)
-            self.assertIn("screen-share the captured results", text, name)
+    def test_canonical_page_has_evidence_and_legacy_page_links_to_it(self):
+        text = self.pages["lab-02.md"]
+        self.assertIn("LiveWell guardrail matrix", text)
+        self.assertRegex(text, r"(?i)look(ing)? only|look, don't run")
+        self.assertIn("tell the facilitator", text.lower())
+        self.assertIn("../data/lab2-prepared-eval.json", text)
+        self.assertIn("(lab-02.md#navigator)", self.pages["lab-02-portal.md"])
 
     def test_troubleshooting_row_for_a_missing_evaluation(self):
         text = self.pages["lab-02.md"]
-        self.assertIn("I cannot see the prepared evaluation", text)
         troubleshooting = text.split("## Troubleshooting")[1].split("## Where next")[0]
-        self.assertRegex(troubleshooting, r"I cannot see the prepared evaluation[^\n]*\| Tell the facilitator\.")
+        self.assertRegex(troubleshooting, r"Prepared evidence unavailable[^\n]*\| Tell the facilitator")
 
     def test_checkpoint_is_the_new_look_only_checkpoint(self):
         checkpoint = self.pages["lab-02.md"].split("## Checkpoint")[1].split("## Troubleshooting")[0]
-        self.assertIn("lab2_injected_flyer", checkpoint)
-        self.assertIn("Prompt Shields", checkpoint)
-        self.assertIn("ignores the hidden instruction", checkpoint)
+        self.assertIn("injected flyer was blocked or its hidden instruction ignored", checkpoint)
         self.assertIn("handled_safely", checkpoint)
-        self.assertIn("prepared evaluation", checkpoint)
+        self.assertIn("prepared", checkpoint)
         self.assertNotRegex(checkpoint, r"(?i)groundedness")
         self.assertNotRegex(checkpoint, r"\b\d+(\.\d+)? (pass|of 7)\b")  # the page quotes no counts
 
@@ -640,7 +623,7 @@ class LabPageTests(unittest.TestCase):
         for path in ("../assets/lab2_govern.py", "../assets/common/evaluation_results.py"):
             self.assertIn(f"]({path})", text)
         self.assertIn("not scored", text)
-        self.assertIn("same model", text.lower())
+        self.assertRegex(text.lower(), r"same[- ]model")
 
     def test_answer_key_is_look_only(self):
         key = json.loads(ANSWER_KEY.read_text(encoding="utf-8"))

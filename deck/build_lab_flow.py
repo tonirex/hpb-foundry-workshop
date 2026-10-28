@@ -88,7 +88,7 @@ LABS = [
             "Inspect the model call and instructions; one refusal does not prove comprehensive safety.",
         ],
         "shot": ("lab-00/10-refusal-trace.png", (0.08, 0.03, 0.92, 0.62)),
-        "caption": "One chat span under the agent, no tool calls, and the `base` block as the system message.",
+        "caption": "One chat span per answer, no tool calls; the conversation includes the greeting and refusal.",
     },
     {
         "id": "lab-01",
@@ -102,7 +102,7 @@ LABS = [
         "story_prompts": [("Rahim", "lab1_prediabetes_eat")],
         "story_note": "The answer must come from HPB-style guides, with sources.",
         "steps": [
-            "**Knowledge → Add → Connect to Foundry IQ** and pick `livewell-guides-kb`.",
+            "**Knowledge → Add → Available knowledge bases**: pick `livewell-guides-kb` via `livewell-guides-kb-mcp`.",
             "Append the `knowledge` instruction block after `base`.",
             "**Parameters** (icon next to Model) → **Text format** JSON Schema: paste `lab1-answer.schema.json`; save.",
             "Send `lab1_prediabetes_eat`: open a retrieved passage and connect it to an answer claim.",
@@ -150,17 +150,17 @@ LABS = [
         "rails": "Navigator + Builder",
         "gain": "Profile, activities MCP, approval, memory\nit acts for Rahim",
         "story_prompts": [("Rahim", "lab3_hazy_indoor_signup")],
-        "story_note": "A write to temporary synthetic records still needs explicit approval; it is not a real booking.",
+        "story_note": "The sign-up changes synthetic demo state, so it needs his approval.",
         "steps": [
-            "Switch the model to `gpt-4.1-mini`, then add the OpenAPI tool `livewell_profile` (Builder: the `get_citizen_profile` function).",
-            "Add `livewell-activities-mcp` and require approval for `register_interest`.",
-            "Enable **Memory** (preview) and append the `tools` block.",
-            "Send `lab3_profile_tailored`: the advice uses Rahim's profile.",
-            "Send `lab3_hazy_indoor_signup`: inspect arguments, then **Approve once** or **Deny**.",
-            "State a preference; in a new chat inspect stored/search evidence, not only plausible wording.",
+            "Switch to `gpt-4.1-mini`; add `livewell_profile` using the prepared Anonymous connection and inline spec.",
+            "Add activities MCP; auto-approve only `find_activities`, never registration.",
+            "**Memory → Add → Auto-create memory store** (preview); append `tools`, set the evidence schema, save.",
+            "Run profile advice, then discovery: profile → knowledge retrieval → indoor activity options.",
+            "Send `lab3_signup_confirm`, inspect the proposed activity, then **Approve once** or **Deny**.",
+            "State preferences, wait for memory, then use a new chat. Optional A2A: verify both actual calls.",
         ],
         "shot": ("lab-03/13-approve-register-interest.png", (0.505, 0.43, 0.995, 0.875)),
-        "caption": "The write waits for you: `register_interest` only runs after Approve.",
+        "caption": "After separate confirmation, inspect the proposed write and choose Approve once.",
     },
     {
         "id": "fabric-step",
@@ -344,6 +344,13 @@ def chip(slide, x: float, y: float, text: str, *, fill=LIGHT, color=NAVY, size: 
 
 def add_screenshot(slide, root: Path, rel: str, crop: tuple[float, float, float, float],
                    x: float, y: float, w: float, h: float) -> None:
+    marker = f"<!-- historical-screenshot: screenshots/{rel} -->"
+    if any(marker in page.read_text(encoding="utf-8") for page in (root / "content" / "labs").glob("*.md")):
+        add_panel(slide, x, y, w, h,
+                  [("Text-only reference", {"bold": True, "color": NAVY}),
+                   "Follow the current Navigator steps and copy blocks. The older screenshot is awaiting a live refresh."],
+                  fill=LIGHT, line=MID, size=11, valign=MSO_ANCHOR.MIDDLE)
+        return
     image = Image.open(root / SCREENSHOTS / rel).convert("RGB")
     iw, ih = image.size
     left, top, right, bottom = crop
@@ -546,7 +553,8 @@ def lab_page_slide(prs, titles: list[str]):
         "Every lab page has the same sections in the same order, so participants always know where they are. "
         "Navigator is the portal path and Builder is the Python path; both reach the same checkpoint. "
         "The checkpoint is self-check only: participants compare their result with the collapsed Expected output block "
-        "on the page. Nothing is submitted or graded.",
+        "on the page. Nothing is submitted or graded. Lab 2 batch evaluation is a separate read-only code walkthrough; "
+        "participants review the facilitator's completed comparison rather than starting their own batches.",
         titles,
     )
     steps = ["Shared objective", "Features", "Story", "Navigator or Builder", "Checkpoint", "Expected output",
@@ -577,7 +585,7 @@ def lab_page_slide(prs, titles: list[str]):
             ("Builder · Python", {"bold": True, "color": NAVY, "size": 15, "space_after": 6}),
             ("One script per lab in `content/assets/`:", {"size": 12, "space_after": 4}),
             ("`lab1_knowledge.py`", {"size": 11.5, "space_after": 1}),
-            ("`lab2_govern.py`", {"size": 11.5, "space_after": 1}),
+            ("`lab2_govern.py` (no batch evaluation)", {"size": 11.5, "space_after": 1}),
             ("`lab3_tools.py` (`--fabric` for the Fabric step)", {"size": 11.5, "space_after": 1}),
             ("`lab4_multiagent.py`", {"size": 11.5, "space_after": 5}),
             ("Each prints a CHECKPOINT and saves the run under `content/assets/.runs/`.", {"size": 12}),
@@ -604,7 +612,7 @@ def lab_page_slide(prs, titles: list[str]):
 def lab_slide(prs, root: Path, lab: dict, prompts: dict, titles: list[str]):
     notes = (
         f"{lab['short']}: {lab['title']}. Objective, read from the lab page: {lab['objective']}. "
-        f"Walk the steps on the left; the screenshot shows what success looks like. "
+        f"Walk the steps on the left; use the illustration or text-only reference to explain the expected outcome. "
         f"Close by reading the 'You learned' line aloud: {lab['learned']}"
     )
     slide = content_slide(prs, f"{lab['short']} · {lab['title']}", notes, titles)

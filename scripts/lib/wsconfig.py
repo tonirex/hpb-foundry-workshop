@@ -48,8 +48,14 @@ def subst(value, env: str | None):
 
 
 def load(env: str | None = None) -> dict:
-    """Whole workshop.yaml with <env> substituted (for Python callers)."""
-    return subst(yaml.safe_load(CONFIG.read_text(encoding="utf-8")), env or None)
+    """Apply the selected environment's resource-name overrides, then substitute <env>."""
+    data = yaml.safe_load(CONFIG.read_text(encoding="utf-8"))
+    overrides = data.get("environments", {}).get(env, {}).get("names", {}) if env else {}
+    if (not isinstance(overrides, dict) or set(overrides) - set(data["names"])
+            or any(not isinstance(value, str) or not value.strip() for value in overrides.values())):
+        raise ValueError(f"invalid resource-name overrides for environment {env!r}")
+    data["names"] = {**data["names"], **overrides}
+    return subst(data, env or None)
 
 
 def main() -> int:
@@ -58,9 +64,9 @@ def main() -> int:
     ap.add_argument("key")
     ap.add_argument("--env", default=None)
     args = ap.parse_args()
-    data = yaml.safe_load(CONFIG.read_text(encoding="utf-8"))
+    data = load(args.env)
     try:
-        value = subst(lookup(data, args.key), args.env or None)
+        value = lookup(data, args.key)
     except KeyError:
         sys.stderr.write(f"workshop.yaml has no key {args.key}\n")
         return 2

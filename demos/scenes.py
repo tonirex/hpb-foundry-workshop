@@ -1,7 +1,7 @@
 """Portal scenes shared by demos/capture-screenshots.py and demos/record-demos.py.
 
 A scene walks one part of the 🟢 Navigator portal track on a facilitator demo agent (livewell-demo-*,
-livewell-workshop-hosted). In "shots" mode it saves the screenshot slots of the lab-0N-portal.md pages and the Bridge spotlight; in
+livewell-workshop-hosted). In "shots" mode it saves the numbered screenshots of the canonical lab pages, Fabric step and Bridge spotlight; in
 "video" mode it shows captions and types slowly. Scenes never save an agent: menus and dialogs are opened,
 captured and cancelled, and the Lab 0 model switch is discarded by reloading the page.
 """
@@ -21,24 +21,38 @@ ROOT = P.ROOT
 LABS = ROOT / "content" / "labs"
 RUNS = ROOT / "demos" / "runs"
 PROMPTS = json.loads((ROOT / "content" / "prompts" / "test-prompts.json").read_text(encoding="utf-8"))["prompts"]
-# Same follow-up as the builder rail (content/assets/lab3_tools.py) when the coach first asks which activity.
-SIGNUP_YES = "Yes, please sign me up for the first indoor option you found."
+# Same explicit confirmation after discovery as the Builder rail (content/assets/lab3_tools.py).
+SIGNUP_YES = P.lw.prompt_text("lab3_signup_confirm")
 FIT = json.loads((ROOT / "content" / "fabric" / "reference-answers.json").read_text(encoding="utf-8"))["q_programme_fit"]
-PROGRAMME_YES = f"Yes, please sign me up for the {FIT['recommended_programme']} intake session."
+PROGRAMME_YES = P.lw.prompt_text("lab3_programme_confirm")
 
 SLOT_ID = r"(?:lab-0\d|bridge)/\d\d[a-z]?"
 SLOT_RE = re.compile(rf"^(?P<indent>\s*)> 📸 \*\*Screenshot slot\*\* · `(?P<path>screenshots/(?P<id>{SLOT_ID})-[^`]+\.png)`"
                      r" · (?P<caption>.+?)\s*$")
 IMAGE_RE = re.compile(rf"^(?P<indent>\s*)!\[(?P<caption>[^\]]*)\]\((?P<path>screenshots/(?P<id>{SLOT_ID})-[^)]+\.png)\)\s*$")
+HISTORICAL_RE = re.compile(
+    rf"^\s*<!-- historical-screenshot: (?P<path>screenshots/(?P<id>{SLOT_ID})-[^\s]+\.png) -->\s*$"
+)
 
-# Slots a script cannot take: they need a participant (Foundry User) lab account or a fresh sign-in.
+# Slots requiring manual identity/setup checks or a specific live evidence state.
 MANUAL = {
     "lab-00/01": "fresh InPrivate sign-in with a lab account",
     "lab-00/02": "Authenticator registration on a lab account",
     "lab-04/07": "needs a Foundry User lab account (disabled controls)",
     "lab-04/08": "needs a Foundry User lab account (Access control, My role)",
-    "lab-02/20": "needs two completed portal evaluation runs (submit step 19 for demo-kb and demo-guarded)",
+    "lab-01/02": "Knowledge Add menu on an agent without KB; show the existing prepared entry",
+    "lab-01/02b": "existing livewell-guides-kb-mcp entry under Available knowledge bases",
+    "lab-02/20": "compare the existing shared guardrail matrix; do not submit a new participant batch",
+    "lab-03/02b": "facilitator-prepared Anonymous OpenAPI connection in the current portal form",
+    "lab-03/03": "current OpenAPI form with the prepared Anonymous connection selected; use native canvas capture",
+    "lab-03/12b": "ordered profile, knowledge retrieval and activity discovery trace with real source evidence",
+    "lab-03/13b": "completed, once-approved synthetic registration trace; do not repeat a write just for a screenshot",
+    "lab-03/15b": "read-only details of this participant's stored preference, with identifiers hidden",
+    "lab-03/25": "existing specialist A2A connections in the Configured catalog",
+    "lab-03/26": "one merged evidence reply from the participant's A2A-equipped coach",
+    "lab-03/27": "actual trace showing both specialist A2A calls",
 }
+EXTERNAL_CAPTURE = {"lab-04/10", "lab-04/11"}  # demos/lab4-devui.py --capture owns these.
 
 
 @dataclasses.dataclass
@@ -55,22 +69,33 @@ class Slot:
 
 
 def slot_pages() -> list[pathlib.Path]:
-    """Pages with screenshot slots: the Navigator lab pages and the Bridge spotlight."""
-    return sorted(LABS.glob("lab-0*-portal.md")) + [LABS / "bridge-spotlight.md"]
+    """Canonical pages only; legacy portal pages contain compatibility links."""
+    return [LABS / f"lab-0{n}.md" for n in range(5)] + [LABS / "fabric-step.md", LABS / "bridge-spotlight.md"]
+
+
+def historical_paths() -> set[str]:
+    return {
+        path for page in slot_pages()
+        for path in re.findall(r"<!-- historical-screenshot: (screenshots/\S+\.png) -->",
+                               page.read_text(encoding="utf-8"))
+    }
 
 
 def slots() -> dict[str, Slot]:
     found: dict[str, Slot] = {}
     for md in slot_pages():
         for line in md.read_text(encoding="utf-8").splitlines():
-            m = SLOT_RE.match(line) or IMAGE_RE.match(line)
+            m = SLOT_RE.match(line) or IMAGE_RE.match(line) or HISTORICAL_RE.match(line)
             if m:
-                found[m["id"]] = Slot(m["id"], m["path"], m["caption"], md, bool(IMAGE_RE.match(line)))
+                if m["id"] in found and found[m["id"]].path != m["path"]:
+                    raise ValueError(f"{md.name}: screenshot id {m['id']} refers to different files")
+                caption = m.groupdict().get("caption") or pathlib.PurePosixPath(m["path"]).stem
+                found.setdefault(m["id"], Slot(m["id"], m["path"], caption, md, bool(IMAGE_RE.match(line))))
     return found
 
 
 def prompt(pid: str) -> str:
-    return PROMPTS[pid]["text"] if pid in PROMPTS else pid
+    return P.lw.prompt_text(pid, with_attachments=False) if pid in PROMPTS else pid
 
 
 def profile_spec() -> str:
@@ -359,6 +384,9 @@ def kb_config(run: Run) -> None:
             run.section_add("Knowledge")
             run.menuitem(r"connect to foundry iq")
             dlg = run.page.get_by_role("dialog").last
+            dlg.get_by_role("combobox", name=re.compile("connection", re.I)).click(timeout=5000)
+            run.page.get_by_role("option", name="livewell-search", exact=True).click(timeout=8000)
+            time.sleep(1.5)
             dlg.get_by_role("combobox", name=re.compile("knowledge base", re.I)).click(timeout=5000)
             time.sleep(1.5)
             run.page.get_by_role("option", name=re.compile("livewell-guides-kb", re.I)).first.click(timeout=8000)
@@ -613,10 +641,12 @@ def tools_chat(run: Run) -> None:
             run.shot("lab-03/11")
     run.escape()
     run.chat("lab3_hazy_indoor_signup")
-    if not P.approval_pending(run.page):
-        run.chat(SIGNUP_YES, new=False)
+    if P.approval_pending(run.page):
+        raise RuntimeError("discovery unexpectedly requested write approval; do not approve it")
+    run.say("Discover indoor options first; registration is a separate confirmation")
+    run.shot("lab-03/12")
+    run.chat(SIGNUP_YES, new=False)
     run.say("register_interest waits for approval")
-    run.shot("lab-03/12", note="" if P.approval_pending(run.page) else "no approval card")
     with run.soft("approve", "lab-03/13"):
         if not P.approval_pending(run.page):
             raise RuntimeError("no approval card")

@@ -29,6 +29,10 @@ Older GQL-based teaching examples describe the legacy path and need a table-read
 
 ## Participant / facilitator tooling
 
+Integration for GitHub publication (2026-10-29): retained the same deployed DevUI pins and added the
+environment-aware configuration loader to its build context. The separate default-inactive evaluator from
+main coexists with the prepared matrix's schema-2 reader; no new evaluation or runtime deployment was started.
+
 Teaching revision (2026-10-26): no SDK upgrades or cloud changes. Lab 2 captures use schema 2 to separate
 pass/fail/not-scored; old aggregate counts cannot be reinterpreted reliably. The current
 [Fabric ontology-context documentation](https://learn.microsoft.com/fabric/data-science/data-agent-ontology-sources)
@@ -93,7 +97,7 @@ Cost Management query 2023-11-01, Fabric capacity suspend/resume 2023-11-01). Fa
 | Package | Pin | Notes |
 |---|---|---|
 | `azure-ai-projects` | `>=2.6.1` (2.6.1 tested) | New Agents API (`agents.create_version`, `create_version_from_code`, Responses, `get_openai_client(agent_name=...)` for hosted agents). 2.2.0 lacks `agents.download_code` (hosted-postdeploy) and `ProtocolConfiguration` (A2A) |
-| `azure-identity` | `>=1.19` (1.25.3 tested) | `DefaultAzureCredential` / device code |
+| `azure-identity` | `>=1.20` (1.25.3 and scoped CLI on 1.27.0 tested) | 1.20 introduced `AzureCliCredential(subscription=...)`; select subscription or tenant, never both |
 | `openai` | `>=1.99` (3.17.0 tested) | Responses client from `project.get_openai_client()` |
 | `azure-search-documents` | `==12.1.0b1` | Foundry IQ knowledge base API (per microsoft/iq-series); 12.1.0b2 exists but is not validated |
 | `azure-ai-evaluation` | `>=1.10` (1.18.7 tested) | Groundedness, relevance, safety evaluators |
@@ -152,3 +156,90 @@ PTU deployments, model-router and partner models are never used.
 | Fabric ontology (preview), graph model and data agent over the ontology | Phase 3 | Fabric data agent over the lakehouse tables |
 | Hosted agents (Agent Framework, code deploy) | Lab 4: the facilitator deploys; participants chat with it | Run the same team locally (`lab4_multiagent.py` section 4); prompt agent published to Teams / M365 |
 | Foundry MCP server | Admin | `az` and SDK scripts |
+
+## Participant guide revision
+
+- Canonical Navigator pages now include the screenshot directions and generated copy blocks. The old portal
+  filenames are compatibility pages. Model versions are unchanged; the later MCAPS binding fix raises the
+  Azure Identity minimum to 1.20 for explicit CLI subscription selection.
+- Optional intake uses the existing strict intake schema on a separate agent. A2A remains the Navigator specialist
+  path; sequential and hand-off output contracts are documented separately.
+- At the Phase 11b consolidation, all 83 files decoded and 50 archived captures were hidden behind complete
+  text-only directions. That historical count and no-retake status are superseded for Labs 0-3 by the native
+  canvas walkthrough below. `python demos/capture-screenshots.py --list-outdated` lists the remaining archived
+  subset; never treat file integrity alone as proof that an illustration is current.
+- Microsoft Learn's current Fabric Lab 28 marks its ontology experience as preview and notes a January 31, 2027
+  retirement. This content revision does not migrate the Fabric deployment; reassess that preview dependency before
+  a future delivery. See [Fabric Lab 28](https://microsoftlearning.github.io/mslearn-fabric/Instructions/Labs/28-build-data-agent-ontology.html).
+- Copy rendering is offline (`sync-lab-blocks.py --check`); environment-specific OpenAPI freshness is checked
+  separately with `sync-openapi-block.py <env> --check` when the selected environment is available.
+- Follow-up capture readiness: an isolated x64 Python 3.13 environment with `azure-ai-projects==2.6.1` resolves the
+  ARM64 `cryptography` build failure. Read-only sponsor checks confirm the intended demo models and schema shapes.
+  Those checks used sponsor and legacy MCAPS, not the user-selected subscription; their Paused status and the
+  sponsor password prompt are superseded by the MCAPS correction below. No cloud configuration, capacity state
+  or screenshot changed. Use `--outdated-only --dry-run` to inspect the optional bounded retake job.
+- **MCAPS correction:** the explicitly selected subscription's existing HPB-prefixed account, Search and Fabric
+  resources now match Python/Bicep configuration and local azd metadata. The browser canvas opens its project
+  with the existing MCAPS session. Fabric is **Active F2**, and its Resident 360 workspace assignment is verified.
+  The Lab 3 OpenAPI block was regenerated from this target. Models, demo schemas, connections and endpoints were
+  checked read-only. The policy drift found during that check was repaired with the user's authorization below.
+- API compatibility: [AzureCliCredential](https://learn.microsoft.com/python/api/azure-identity/azure.identity.azureclicredential)
+  and the [Azure Identity 1.20 release notes](https://github.com/Azure/azure-sdk-for-python/blob/main/sdk/identity/azure-identity/CHANGELOG.md#1200-2025-02-11)
+  document the subscription parameter. The CLI's mutually exclusive subscription/tenant token flags were also
+  verified live. No SDK workaround, new sign-in, account creation, deployment or permission change was used.
+- **Guardrail repair (2026-10-28):** the canonical Blocking policy, 13 filters and prompt-side custom-blocklist
+  attachment are restored on the selected MCAPS account; `apply-guardrail.py --check` reports zero drift.
+  Existing guarded-agent probes confirm medication blocklist enforcement, self-harm blocking and an allowed
+  benign control with retrieval/citations. No model or agent version changed, and no full evaluation was run.
+  An external-tenant application wrote the policy on the previous day, so retain the day-of drift check.
+- Principal lookup uses the shared subscription-scoped Graph REST helper, not unsupported `az ad --subscription`
+  flags. The [service-principal alternate-key lookup](https://learn.microsoft.com/graph/api/serviceprincipal-get)
+  and `/me` were verified read-only; no dependency version changed for this compatibility fix.
+
+## Lab 2 evaluation pacing
+
+- No model or package version changes. `lab2_govern.py` is hands-on only; `lab2_evaluate.py` is an
+  inactive-by-default code walkthrough with an explicit terminal `--run` gate. Participants review a
+  shared completed comparison; automatic Builder validation does not start batch evaluation.
+- The existing [Azure AI Evaluation SDK](https://learn.microsoft.com/python/api/azure-ai-evaluation/azure.ai.evaluation)
+  supplies `evaluate`, column mappings, local output and optional project upload. The
+  [agent-version lookup](https://learn.microsoft.com/python/api/azure-ai-projects/azure.ai.projects.operations.agentsoperations)
+  pins `agent_name` and `agent_version` from the saved hands-on result. These API shapes were checked
+  against Microsoft Learn; no new evaluation API or service was introduced.
+- Default/CLI/cell execution and the opt-in path are covered offline with mocked cloud boundaries.
+  No new live batch, judge score or runtime claim is made. Prepare the shared comparison before delivery;
+  do not use a historical combined-output screenshot as proof of the current participant run.
+
+## Native Navigator walkthrough (2026-10-28 UTC)
+
+- No model deployment or package version changed. Fresh `livewell-wxyz` versions use `gpt-5-mini` Low for
+  Labs 0-2 and `gpt-4.1-mini` for Lab 3. The separate intake agent and fresh memory store do not reuse demo
+  conversations. Screenshots are actual Copilot browser-canvas captures; addresses/identifiers may be hidden,
+  never answers or verdicts.
+- Portal paths verified live: reuse the existing KB connection under Available knowledge bases; the
+  facilitator-only Connect alternative selects Search before KB selection; JSON citations through retrieved
+  passages; **Manage guardrail → Reassign guardrail → Assign → Save**; MCP's CSV tool fields and
+  **Always auto-approve specific tools**; **Memory → Add → Auto-create memory store**.
+  The [guardrail assignment guidance](https://learn.microsoft.com/azure/foundry/guardrails/how-to-create-guardrails)
+  describes immediate effect, but the observed draft banner explicitly required saving the agent.
+- `connect-tools.py` retains ARM `2025-10-01-preview` and checks the portal-created OpenAPI connection by
+  GET only. Its observed `OpenAPI` category is absent from the published
+  [2025-10-01-preview](https://learn.microsoft.com/azure/templates/microsoft.cognitiveservices/2025-10-01-preview/accounts/projects/connections)
+  and [2026-09-01](https://learn.microsoft.com/azure/templates/microsoft.cognitiveservices/2026-09-01/accounts/projects/connections)
+  category enums. Creation stays a documented facilitator portal step, not an undocumented automated PUT.
+- Source-aware discovery and separate confirmation replace the combined request that repeated JSON.
+  A source-skipping variant was rejected too: the final prompt names the retrieval tools, and its three
+  read operations plus actual returned guide IDs were verified. Approval/write evidence was collected once
+  in a separate rehearsal on the same saved configuration. This is not a claim that the service-loop cause
+  was fixed or that every model run is deterministic.
+- Memory recall recovered after one delayed read-only retry; an existing preference record proves storage.
+  A2A required an explicit Activity follow-up after the initial Nutrition-only route. The portal labels its
+  A2A cards Preview and returns `a2a_preview_call`, so the participant-facing portal surface is labelled
+  preview regardless of the older general-availability wording in 4.16a.
+- The pre-existing seven-prompt matrix and automatic response metrics are not a new full evaluation.
+  The [coverage record](content/admin/ADMIN-SETUP.md#navigator-walkthrough-coverage) distinguishes recoveries,
+  facilitator identity, unverified attendee permissions, and the optional Fabric step not rerun here.
+- The final KB binding check saved `wxyz` v8 on the existing `livewell-guides-kb-mcp` connection without
+  altering its instructions, model, remaining tools, memory or guardrail. Saved YAML, not the pre-save YAML
+  view, confirmed the new binding. The prepared connection returned live retrieval results; the earlier
+  generated-connection route remains a facilitator alternative only.

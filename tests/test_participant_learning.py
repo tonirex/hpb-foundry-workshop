@@ -126,17 +126,19 @@ class ParticipantContentTests(unittest.TestCase):
         self.assertIn("screening", actual["schema"]["properties"])
         self.assertNotIn("answer", actual["schema"]["properties"])
         text = (ROOT / "content" / "labs" / "lab-01.md").read_text(encoding="utf-8")
-        self.assertIn("Do not replace your coach's answer schema", text)
+        self.assertIn("Do not replace your coach's schema", text)
         self.assertIn("livewell-<initials>-intake", text)
         self.assertIn("Return to **`livewell-<initials>`** for Lab 2", text)
 
     def test_openapi_generated_blocks_remain_intact(self):
-        for name in ("lab-03.md", "lab-03-portal.md"):
-            path = ROOT / "content" / "labs" / name
-            text = path.read_text(encoding="utf-8")
-            block = re.search(r"<!-- openapi-spec:begin.*?<!-- openapi-spec:end -->", text, re.S).group()
-            spec = json.loads(re.search(r"```json\s*(.*?)```", block, re.S).group(1))
-            self.assertEqual(spec["paths"]["/profile/{resident_id}"]["get"]["operationId"], "get_citizen_profile")
+        path = ROOT / "content" / "labs" / "lab-03.md"
+        text = path.read_text(encoding="utf-8")
+        block = re.search(r"<!-- openapi-spec:begin.*?<!-- openapi-spec:end -->", text, re.S).group()
+        spec = json.loads(re.search(r"```json\s*(.*?)```", block, re.S).group(1))
+        self.assertEqual(spec["paths"]["/profile/{resident_id}"]["get"]["operationId"], "get_citizen_profile")
+        legacy = (path.parent / "lab-03-portal.md").read_text(encoding="utf-8")
+        self.assertNotIn("openapi-spec:begin", legacy)
+        self.assertIn("(lab-03.md#navigator)", legacy)
 
     def test_legacy_visualiser_does_not_claim_unknown_steps_prove_no_query(self):
         spec = importlib.util.spec_from_file_location("fabric_steps_learning_test", ROOT / "demos" / "fabric-steps.py")

@@ -79,6 +79,7 @@ def az_token(resource: str, tenant: str | None = None, subscription: str | None 
     signed-in account that owns that subscription, silently); `--tenant` alone uses the ACTIVE account against that
     tenant, which can wait for an interactive sign-in when the active account belongs elsewhere."""
     cmd = ["account", "get-access-token", "--resource", resource, "--query", "accessToken", "-o", "tsv"]
+    subscription = subscription or os.environ.get("AZURE_SUBSCRIPTION_ID")
     if subscription:
         cmd += ["--subscription", subscription]
     elif tenant:
@@ -104,7 +105,7 @@ class Api:
     def __init__(self, kind: str, tenant: str | None = None, subscription: str | None = None):
         self.base, resource = RESOURCES[kind]
         self.token = az_token(resource, tenant or os.environ.get("AZURE_TENANT_ID") or None,
-                              subscription or os.environ.get("AZURE_SUBSCRIPTION_ID") or None)
+                              subscription=subscription or os.environ.get("AZURE_SUBSCRIPTION_ID") or None)
 
     def call(self, method: str, path: str, body: object | None = None, ok_404: bool = False,
              headers: dict | None = None) -> dict | None:

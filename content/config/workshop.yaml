@@ -52,13 +52,12 @@ names:
                                           # no automatic fallback (ASSUMPTIONS.md 11.13); never Southeast Asia
   resource_group: "rg-livewell-workshop-<env>"   # the ONE resource group: set here once, exported as AZURE_RESOURCE_GROUP, used by every script
   # The next two are GLOBAL DNS names (<name>.cognitiveservices.azure.com / <name>.search.windows.net): unique across
-  # all of Azure, not just this subscription. The bare "aif-livewell-<env>" / "srch-livewell-<env>" were already taken
-  # (checked 2026-10-23, most likely the earlier workshop's environment in another subscription), hence "hpb". Preflight
-  # check 7 re-checks availability; never reuse a name that preflight reports as someone else's.
-  foundry_account: "aif-hpb-livewell-<env>"
+  # all of Azure, not just this subscription. MCAPS uses the verified environment-specific HPB names below;
+  # preserve sponsor defaults. Preflight rechecks availability; never adopt somebody else's resource.
+  foundry_account: "aif-livewell-<env>"
   foundry_project: "livewell-workshop"
-  search_service: "srch-hpb-livewell-<env>"
-  fabric_capacity: "fabhpblivewell<env>"   # original name was occupied; availability checked 2026-10-24
+  search_service: "srch-livewell-<env>"
+  fabric_capacity: "fablivewell<env>"
   fabric_workspace: "HPB Resident 360"
   lakehouse: "lh_resident360"
   ontology: "resident_ontology"
@@ -74,6 +73,7 @@ names:
   devui_app: "ca-lab4-devui-<env>"                 # Lab 4 DevUI in a browser (LAB4_DEVUI, azd deploy lab4-devui)
   mcp_connection: "livewell-activities-mcp"        # project connection to the activities MCP server
   profile_openapi_tool: "livewell_profile"         # Navigator OpenAPI tool over the profile endpoint
+  profile_openapi_connection: "livewell-profile-openapi"  # Anonymous connection; facilitator creates it in the portal
   fabric_connection: "livewell-fabric-resident360" # project connection created by Add tool -> Fabric IQ
   kb_mcp_connection: "livewell-guides-kb-mcp"      # project connection to the knowledge base MCP endpoint
   nutrition_a2a_connection: "livewell-nutrition-a2a"  # A2A connection to livewell-demo-nutrition (Lab 3 step 11)
@@ -89,7 +89,7 @@ models:
   # eligibility, free quota or deployable capacity: scripts/preflight.sh (scripts/lib/modelcheck.py) reports the four
   # separately and must be re-run at T-3. Live compatibility and load tests are still pending approval.
   # Two chat models plus embeddings; no model-router (decision 3), no quota requests are ever made automatically.
-  default: "gpt-5-mini"              # Labs 0-2 agents, Lab 3 specialists, memory store, KB planner, Lab 4
+  default: "gpt-5-mini"              # Labs 0-2, specialists, Builder memory, KB planner, Lab 4; portal memory uses its agent model
   reasoning_effort:                  # per-deployment default for agents; gpt-5-mini's own default is medium
     gpt-5-mini: "low"                # low: about half the latency of medium and still calls every tool
   tools: "gpt-4.1-mini"              # Lab 3 coach on: OpenAPI, A2A and Fabric Data Agent tools are not supported on
@@ -198,6 +198,10 @@ environments:
     subscription_id: "c4745a9c-2fb6-4336-a000-6e0f71afaeb5"
     tenant_id: "f41bde0b-74cd-498a-9091-079dec7418a4"
     participants: 30
+    names:
+      foundry_account: "aif-hpb-livewell-mcaps"
+      search_service: "srch-hpb-livewell-mcaps"
+      fabric_capacity: "fabhpblivewellmcaps"
     facilitator_upns:
       - "kychan@MngEnvMCAP261533.onmicrosoft.com"   # Fabric capacity admin + Foundry Project Manager (holds Owner on the subscription)
     lab_accounts:
@@ -275,6 +279,7 @@ labs:
     title: "Multi-agent & Hosted deploy"
     minutes: 30
     rails: [navigator, builder]
+    facilitator_deploy_only: true
     patterns: [3, 9, 10]
   - id: bridge-spotlight
     title: "Two IQs, one agent"

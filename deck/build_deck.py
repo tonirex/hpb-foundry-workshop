@@ -436,7 +436,7 @@ def foundry_features_slide(prs: Presentation, titles: list[str]):
             "Function tool and OpenAPI tool",
             "MCP tool with approval-before-write",
             "Fabric IQ tool (preview)",
-            "Memory (preview) and connected agents / Agent Framework",
+            "Memory (preview); A2A specialists / Agent Framework",
             "Hosted agents: azd ai agent, Foundry Toolkit, rai_config",
             "Optional Bing grounding / Code Interpreter; Toolbox + Skills mentioned (preview)",
         ]),
@@ -491,8 +491,8 @@ MODULES = [
         "capability": "Tools, MCP & Memory — hyper-personalisation",
         "level": "Extend · Navigator + Builder",
         "story": "Rahim asks for indoor hazy-day activities near Woodlands, approves the sign-up, and expects the coach to remember his preferences.",
-        "features": "livewell_profile OpenAPI tool (get_citizen_profile function in Builder); activities MCP; approval-before-write; memory; connected specialists.",
-        "checkpoint": "Inspect profile and activity calls; approve or deny the proposed write explicitly. Memory has stored/search evidence. Fixed synthetic Rahim, no real booking.",
+        "features": "livewell_profile OpenAPI tool (get_citizen_profile function in Builder); activities MCP; approval-before-write; memory; optional A2A specialists.",
+        "checkpoint": "Verify read-only profile/KB/activity discovery, then confirm and approve or deny the write. Inspect stored/search memory evidence. Synthetic data, not a real booking.",
     },
     {
         "id": "fabric-step",
@@ -658,6 +658,8 @@ def guardrail_slide(prs: Presentation, cfg: dict, titles: list[str]):
         "Keep prompts unchanged, inspect the actual filter and stage, and report differences rather than retrying for a desired result. "
         "Explain block versus annotate: at or above the threshold the request is blocked (HTTP 400, red banner, Failed trace); "
         "below it the answer goes through and the severity is recorded. The dose-reminder row is the cost of a stricter control. "
+        "Batch evaluation is a code walkthrough, not a participant run: show the completed shared v1/v2 results. "
+        "Launching several judges per row across the room can exhaust quota and exceed the lab time. "
         "Gate: move on when every table has at least one production policy they would require.",
         titles,
     )
@@ -738,7 +740,7 @@ def resources_slide(prs: Presentation, cfg: dict, titles: list[str]):
         titles,
     )
     add_box(slide, 0.65, 1.0, 5.85, 0.72, "Workshop repo", fill=NAVY, line=NAVY, size=15, color=WHITE, bold=True)
-    add_text(slide, 0.85, 1.95, 5.35, 0.5, f"{repo}\nprivate: the facilitator invites your GitHub username", size=14, color=BODY)
+    add_text(slide, 0.85, 1.95, 5.35, 0.65, f"{repo}\nPrivate access; one lab page for Navigator + Builder", size=13, color=BODY)
     repos = [
         "microsoft/azure-skills (Foundry Skill)",
         "MicrosoftLearning/mslearn-ai-agents",

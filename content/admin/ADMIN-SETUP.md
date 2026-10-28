@@ -44,6 +44,22 @@ azd auth login --tenant-id <tenant-id>
 fab auth login                            # Phase 3 onwards
 ```
 
+**Checking an existing MCAPS setup is not provisioning it.** Compare the subscription explicitly with
+`environments.mcaps.subscription_id` in [workshop.yaml](../config/workshop.yaml), not just the friendly name
+`mcaps` or the CLI's global default. The current MCAPS deployment uses `aif-hpb-livewell-mcaps`,
+`srch-hpb-livewell-mcaps` and `fabhpblivewellmcaps`; per-environment name overrides leave sponsor unchanged.
+Its existing Search service is in France Central (the capacity exception in ASSUMPTIONS.md 2.5); Foundry
+and Fabric remain in Sweden Central. To regenerate only the local parameter file:
+
+```bash
+azd env select mcaps
+AZURE_ENV_NAME=mcaps python scripts/select-params.py --parameters-only
+```
+
+This does not create users, assign roles, generate a token, provision resources or resume capacity.
+Account creation remains a separate operator task. Restoring deployment outputs does not restore the
+private DevUI token; restore that value privately before a later provision, rather than generating a replacement.
+
 ## Timeline
 
 ### T-10: quota requests
@@ -94,7 +110,7 @@ About 1.5 h end to end.
 | 3 Resident 360 on Fabric | `bash scripts/fabric/deploy.sh mcaps` | ≈ 17–20 min | 7 tables, ontology 4/5 with instances, graph refresh Completed, data agent published |
 | 4 Knowledge base | `python scripts/build-kb.py` | 5 min | `livewell-guides-kb` answers with a citation (`--check` re-tests it) |
 | 5 MCP server | `azd deploy mcp-activities` | 5 min | `MCP_URL` responds |
-| 6 Tool connections | `python scripts/connect-tools.py`, then `python scripts/sync-openapi-block.py mcaps` (commit and push the two Lab 3 pages if it changed them) | 2 min | Activities MCP, Fabric IQ and the two specialist A2A connections (`livewell-nutrition-a2a`, `livewell-activity-a2a`); `/profile/me` 200, another resident 403; `FABRIC_IQ_CONNECTION_ID` in `.azure/mcaps/.env`; "Lab 3 spec block in sync" |
+| 6 Tool connections | Prepare the [Profile OpenAPI connection](#profile-openapi-connection), run `python scripts/connect-tools.py`, then `python scripts/sync-openapi-block.py mcaps` (commit the canonical Lab 3 page if its generated block changes) | 2-5 min | Anonymous OpenAPI prerequisite, activities MCP, Fabric IQ and both specialist A2A connections in sync; `/profile/me` 200, another resident 403; `FABRIC_IQ_CONNECTION_ID` in `.azure/mcaps/.env`; "Lab 3 spec block in sync" |
 | 7 Hosted agent and DevUI (Lab 4) | Repo `.venv` active: `azd deploy livewell-workshop-hosted`, then `python scripts/hosted-postdeploy.py --verify`, then `azd deploy lab4-devui` | ≈ 10 min | Hosted proof as in its README; a fresh browser opens the private DevUI launch link directly on LiveWell sequential with no token entry |
 | 8 Demo agents | `python demos/create-demo-agents.py` | 3 min | Seven `livewell-demo-*` agents listed (five lab agents plus the Nutrition and Activity specialists, each with "a2a on") and the `livewell-eval` dataset registered (for the facilitator's own evaluations; participants do not create evaluations); `--check` re-tests |
 | 9 Attendees | `bash scripts/seed-attendees.sh mcaps --lab-accounts` | 2 min | Every row shows `added` or `exists` |
@@ -141,11 +157,84 @@ About 1.5 h end to end.
   `WorkflowMessage is not JSON serializable`. This is separate from authentication: fresh-run streaming works.
   Use **+** and inspect live events; do not promise retained-run replay. Use captured screenshots or Foundry
   tracing for retained evidence. No extra model run was submitted to recover the sequential verification capture.
+- **Restored environment.** If the existing app's local backend secret is missing, `select-params.py` stops
+  rather than silently rotating it. Restore it privately before provisioning or rendering launch links.
 
 Re-run step 9 after step 3 so that attendees also get **Viewer** on the Fabric workspace, which gives read access to
 the data agent. The postprovision hook (`scripts/apply-guardrail.py`) keeps every model deployment on the platform
 default (`Microsoft.DefaultV2`) and the Lab 2 guardrail (`livewell-guardrails` + blocklist) current on every
 provision; agents attach the guardrail themselves (ASSUMPTIONS.md 6.1). `--check` reports drift.
+
+#### Profile OpenAPI connection
+
+The current Navigator form requires a **Connection even with Anonymous authentication**. Prepare it once
+in **each environment**, after the MCP server is deployed and before participants start Lab 3.
+
+1. Select the intended azd environment and refresh its private values sheet:
+   `python scripts/render-values.py mcaps` (use `sponsor` for that environment).
+   Read **Profile OpenAPI project connection** and **Profile OpenAPI connection target (API root)**.
+2. In your own facilitator setup agent on `gpt-4.1-mini`, open
+   **Tools → Add → Add tools → Custom → OpenAPI tool → Create**. Select **Anonymous**.
+3. If **`livewell-profile-openapi`** already exists, inspect/reuse it. If missing, use the form's
+   **Create a new connection** action. Enter the configured name and the API-root target from the private
+   sheet, **without** `/mcp` or `/openapi.json`. No credential is entered. Create the connection, then cancel
+   the tool form if you were only preparing the shared prerequisite.
+4. Run `python scripts/connect-tools.py --check` after the other tool connections are prepared.
+   **OpenAPI prerequisite** must be **in sync**. Missing or drifted category, authentication, target or
+   metadata causes a nonzero result and manual-preparation guidance; this check does not create, repair
+   or broaden access to the OpenAPI connection.
+5. Before delivery, verify that an actual attendee account can select the prepared connection. Do not
+   infer this from an Owner/Project Manager run or grant broader roles just to get through the form.
+
+![Facilitator-only Anonymous connection preparation; service address hidden](../labs/screenshots/lab-03/02b-openapi-connection-prerequisite.png)
+
+The observed portal-created shape is `category: OpenAPI`, `authType: None`, with metadata `type: openapi`
+and the API root as target. Published ARM category enums omit `OpenAPI`, including
+[2025-10-01-preview](https://learn.microsoft.com/azure/templates/microsoft.cognitiveservices/2025-10-01-preview/accounts/projects/connections)
+and [2026-09-01](https://learn.microsoft.com/azure/templates/microsoft.cognitiveservices/2026-09-01/accounts/projects/connections).
+For that reason, preparation stays in the portal and automation is **read-only validation**, not an
+invented PUT contract. The Builder's existing inline-anonymous OpenAPI helper is unchanged.
+
+#### Navigator walkthrough coverage
+
+The 2026-10-28 UTC browser-canvas walkthrough created `livewell-wxyz` and a separate `livewell-wxyz-intake`
+in the selected MCAPS project. It followed Labs 0-3 using the existing **facilitator** sign-in, not a new
+attendee. It did not create users, change RBAC, deploy models, edit shared specialists/policies, or alter
+capacity. Keep the practice agents and their fresh memory store available for inspection.
+
+- Lab 0 introduction/refusal and trace; Lab 1 retrieval, JSON, supplement refusal and separate intake passed.
+- Lab 2 ran the exact seven-prompt ladder once per saved baseline/guarded version: one versus four blocks.
+  Trace metadata verified self-harm Low annotated versus blocked, jailbreak blocking and the medication
+  blocklist. These are observed outcomes, not deterministic classifier guarantees.
+- Lab 3 required the missing Anonymous OpenAPI connection. The original combined find/register prompt
+  produced repeated JSON despite a valid saved schema. A read-only discovery variant initially skipped
+  retrieval; the final tool-explicit prompt verified profile → knowledge retrieval → activity lookup,
+  and every cited guide ID was present in the KB output. Separate confirmation and **Approve once**
+  produced one synthetic interest receipt. The write was not repeated for later discovery checks.
+- Memory recall encountered one generic server error; one delayed, new-conversation retry succeeded.
+  The existing stored preference was inspected read-only. The first specialist request called only
+  Nutrition; the explicit Activity follow-up completed both routes across two turns. These recovery
+  cases are documented in the participant guide, not presented as clean first-attempt passes.
+- The evaluation screenshot is a **pre-existing seven-prompt guardrail matrix**, not a 30-row
+  groundedness comparison or a score for `wxyz`. Its schema-2 capture supplies the current HPB checkpoint;
+  [additional evaluation](#lab-2-shared-evaluation) is optional and separately approved. No new batch or red-team job was submitted;
+  the portal's automatic per-response metrics were still enabled.
+
+**Still outside this proof:** first-time attendee sign-in/MFA, least-privilege connection attachment and
+guardrail assignment, the optional Fabric extension, and new Builder live runs. The initial Connect
+alternative generated a KB connection under the elevated account; the final prepared-entry route below
+avoids requiring attendees to create one.
+
+The final Lab 1 route instead reuses **Knowledge → Add → Available knowledge bases → `livewell-guides-kb`**
+with subtitle **`livewell-guides-kb-mcp`**. A later binding check on `wxyz` v8 replaced only the generated
+KB connection with this prepared one, retaining tools, instructions, memory and guardrail; the saved YAML
+and live retrieval verified reuse. Its per-response trace initially returned No traces found; the agent's
+**Traces** tab exposed the completed run and retrieved passages without another model request.
+Check that attendee accounts can see the prepared entry rather than asking them to create connections.
+
+Fresh PNGs come from the Copilot app's browser canvas; service addresses and telemetry identifiers are
+hidden where needed, never model answers, policy verdicts or scores. The facilitator evaluation wizard
+remains explicitly text-only; its old picture is archived rather than presented as current.
 
 #### Step 3 in detail: `scripts/fabric/deploy.sh`
 
@@ -342,7 +431,7 @@ type. Cost Management lags by up to 24 h.
 | Attendees | Foundry User | Project | `seed-attendees.sh` |
 | Attendees | Search Index Data Reader | Search service | `seed-attendees.sh` |
 | Attendees | Log Analytics Reader | Application Insights | `seed-attendees.sh` (Tracing tab) |
-| Attendees | Cognitive Services OpenAI User (Builder Lab 2 judges call the account's OpenAI endpoint, which a project role does not reach) | Foundry account | `seed-attendees.sh` |
+| Attendees | Cognitive Services OpenAI User (allows approved after-workshop judge runs; not a request to run Lab 2 evaluations in class) | Foundry account | `seed-attendees.sh` |
 | Attendees | Fabric workspace Viewer (read on the data agent) | Fabric workspace | `seed-attendees.sh`, after Phase 3 |
 
 Role IDs are built-in and the same in every tenant. They live only in `workshop.yaml` → `rbac_roles`.
@@ -367,18 +456,65 @@ Gotchas:
   each re-provision.
 - Guests (B2B) must redeem the invitation before role assignments show up in the portal. Lab accounts are simpler.
 
+### Lab 2 shared evaluation
+
+**Current HPB evidence is already prepared:** `LiveWell guardrail matrix 2026-10-26 20:51`,
+four completed seven-prompt runs, with [schema-2 fallback](../data/lab2-prepared-eval.json).
+Compare same-model default/custom `handled_safely` counts and inspect failures/not-scored rows.
+This matrix has no groundedness criterion and does not measure participant versions.
+Do not start a new evaluation merely to complete this checkpoint.
+
+<details>
+<summary><strong>Optional, separately approved: prepare an additional groundedness comparison</strong></summary>
+
+The hands-on
+`lab2_govern.py` runs the guardrail ladder and saves the exact v1/v2 names and versions. Batch evaluation
+is now in [`lab2_evaluate.py`](../assets/lab2_evaluate.py), which participants read as a code step-through.
+They must not enable it during the workshop: response generation plus multiple LLM judges can take
+longer than the lab and exhaust the shared quota.
+
+Only after separate approval, in the selected environment, use your own facilitator initials (not the protected `demo` or `workshop`
+initials). Prepare the agents **without `--cleanup`**, then run the evaluation separately:
+
+```bash
+python content/assets/lab2_govern.py
+python content/assets/lab2_evaluate.py --run --eval-all --upload
+```
+
+The second command is **facilitator-only during preparation**. It reuses the saved versions and refuses a
+different project binding, a missing comparison or agents removed by cleanup; it does not import/rerun
+the hands-on script or create new agent versions. `--run` is mandatory even with `--eval-all` or `--upload`.
+A plain invocation or notebook **Run All** makes no cloud calls. Without `--eval-all`, an explicitly
+enabled run uses six rows for a small preparation/after-workshop check. Even that subset makes live
+agent and judge calls; do not ask the class to run it.
+
+Open the two completed runs under **Foundry → Evaluations**, or share the actual local summary
+`content/assets/.runs/lab2-evaluation-<initials>.json`. Input JSONL, detailed results and evaluator logs
+are kept in the separate `lab2-evaluation-<initials>-*` directory beside it. Check the named versions,
+dataset/row counts, groundedness and missing scores before presenting the comparison. The hands-on
+result file is not overwritten. If either groundedness score is unavailable, the evaluation exits
+with an incomplete-result error rather than declaring success.
+
+These **additional shared reference results** do not measure participant agents or replace the prepared matrix.
+Retain a recorded completed comparison as a fallback when presenting this optional evaluation.
+Do not grant extra permissions or increase quota merely to let the whole room evaluate simultaneously.
+The evaluation script creates no agents, so its `--cleanup` flag reports that there is nothing to delete.
+
+</details>
+
 ### Evaluation uploads
 
-`lab2_govern.py` does not evaluate unless the **facilitator** passes `--run-eval` (paid, on the shared judge quota;
-participants never do). With it, the run scores locally and prints the headline, and `--upload` also publishes the run
-to the project's
-**Evaluations** page through the project's storage connection (the knowledge storage account). The account allows
+Only the separate `lab2_evaluate.py --run` path evaluates; without `--upload`, results stay local.
+`--upload` also publishes the run to the project's **Evaluations** page through the project's storage
+connection (the knowledge storage account). The account allows
 public network access with Entra ID only (`storageNetworkDefaultAction='Allow'`, ASSUMPTIONS 4.4 and 4.15), so the
 upload works from a laptop or Codespace. The red-team script's `--upload` uses the same path.
 
 If a tenant requires the account to be locked down, set `storageNetworkDefaultAction = 'Deny'` in the env's
-`.bicepparam` and re-provision. Uploads then fail from outside Azure: the scripts say "upload to Foundry failed …
-scored locally instead", and the local scores are still valid. To publish a run in that mode, add your IP with
+`.bicepparam` and re-provision. Uploads then fail from outside Azure. The Lab 2 evaluation script surfaces the error and **does not automatically
+run the batch again locally**, which would duplicate paid judge calls. Inspect the saved files and logs before
+an intentional retry; omit `--upload` for a planned local-only run. The separate red-team script retains its
+existing local fallback. To publish a run in that mode, add your IP with
 `az storage account network-rule add` for the upload and remove it afterwards.
 
 ## Backup plans
@@ -412,6 +548,82 @@ scored locally instead", and the local scores are still valid. To publish a run 
 | Hosted agent: 424 `session_not_ready`, or `postdeploy` hook failed | See the troubleshooting table in [hosted-agent-example/README.md](../assets/hosted-agent-example/README.md) |
 | Git Bash: paths like `C:/Program Files/Git/subscriptions/...` | Use the scripts; `scripts/lib/common.sh` sets `MSYS_NO_PATHCONV=1` |
 
+## Screenshot maintenance
+
+The participant procedure lives in each main lab's **Navigator** section, including the optional
+[Fabric step](../labs/fabric-step.md). The old portal filenames are compatibility pages, not capture sources.
+Keep screenshot paths stable and relative to `content/labs/`, using `screenshots/lab-0N/NN-short-slug.png`.
+DevUI's `10` and `11` screenshots are captured by `demos/lab4-devui.py --capture`; Builder evidence remains separate.
+
+Review the model, schema name, controls, caption and redaction before deciding an image needs a retake.
+**Retake only outdated existing images**, using explicit slot IDs; do not run a blanket capture or create new
+sign-in/MFA, evaluation-comparison or participant-role images for the currently text-only steps.
+
+```bash
+python demos/capture-screenshots.py --list-missing
+python demos/capture-screenshots.py --list-outdated
+python demos/capture-screenshots.py --outdated-only --dry-run
+python demos/capture-screenshots.py --only lab-00/08 lab-01/06 --headless
+python demos/capture-screenshots.py --link --dry-run
+```
+
+Capture requires an authorized facilitator browser session and the selected environment in this worktree.
+Review each replacement PNG before linking it. Never fabricate a new model label in an old screenshot, and never
+copy credentials from another checkout. When live capture is unavailable, state that explicitly and keep the step
+usable from its text; a successful image decode does not establish that the portal is current.
+
+The review identified **50 archived captures** needing a refresh, plus two unused historical assets. None of those
+captures is rendered in a participant guide. Their steps have complete text instructions, and the lab-flow deck uses
+explicit text-only reference cards. Hidden `historical-screenshot` markers preserve the optional maintenance inventory.
+`--list-outdated` prints that inventory and exits nonzero while any remain; this is separate from the participant
+content gate, which verifies that archived captures are not displayed.
+After a genuine retake and visual/redaction review, replace the relevant marker with a normal Markdown image and
+descriptive alt text, then rebuild the deck. Do not reintroduce an archived image merely because its file exists.
+
+Retakes were not performed during this content pass. The original browser session was expired; the requested browser
+canvas reached the correct sponsor account's password prompt and requires the user's sign-in/MFA.
+No tenant, account, permission or PNG was changed to bypass that boundary. The approved text-only fallback therefore
+completes the participant guide without requiring live captures.
+
+The follow-up readiness check resolved the existing sponsor project through read-only management calls and verified
+all seven demo agents use the intended models. Both workshop Fabric capacities were **Paused**. Fabric-related live
+retakes therefore need explicit approval to resume the selected capacity, followed by pausing it again; do not
+silently restart it to obtain a screenshot.
+
+On Windows ARM64, the capture SDK's `cryptography` dependency may require unavailable native build tools. Use an
+existing **x64 Python 3.13** with an isolated capture venv and binary wheels instead. The worktree preparation used
+`.venv/capture-x64`; no main-checkout files or browser credentials were copied. Once the operator has authorized and
+completed the capture-browser sign-in, the bounded command is:
+
+```powershell
+.\.venv\capture-x64\Scripts\python.exe demos\capture-screenshots.py --outdated-only --headless
+```
+
+`--outdated-only --dry-run` is safe before authentication: it lists exactly the historical subset without opening a
+browser, invoking a model, changing files, or selecting current/missing illustrations.
+
+## Maintaining inline copy blocks
+
+Edit instructions in `content/prompts/coach-instructions.md`, prompts in `content/prompts/test-prompts.json`,
+and attachment sources in `content/data/`. Lab-page copies are generated, not independently authored:
+
+```bash
+python scripts/gen-schemas.py
+python scripts/sync-lab-blocks.py
+python scripts/check-content.py
+python scripts/validate-narrative.py --layers static,data --check --no-report
+python -m unittest discover -s scripts/tests -p "test_*.py"
+```
+
+The renderer includes complete JSON wrappers and complete multi-document messages. Keep the flyer's hidden HTML
+literal inside its code block. `--check` detects missing markers, missing sources and stale generated text.
+Use `scripts/sync-openapi-block.py <env>` separately for the one endpoint-bearing block on the canonical Lab 3 page.
+After content or retained screenshots change, rebuild both decks as described in [deck/README](../../deck/README.md).
+
+`workshop.repo_url` points to the participant repository, `tonirex/hpb-foundry-workshop`. Regenerate the private
+sign-in cards through the normal account runbook if existing distributed cards still name the old repository;
+never commit those credential-bearing PDFs.
+
 ## Script reference
 
 | Script | What it does |
@@ -426,8 +638,9 @@ scored locally instead", and the local scores are still valid. To publish a run 
 | [gen-citizens.py](../../scripts/gen-citizens.py) | `citizens.json` from the gold build; `--check`, `--from-onelake` |
 | [apply-guardrail.py](../../scripts/apply-guardrail.py) | `livewell-guardrails` + blocklist from `guardrails.yaml`, and each deployment's guardrail (`Microsoft.DefaultV2`) (postprovision hook); `--check` |
 | [build-kb.py](../../scripts/build-kb.py) | Foundry IQ knowledge base `livewell-guides-kb` + its MCP connection; `--source onelake`, `--check` |
-| [connect-tools.py](../../scripts/connect-tools.py) | Activities MCP, Fabric IQ and specialist A2A connections, profile tool URL, access checks, Lab 3 spec block check; `--check` |
-| [sync-openapi-block.py](../../scripts/sync-openapi-block.py) | Writes the live profile OpenAPI spec into the Lab 3 copy-and-paste block (both pages); `--check`. Commit and push the pages after it changes them |
+| [connect-tools.py](../../scripts/connect-tools.py) | Activities MCP, Fabric IQ and specialist A2A connections; read-only validation of the manually prepared Anonymous OpenAPI connection; profile URL/scope and generated Lab 3 spec checks; `--check` |
+| [sync-openapi-block.py](../../scripts/sync-openapi-block.py) | Writes the live profile OpenAPI spec into the canonical Lab 3 copy block; `--check`. Commit and push that page after it changes |
+| [sync-lab-blocks.py](../../scripts/sync-lab-blocks.py) | Renders canonical instruction, prompt, schema and attachment copies in participant pages; `--check` is offline and read-only |
 | [hosted-postdeploy.py](../../scripts/hosted-postdeploy.py) | Hosted agent: identity RBAC + guardrail (azd postdeploy hook); `--check`, `--verify` |
 | [gen-schemas.py](../../scripts/gen-schemas.py) | Navigator JSON schemas and the hosted agent's `livewell.json` from the prompts and `livewell_common.py`; `--check` |
 | [validate-builder-rail.py](../../scripts/validate-builder-rail.py) | Runs Labs 1–4 as `INITIALS=test` with `--cleanup`, checks the key signals (KB citation, injected flyer blocked, ≥ 2 tools, Fabric for Mei and not for Rahim, hosted agent) and that nothing is left behind (items an interrupted earlier run left are deleted first); `--labs`, `--fabric`, `--report`, `--verbose`. `make -C content/assets validate-rail` |
@@ -442,7 +655,7 @@ scored locally instead", and the local scores are still valid. To publish a run 
 | [smoke-test.py](../../scripts/smoke-test.py) | End-to-end check with temporary `livewell-smoke-*` agents: MCP, knowledge, guardrail, tools, Fabric, hosted agent, demo-memory residue, cost since provision; `--demo-agents`, `--no-fabric`, `--no-hosted`, `--since`, `--report` |
 | [create-demo-agents.py](../../demos/create-demo-agents.py) | The seven `livewell-demo-*` agents (one per lab, plus the Nutrition and Activity specialists with incoming A2A and an agent card) and the `livewell-eval` dataset; a new version only when the definition changed; `--check`, `--roles`, `--no-memory`, `--no-dataset` |
 | [portal.py](../../demos/portal.py) | Playwright helpers for the Foundry portal; `login`, `status`, `open <page>`, `shot <page>` |
-| [capture-screenshots.py](../../demos/capture-screenshots.py) | Navigator screenshot slots from the live portal; `--only`, `--list-missing`, `--link [--dry-run]`, `--headless` |
+| [capture-screenshots.py](../../demos/capture-screenshots.py) | Canonical Navigator screenshots from the live portal; select stale slots with `--only`; `--list-missing`, `--link [--dry-run]`, `--headless` |
 | [record-demos.py](../../demos/record-demos.py) | One captioned WebM per lab and the Bridge spotlight into `demos/videos/`; `--lab` |
 | [fabric-steps.py](../../demos/fabric-steps.py) | Bridge visualiser: the Fabric data agent's own run steps (rewrite, GQL, rows) for one question as an HTML page; `bridge`, `fit`, any question id; `--replay`, `--open`, `--save-sample` |
 | [record-terminal.py](../../demos/record-terminal.py) | Evidence recorder: runs any script, then saves its output with real timings (`.cast`) and a PNG in `demos/evidence/<date>/` and a replay WebM in `demos/videos/`; IDs, endpoints, e-mails and local paths redacted; `--title`, `--render`, `--idle`, `--no-video` |

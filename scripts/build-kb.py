@@ -85,8 +85,9 @@ def public_ip() -> str:
         return r.read().decode().strip()
 
 
-def az(*args: str) -> str:
-    proc = subprocess.run(["az", *args, "-o", "tsv"], capture_output=True, text=True, shell=os.name == "nt")
+def az(*args: str, subscription: str) -> str:
+    proc = subprocess.run(["az", *args, "--subscription", subscription, "-o", "tsv"],
+                          capture_output=True, text=True, shell=os.name == "nt")
     if proc.returncode != 0:
         raise SystemExit(f"[build-kb] az {' '.join(args[:3])} failed: {proc.stderr.strip()[:300]}")
     return proc.stdout.strip()
@@ -98,16 +99,19 @@ def upload_blob(env: dict, container: str, pdfs: list[Path]) -> None:
     from azure.storage.blob import BlobServiceClient, ContentSettings
 
     account, rg = env["AZURE_STORAGE_ACCOUNT_NAME"], env["AZURE_RESOURCE_GROUP"]
-    deny = az("storage", "account", "show", "-n", account, "-g", rg, "--query", "networkRuleSet.defaultAction") == "Deny"
+    subscription = env["AZURE_SUBSCRIPTION_ID"]
+    deny = az("storage", "account", "show", "-n", account, "-g", rg, "--query", "networkRuleSet.defaultAction",
+              subscription=subscription) == "Deny"
     ip = public_ip() if deny else ""
     rules = az("storage", "account", "network-rule", "list", "-n", account, "-g", rg,
-               "--query", "ipRules[].ipAddressOrRange") if deny else ""
+               "--query", "ipRules[].ipAddressOrRange", subscription=subscription) if deny else ""
     added = deny and ip not in rules.split()
     if added:
         log(f"allowing {ip} on {account} for the upload")
-        az("storage", "account", "network-rule", "add", "-n", account, "-g", rg, "--ip-address", ip, "--query", "defaultAction")
+        az("storage", "account", "network-rule", "add", "-n", account, "-g", rg, "--ip-address", ip,
+           "--query", "defaultAction", subscription=subscription)
     try:
-        svc = BlobServiceClient(env["AZURE_STORAGE_BLOB_ENDPOINT"], credential=AzureCliCredential())
+        svc = BlobServiceClient(env["AZURE_STORAGE_BLOB_ENDPOINT"], credential=AzureCliCredential(subscription=subscription))
         cc = svc.get_container_client(container)
         for attempt in range(12):  # firewall changes take up to ~1 min to apply
             try:
@@ -132,13 +136,14 @@ def upload_blob(env: dict, container: str, pdfs: list[Path]) -> None:
         log(f"{container}: {len(pdfs)} guides in Blob")
     finally:
         if added:
-            az("storage", "account", "network-rule", "remove", "-n", account, "-g", rg, "--ip-address", ip, "--query", "defaultAction")
+            az("storage", "account", "network-rule", "remove", "-n", account, "-g", rg, "--ip-address", ip,
+               "--query", "defaultAction", subscription=subscription)
             log(f"removed {ip} from {account}")
 
 
 def upload_onelake(env: dict, pdfs: list[Path]) -> None:
     ws, lh = env["FABRIC_WORKSPACE_ID"], env["FABRIC_LAKEHOUSE_ID"]
-    token = az_token("https://storage.azure.com")
+    token = az_token("https://storage.azure.com", subscription=env["AZURE_SUBSCRIPTION_ID"])
     base = f"https://onelake.dfs.fabric.microsoft.com/{ws}/{lh}/{ONELAKE_FOLDER}"
 
     def call(method: str, url: str, data: bytes | None = None) -> None:
@@ -159,7 +164,7 @@ def upload_onelake(env: dict, pdfs: list[Path]) -> None:
 
 def grant_search_on_workspace(env: dict, search_principal: str) -> None:
     """OneLake indexing reads the lakehouse as the search service identity (workspace Contributor)."""
-    fabric = Api("fabric")
+    fabric = Api("fabric", subscription=env["AZURE_SUBSCRIPTION_ID"])
     ws = env["FABRIC_WORKSPACE_ID"]
     current = fabric.get_all(f"/v1/workspaces/{ws}/roleAssignments")
     if any((a.get("principal") or {}).get("id") == search_principal for a in current):
@@ -266,7 +271,7 @@ def wait_for_ingestion(client, name: str, expected: int, timeout_s: int = 900) -
 def ensure_connection(env: dict, names: dict, check: bool) -> str:
     target = f"{env['AZURE_SEARCH_ENDPOINT'].rstrip('/')}/knowledgebases/{names['knowledge_base']}/mcp?api-version={KB_API}"
     url = f"{env['AZURE_AI_PROJECT_ID']}/connections/{names['kb_mcp_connection']}?api-version={CONN_API}"
-    arm = Api("arm")
+    arm = Api("arm", subscription=env["AZURE_SUBSCRIPTION_ID"])
     current = arm.get(url, ok_404=True)
     if current and (current.get("properties") or {}).get("target") == target:
         return "in sync"
@@ -322,7 +327,7 @@ def main() -> int:
     from azure.identity import AzureCliCredential
     from azure.search.documents.indexes import SearchIndexClient
 
-    credential = AzureCliCredential()
+    credential = AzureCliCredential(subscription=env["AZURE_SUBSCRIPTION_ID"])
     client = SearchIndexClient(endpoint=env["AZURE_SEARCH_ENDPOINT"], credential=credential)
     pdfs = sorted(PDF_DIR.glob("lg-*.pdf"))
     if not pdfs:
@@ -332,7 +337,8 @@ def main() -> int:
         if not args.skip_upload:
             if args.source == "onelake":
                 search_principal = az("search", "service", "show", "-n", env["AZURE_SEARCH_SERVICE_NAME"], "-g",
-                                      env["AZURE_RESOURCE_GROUP"], "--query", "identity.principalId")
+                                      env["AZURE_RESOURCE_GROUP"], "--query", "identity.principalId",
+                                      subscription=env["AZURE_SUBSCRIPTION_ID"])
                 grant_search_on_workspace(env, search_principal)
                 upload_onelake(env, pdfs)
             else:

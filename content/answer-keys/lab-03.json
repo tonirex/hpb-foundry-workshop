@@ -5,7 +5,7 @@
     {
       "prompt_id": "lab3_hazy_indoor_signup",
       "validation_type": "B_trace_field",
-      "notes": "Inspect profile and activity calls and the exact proposed write arguments. Require an explicit human approval or denial; on denial no write should occur. An automatically approved rehearsal does not demonstrate participant consent. The stored registration is temporary synthetic data, not a real booking.",
+      "notes": "Inspect discovery and the separate lab3_signup_confirm follow-up. Discovery uses get_citizen_profile, knowledge_base_retrieve and find_activities (activity lookup may run inside the Builder specialist), cites retrieved passages and does not register. The later write must wait for an explicit human approval or denial; inspect its arguments and receipt, and ensure denial does not run an approved write. Each reply is one complete evidence JSON object. Automated rehearsal is not participant consent, and registration is temporary synthetic data, not a real booking.",
       "expected_ref": "prompts/test-prompts.json#/prompts/lab3_hazy_indoor_signup/expected"
     },
     {

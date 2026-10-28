@@ -12,8 +12,8 @@ Where an entry changes something SPEC.md states, it says so.
 | Guest Wi-Fi SSID and code | `workshop.guest_wifi` (rendered on the deck logistics slide) | TODO |
 | Sponsor subscription ID and tenant ID | `environments.sponsor` and `infra/env/sponsor.bicepparam` (Phase 2) | Done 2026-10-04: subscription "HPB-workshop_HPB_Customer" (Azure Sponsorship) in its own tenant `hpbsub2026outlook.onmicrosoft.com`, kept separate from MCAPS (no Change directory) |
 | Sponsor facilitator UPN(s) | `environments.sponsor.facilitator_upns` | Done 2026-10-04: `hpb.facilitator@hpbsub2026outlook.onmicrosoft.com`, a cloud-only work account (Global Administrator, subscription Owner) that runs the sponsor environment. The tenant's creator `hpb.sub2026@outlook.com` keeps its rights and receives the budget alerts (10.1) |
-| Fabric Administrator role for the MCAPS facilitator account | Entra ID → Roles → Fabric Administrator (or activate Global Administrator in PIM). Needed for the tenant settings in `content/admin/TENANT-BOOTSTRAP.md` | Done 2026-09-29: "Users can create Ontology (preview) items" enabled; Phase 3 deploy green |
-| Fabric tenant sign-up (MCAPS tenant has never used Fabric) | A tenant user signs in once at app.fabric.microsoft.com | Done 2026-09-29: F2 `fablivewellmcaps` created by `provision.sh mcaps` |
+| Fabric Administrator role for the MCAPS facilitator account | Entra ID → Roles → Fabric Administrator (or activate Global Administrator in PIM). Needed for the tenant settings in `content/admin/TENANT-BOOTSTRAP.md` | The 2026-09-29 bootstrap used the legacy MCAPS tenant. Current-tenant role assignments were not changed or re-audited in 11.15 |
+| Fabric tenant sign-up | A tenant user signs in once at app.fabric.microsoft.com | Current MCAPS: existing `fabhpblivewellmcaps` is Active F2 and hosts the Resident 360 workspace (11.15) |
 
 ## Phase 0: bootstrap
 
@@ -1156,3 +1156,177 @@ says so. The linear procedure is [HPB-DELIVERY-RUNBOOK.md](content/admin/HPB-DEL
   DevUI's `WorkflowMessage` JSON-serialization limitation. Its final output was not independently recovered,
   and it was not rerun. No claim of a full load rehearsal or retained-history support is made. No resource
   provisioning, tenant identity/role changes, Fabric action or evaluation was included.
+## Phase 11b: participant journey consolidation
+
+- **11b.1 (user-directed)** Keep GitHub Markdown, merge the screenshot walkthroughs into each main lab's Navigator
+  section, and retain Builder separately. Old portal filenames and their checkpoint/troubleshooting anchors remain
+  compatibility links. The optional Fabric step has one canonical page.
+- **11b.2 (user-directed)** Retain the existing age-band-only programme-fit exercise from 6.7 and align SPEC.md with
+  it. Ordinary citizen guidance and individual profile lookups never use Fabric; the optional cohort question sends
+  only the age band. The core learning objectives remain verbatim.
+- **11b.3 (user-directed)** Participant entry links now use `tonirex/hpb-foundry-workshop`, including generated
+  sign-in cards and the Day 1 deck. The older `tonirex/livewell-foundry-workshop` is a separate repository that had
+  the same starting revision, not a dead link. This guide consolidation did not rename Azure resources or
+  deterministic ID namespaces; the later environment-binding correction is recorded in 11b.15.
+- **11b.4** `sync-lab-blocks.py` generates inline copy payloads from canonical sources and fails on missing markers,
+  unknown sources or drift. Instructions explicitly say append or replace. Schemas include their full wrapper,
+  intake includes both documents, and the flyer's hidden HTML survives exactly as in the tested portal message.
+  The Lab 3 OpenAPI endpoint exception now applies only to `lab-03.md`; its generator remains separate.
+- **11b.5** Navigator's optional intake previously asked for an intake object while the strict knowledge-answer
+  schema was active. It now uses a separate `livewell-<initials>-intake` agent, matching Builder. The existing
+  Builder intake rules moved verbatim into the shared instruction file; the schema comes from `lw.intake_schema()`.
+- **11b.6** Lab 4's sequential/hosted team merges evidence JSON; the hand-off team ends with Activity's answer.
+  The story, checkpoints and decks now distinguish these outcomes. Browser DevUI and hosted chat are participant
+  activities; publishing remains facilitator-only. Accounts with broader permissions must still follow that boundary.
+- **11b.7 (user-directed)** Retake only outdated existing screenshots, not the five missing sign-in/MFA,
+  evaluation-comparison or participant-role illustrations. Those steps are text-only. All 83 PNGs decode and
+  their linked paths resolve, but visual review found 50 captures showing obsolete model/schema or trace content,
+  plus two unused historical assets. Those captures are omitted from participant rendering and retained only as
+  hidden maintenance references; the lab-flow deck uses text-only reference cards instead of embedding them.
+- **11b.8 (unverified live)** No PNG was retaken in this pass. A fresh isolated Edge session was signed out, and
+  the existing Foundry window exposed no verified page to the UI tool, which required stopping that attempt.
+  No main-checkout files, browser profiles, credentials, tenant settings or permissions were copied or changed.
+  `capture-screenshots.py --list-outdated` lists the pending subset and exits nonzero; file integrity must not be
+  mistaken for a completed live retake. Retakes require an authorized worktree-local capture session.
+- **11b.9** Content validation now covers inline payload fidelity, case-sensitive paths, source-line bounds,
+  compatibility anchors and PNG decoding, with offline regression tests in `scripts/tests/`. Network reachability
+  and authenticated live behaviour remain separate checks. The fixed agenda is unchanged; full reference exercises
+  and optional participant extensions are distinguished from facilitated demonstrations.
+- **11b.10** Rail switching is not an implicit agent conversion. Navigator's `livewell-<initials>` and Builder's
+  `livewell-<initials>-coach` remain separate. The README and entry checks require missing target-rail setup before
+  continuing; a Builder Lab 3 function-tool agent cannot be used directly in the portal without its Python client.
+- **11b.11** GitHub's authenticated Markdown renderer preserved the exact text of all 37 generated required
+  copy blocks, including the hidden flyer markup and both intake documents. The committed profile OpenAPI block
+  also matched the reachable anonymous server's current `/openapi.json`. This is not a new authenticated Foundry
+  lab run or a claim that the historical portal screenshots were retaken.
+- **11b.12 (capture readiness, not a live retake)** The capture SDK could not install on the host's ARM64 Python
+  because `cryptography` required unavailable native build tools. An already-installed x64 Python 3.13 now runs an
+  isolated `.venv/capture-x64` with binary wheels and `azure-ai-projects==2.6.1`. Read-only management calls populated
+  a gitignored sponsor capture context from existing resource metadata; no credentials or main-checkout files were copied.
+  SDK reads verified all seven sponsor demo agents' models and all four structured response schemas against the
+  canonical helpers. The knowledge/guarded demo schema label is `livewell_lab1_answer`; its schema is identical to
+  the participant's `livewell_answer`, so the guide explains that cosmetic difference rather than changing the cloud agent.
+- **11b.13 (initial wrong-target checks; superseded by 11b.15)** The sponsor and legacy-MCAPS capacities inspected
+  initially were Paused. Those results did **not** describe the user's intended MCAPS subscription. No capacity
+  was resumed, no new capture sign-in was saved, and no model was invoked. An unavailable approval prompt was
+  not treated as authorization. Future retakes need an authorized capture session and a fresh check of the chosen
+  environment, not these historical capacity observations.
+  `--outdated-only --dry-run` now proves the exact 50-image selection offline and never broadens an empty selection.
+- **11b.14 (approved fallback applied)** The plan explicitly permits complete text-only guidance when an outdated
+  screenshot cannot be refreshed. That fallback is now applied without leaving historical images in expandable
+  participant sections. The image files remain unchanged, hidden markers keep the optional retake inventory usable,
+  and validation fails if an archived capture is rendered in a canonical guide. This is not a claim that a live
+  retake occurred. The sponsor password prompt reached during that attempt was the wrong target; no password
+  was submitted. The later MCAPS canvas correction is recorded below, and guides do not depend on a new sign-in.
+- **11b.15 (user-directed MCAPS correction)** The user supplied the authoritative subscription, now recorded in
+  `environments.mcaps`. Live ARM verification identifies it as `ME-MngEnvMCAP261533-antoniachen-1`, Enabled.
+  The stale config and CLI default described a different MCAPS subscription. The selected local azd environment,
+  tenant, generated parameters and endpoint metadata now match the user-selected target. Effective names are
+  `aif-hpb-livewell-mcaps` / `livewell-workshop`, `srch-hpb-livewell-mcaps` and `fabhpblivewellmcaps`; Python and
+  Bicep merge only those three MCAPS overrides, preserving sponsor defaults. All 15 resource IDs, the three
+  required model deployments, nine project connections, seven demo-agent models and four response schemas were
+  checked read-only. The profile endpoint and DevUI sign-in page respond; the Resident 360 workspace is assigned
+  to this exact **Active F2** capacity. Search remains in France Central under the existing capacity exception.
+  The browser canvas opens the correct project using the existing MCAPS session; no password was entered and
+  no account was created. The existing capacity administrator supplies the configuration's facilitator defaults.
+  The CLI's global default and all cloud resources, roles and capacity states were left unchanged.
+- **11b.16 (binding safeguards)** CLI credentials and standalone REST helpers explicitly select the environment's
+  subscription instead of accidentally using another signed-in account. `az account get-access-token` accepts
+  subscription **or** tenant, not both; subscription wins when supplied. `azure-identity>=1.20` is required for
+  `AzureCliCredential(subscription=...)`. `--parameters-only` never creates access or resources. A restored
+  environment with an existing DevUI but no local token stops normal provisioning rather than rotating the token.
+  Account creation remains the user's separate task; no attendee seeding or RBAC operation was run.
+- **11b.17 (initial readiness finding; resolved in 11b.18)** Read-only `apply-guardrail.py --check` on the corrected
+  MCAPS target found drift in `livewell-guardrails`: its mode, blocking filters and custom-blocklist attachment
+  differed from `guardrails.yaml`. The four blocklist items and deployment-level policies matched. That initial
+  validation did not change the cloud policy or claim a model-behaviour run; the user subsequently authorized
+  the targeted repair below.
+- **11b.18 (user-directed guardrail repair, 2026-10-28)** Reapplied the canonical `livewell-guardrails` policy on
+  `aif-hpb-livewell-mcaps` with `scripts/apply-guardrail.py`. Only the policy changed: the four existing blocklist
+  items and all deployment-level policies were already correct. The subsequent `--check` reports zero drift
+  across Blocking mode, all 13 configured filters and the prompt-side blocking attachment to
+  `livewell-medication-dosage`. On existing `livewell-demo-guarded` version 1, `lab2_medication_double` was blocked
+  by `custom_blocklists`, `lab2_skip_meals` was blocked by `self_harm`, and `lab2_benign_control` was allowed with
+  `route=self_care`, knowledge retrieval and citations. This resolves the specific guardrail readiness blocker;
+  it is not a full new Lab 2 evaluation or screenshot run. No accounts, roles, agent versions, model deployments
+  or capacity settings were changed. The activity log shows an external-tenant application writing this policy
+  on 2026-10-27 at 09:19 SGT; its display name could not be resolved in the workshop tenant. That writer was not
+  disabled or modified. Keep the existing day-of/pre-Lab-2 drift check: this repair is not a permanent exemption
+  from tenant governance.
+- **11b.19 (principal lookup compatibility)** Verification exposed that `az ad` does not accept `--subscription`
+  on this installed CLI. `select-params.py` now uses the existing subscription-scoped Graph helper for `/me`
+  and service-principal lookup by app ID, rather than relying on the global CLI account or passing unsupported
+  flags. The helper also avoids Windows command-shell interpretation of Graph alternate-key URLs. Both lookup
+  shapes were verified read-only; missing principal IDs stop before any local identity value is written.
+
+## Phase 12: Lab 2 evaluation pacing and Navigator validation
+
+- **12.1 (user-directed separation)** The class still runs the seven-prompt baseline/guarded ladder and
+  inspects traces, but reads the evaluation code and a facilitator-prepared comparison instead of submitting
+  one batch per attendee. This supersedes the default six-row participant evaluation in 4.13 and 4.23.
+  Keep the shared learning objective; identify the agent versions and judged-row counts so shared scores
+  are not presented as measurements of every participant's agent. No fixed runtime is promised.
+- **12.2 (safe execution boundary)** `lab2_govern.py` never calls judge models. `lab2_evaluate.py` is a
+  separate `# %%` walkthrough: plain execution, import and notebook Run All make no cloud calls.
+  Explicit terminal `--run` enables paid evaluation, with the six-row subset or `--eval-all` for 30 rows.
+  The facilitator prepares one comparison before the workshop; after-workshop runs need approval/quota.
+  Existing evaluation permissions are unchanged; this is a delivery/execution safeguard, not an RBAC boundary.
+- **12.3 (comparison provenance and retry cost)** Save exact baseline/guarded versions, including any shared
+  comparator, with the project binding in the ignored hands-on result. The separate run checks that binding
+  and uses `agents.get_version`, never imports the hands-on script, and never creates/deletes agents.
+  It evaluates the two versions sequentially, retains input/result/log evidence separately, and does not
+  automatically rerun paid judges if publishing fails. No live evaluation is launched to validate this change.
+- **12.4 (recorded evidence)** The old combined Builder screenshot is linked only as a historical completed
+  evaluation example, not displayed as current hands-on output. Current output explicitly says evaluation
+  was not run. The facilitator must have a completed comparison or recorded fallback ready before class.
+- **12.5 (user-directed follow-up)** Walk through Labs 0-3 with fresh initials `wxyz` and capture the actual
+  UI in the Copilot app's browser canvas. This replaces the earlier text-only fallback for the recaptured
+  steps. Sign-in/MFA remain account-specific and text-only; no user account was created. The existing
+  MCAPS facilitator session proves workflow behaviour, not attendee-only RBAC. Intake uses its own agent.
+- **12.6 (observed portal paths)** The facilitator's Connect to Foundry IQ alternative selects `livewell-search`
+  before the KB list loads; the final attendee route reuses the prepared entry (12.11). Structured JSON uses
+  `cited_sources` plus retrieval traces, not a guaranteed Sources button. Guardrail assignment uses
+  **Assign**, then top-level **Save**; the live unsaved-assignment banner takes precedence over assuming
+  immediate application. Self-harm Low is labelled Highest blocking in the policy preview.
+- **12.7 (OpenAPI prerequisite)** The current form requires `livewell-profile-openapi` even for Anonymous
+  authentication. It was created through the portal with no credential or RBAC change. The observed ARM
+  shape is category OpenAPI, authType None, metadata type openapi, target API root. Published category
+  enums omit OpenAPI, so do not invent a PUT contract: keep manual portal preparation and read-only
+  readiness validation in `connect-tools.py`. Configure the name and derive the target per environment;
+  do not change sharing flags to make a test pass.
+- **12.8 (generation and source evidence)** The original combined find/register question produced repeated
+  JSON: the trace contained repeated model calls, not just duplicated rendering. Saved schema/approval
+  settings were correct and guardrail records did not show blocking. A discovery-only retry returned
+  one object but skipped KB retrieval. The final tool-explicit discovery prompt verified all three reads
+  and matched every cited guide to the KB output. The underlying service repetition cause is unresolved;
+  the guide uses a verified bounded recovery, never crops a bad reply into a purported pass.
+- **12.9 (approval, memory and specialists)** One synthetic registration was approved once and its actual
+  interest receipt inspected; it was not repeated for subsequent read-only checks. Memory used a fresh
+  store (portal auto-creation selected the coach's model), a processing wait and a new conversation.
+  One server-error retry was needed, and the stored preference was inspected without editing it.
+  A2A first called only Nutrition; an explicit Activity follow-up produced the second call and a merged
+  JSON reply. Captions identify this as two turns. Current portal cards and response items say Preview.
+- **12.10 (coverage boundary)** No new batch evaluation, AI-analysis job or red-team scan was submitted;
+  automatic portal response metrics remained enabled. The existing seven-prompt matrix is not a
+  30-row groundedness comparison or a score for each participant. Attendee sign-in/permissions,
+  the optional Fabric extension and new Builder live runs remain outside this walkthrough. Test the
+  prepared KB and OpenAPI selections with an attendee before delivery.
+- **12.11 (prepared KB reuse)** Image review exposed the existing `livewell-guides-kb-mcp` entry under
+  Available knowledge bases. Prefer that entry over Connect to Foundry IQ, which had generated another
+  connection under the elevated account. On the same coach, v8 changed only the KB binding; saved YAML
+  retained the other tools, per-tool approval, canonical instructions, memory and guardrail, and a live
+  read-only discovery verified the prepared connection. This still does not certify attendee permissions.
+
+## Phase 13: publishing the combined workshop changes
+
+- **13.1 (2026-10-29)** Publication integrates the previously local MCAPS/DevUI work with main's canonical
+  Navigator pages, fresh core screenshots, generated copy blocks, connection prerequisites and discovery-before-write
+  safeguards. Phase 11b keeps the parallel journey history separate from the original Phase 11 numbering.
+- **13.2** Preserve the separately gated `lab2_evaluate.py`; the hands-on script never evaluates, but retains
+  the prepared matrix's GET-only reader, schema-2 fallback and pass/fail/not-scored counts. The current checkpoint
+  needs `handled_safely` evidence, not an unprepared groundedness run.
+- **13.3** Keep the short concept-first core and expandable setup/FAQ alongside canonical inline payloads.
+  Lab 4 uses private links and already-deployed teams; expired links, shared sessions and unreliable saved-history
+  reopening remain explicit. No secret, launch link or local-only participant-review report is published.
+- **13.4** This publication performs offline integration checks only. It authorizes no new deployment,
+  tenant/RBAC change, capacity action, model call, evaluation or full live lab sanity check.
