@@ -158,13 +158,13 @@ def main() -> int:
             return 1
 
     # Lab 4 DevUI bearer token (LAB4_DEVUI): one per environment, read by the bicepparam as a secure parameter and
-    # printed on the values sheet by render-values.py. Never a Bicep output.
+    # used server-side and to sign private expiring links. Never a Bicep output or participant token.
     if (os.environ.get("LAB4_DEVUI", "true").strip().lower() in ("1", "true", "yes")
             and not os.environ.get("LIVEWELL_DEVUI_TOKEN")):
         token = secrets.token_urlsafe(18)
         run(["azd", "env", "set", "LIVEWELL_DEVUI_TOKEN", token])
         os.environ["LIVEWELL_DEVUI_TOKEN"] = token
-        print("[select-params] LIVEWELL_DEVUI_TOKEN generated (Lab 4 DevUI sign-in, on the values sheet)")
+        print("[select-params] LIVEWELL_DEVUI_TOKEN generated (server-only Lab 4 secret)")
         if hook_mode:
             print("[select-params] DevUI token added after azd read parameters. Re-run the same command.")
             return 1

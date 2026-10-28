@@ -1,7 +1,8 @@
 // Lab 4 DevUI in a browser (LAB4_DEVUI, optional): demos/lab4-devui.py on the workshop Container Apps environment,
 // so participants explore the sequential and hand-off workflows without local Python or Codespaces.
 // `azd deploy lab4-devui` replaces the placeholder image (demos/devui-aca/). DevUI is a sample app, not a
-// production host: it runs in developer mode (for the trace panel) behind one shared bearer token, keeps conversations in memory (so exactly
+// production host: private expiring links exchange into secure browser sessions; the shared bearer stays server-side.
+// It runs in developer mode (for the trace panel), keeps conversations in memory (so exactly
 // one replica), builds a fresh workflow for every run and caps runs in flight per workflow at LIVEWELL_DEVUI_SEATS.
 // Its own identity holds only AcrPull and Foundry User on the project (the same data-plane role as an attendee).
 param location string
@@ -15,7 +16,7 @@ param projectName string
 param projectEndpoint string
 
 @secure()
-@description('Bearer token participants type into DevUI (LIVEWELL_DEVUI_TOKEN). Stored as a Container App secret.')
+@description('Server-only DevUI bearer and launch-ticket signing secret (LIVEWELL_DEVUI_TOKEN). Never distribute it to participants.')
 param authToken string
 
 @description('Image last deployed by `azd deploy lab4-devui` (SERVICE_LAB4_DEVUI_IMAGE_NAME). Empty = placeholder.')

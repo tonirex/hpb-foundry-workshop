@@ -20,7 +20,9 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts" / "lib"))
+sys.path.insert(0, str(ROOT / "content" / "assets"))
 import wsconfig  # noqa: E402
+from common.devui_access import issue_link  # noqa: E402
 
 MISSING = "(not yet provisioned)"
 
@@ -87,12 +89,17 @@ def main() -> int:
     fabric_ws_url = v.get("FABRIC_WORKSPACE_URL") or MISSING
     devui_on = (v.get("LAB4_DEVUI") or "true").strip().lower() in ("1", "true", "yes")
     devui_off = "not deployed (LAB4_DEVUI=false)"
-    # Attendees hold resource-scoped roles only, so they cannot read the secret (listSecrets needs Owner or Contributor):
-    # they use the token below. The command is for facilitators.
-    devui_cmd = (f"`az containerapp secret show -n {v.get('LAB4_DEVUI_APP_NAME') or names['devui_app']}"
-                 f" -g {v.get('AZURE_RESOURCE_GROUP') or names['resource_group']}"
-                 f" --subscription {g('AZURE_SUBSCRIPTION_ID')}"
-                 " --secret-name devui-auth-token --query value -o tsv`")
+    devui_link, devui_expiry = devui_off, devui_off
+    if devui_on:
+        origin, secret = v.get("LAB4_DEVUI_URL"), v.get("LIVEWELL_DEVUI_TOKEN")
+        devui_link = devui_expiry = MISSING
+        if origin and secret:
+            hours = ws["devui_access"]["link_lifetime_hours"]
+            if type(hours) is not int:
+                raise ValueError("workshop.devui_access.link_lifetime_hours must be an integer.")
+            link, expiry = issue_link(secret, origin, hours * 3600)
+            devui_link = f"[Open the prepared LiveWell demo]({link})"
+            devui_expiry = datetime.fromtimestamp(expiry, timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
 
     rows = [
         ("Environment", env),
@@ -116,9 +123,8 @@ def main() -> int:
         ("Your agent name", ws["agent_naming"]["portal_agent"] + "  (Navigator)"),
         ("Builder agents", ws["agent_naming"]["builder_agent"] + "  (Builder)"),
         ("Hosted agent (Lab 4, facilitator)", hosted()),
-        ("Lab 4 DevUI (browser, no install)", g("LAB4_DEVUI_URL") if devui_on else devui_off),
-        ("Lab 4 DevUI token", g("LIVEWELL_DEVUI_TOKEN") if devui_on else devui_off),
-        ("Lab 4 DevUI token command (facilitators: needs Owner or Contributor)", devui_cmd if devui_on else devui_off),
+        ("Lab 4 private launch link (no token entry)", devui_link),
+        ("Lab 4 access expires", devui_expiry),
         ("Workshop accounts", accounts),
         ("Guest Wi-Fi", f"{ws['guest_wifi']['ssid']} / {ws['guest_wifi']['code']}"),
     ]
@@ -146,6 +152,10 @@ def main() -> int:
     lines += [
         "",
         *sign_in,
+        "",
+        "The Lab 4 launch link grants shared demo access until the expiry above. Distribute it privately to this",
+        "workshop only; do not put it in a repository, public slide, screenshot, QR code or URL shortener. The",
+        "backend secret is never printed here. Re-render this sheet for fresh links; older links keep their original expiry.",
         "",
     ]
     out = ROOT / "content" / "config" / "values.md"

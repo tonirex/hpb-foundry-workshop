@@ -1,4 +1,4 @@
-# Lab 4 DevUI in Azure Container Apps: demos/lab4-devui.py with both workflows, in developer mode behind a bearer token.
+# Lab 4 shared DevUI: private launch links establish expiring sessions; backend bearer stays server-side.
 # Built remotely in ACR by `azd deploy lab4-devui`. The azd prepackage hook (scripts/stage-devui.py) first copies
 # the script and the files it reads into ./app with the repo layout, so the same code runs here and on a laptop.
 FROM python:3.12-slim

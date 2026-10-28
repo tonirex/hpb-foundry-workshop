@@ -77,9 +77,9 @@ services:
           run: Copy-Item ../../data/activities.json, ../../data/citizens.json ./ -Force
 
   # Lab 4 — DevUI in a browser (optional, LAB4_DEVUI): demos/lab4-devui.py with the sequential and hand-off
-  # workflows on Azure Container Apps, DevUI developer mode (for the Events/Traces/Tools panel) behind the
-  # LIVEWELL_DEVUI_TOKEN bearer token, so participants
-  # explore Lab 4 without local Python. Bicep creates the app (infra/modules/devui.bicep); the prepackage hook
+  # workflows on Azure Container Apps, with private expiring launch links and server-only bearer auth.
+  # DevUI developer mode keeps Events/Traces/Tools; participant deploy/reload endpoints are blocked.
+  # Participants need no local Python or token entry. Bicep creates the app; the prepackage hook
   # stages the script and the content files it reads into demos/devui-aca/app (git-ignored).
   lab4-devui:
     project: demos/devui-aca

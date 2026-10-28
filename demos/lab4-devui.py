@@ -2,8 +2,9 @@
 """Lab 4 facilitator demo: watch the Agent Framework orchestration run, agent by agent, in DevUI.
 
 `lab4_multiagent.py` prints the route as text. This opens the same two workflows in Agent Framework DevUI, a local
-web page that draws each workflow graph, lights up the agent that is running, and streams every tool call and
-answer into the chat. The Traces panel shows the OpenTelemetry spans of each run.
+web page that draws each workflow graph and shows agent outputs and local hand-off calls.
+Foundry-hosted MCP calls are not listed in its Tools panel; inspect server-side traces for those operations.
+The Traces panel shows the OpenTelemetry spans collected by this app for each run.
 
     python demos/lab4-devui.py                 # http://127.0.0.1:8090: "LiveWell sequential" and "LiveWell hand-off"
     python demos/lab4-devui.py --mermaid       # print the WorkflowViz graphs (the diagrams in lab-04.md) and exit
@@ -17,8 +18,9 @@ DevUI binds to 127.0.0.1 with no sign-in. Needs `pip install -r requirements-dem
 your az login with Foundry User and the azd env (AZURE_ENV_NAME) or a filled .env. Stop it with Ctrl+C.
 
 The same script runs in Azure (`azd deploy lab4-devui`, demos/devui-aca/): `--host 0.0.0.0` requires the
-DEVUI_AUTH_TOKEN bearer token (DevUI stays in developer mode so the Events/Traces/Tools panel shows), and the
-Container App's managed identity (Foundry User) replaces your az login. Every run gets a freshly built workflow,
+server-only DEVUI_AUTH_TOKEN. Private expiring workshop links establish an HttpOnly browser session without
+token entry (developer mode keeps the Events/Traces/Tools panel). The Container App's managed identity
+(Foundry User) replaces your az login. Every run gets a freshly built workflow,
 because a workflow object keeps its agents' chat history between runs; `--seats N` caps how many runs of one
 workflow are in flight at once.
 """
@@ -307,13 +309,24 @@ def main() -> int:
     lw.heading("Paste this into the DevUI chat box")
     print(request)
     lw.say(f"\nDevUI on http://{args.host}:{args.port} ({seats} seat(s) per workflow, "
-           f"{'no sign-in' if local else 'bearer token'}; Ctrl+C to stop). Pick a workflow at the top left.")
+           f"{'local development' if local else 'private workshop link'}; Ctrl+C to stop).")
     stable_entity_ids()
     per_run_traces()
-    # Developer mode is what shows the Events/Traces/Tools panel the lab uses. Its extra APIs (hot reload,
-    # deploy) do nothing for in-memory workflows, and the hosted container has no az or docker.
-    serve(entities=entities, port=args.port, host=args.host, auto_open=local and not args.no_browser,
-          instrumentation_enabled=True, auth_enabled=not local, mode="developer")
+    if local:
+        serve(entities=entities, port=args.port, host=args.host, auto_open=not args.no_browser,
+              instrumentation_enabled=True, auth_enabled=False, mode="developer")
+    else:
+        import uvicorn
+        from agent_framework.observability import enable_instrumentation
+        from agent_framework_devui import DevServer
+        from common.devui_access import WorkshopAccessMiddleware
+
+        enable_instrumentation(enable_sensitive_data=True)
+        server = DevServer(port=args.port, host=args.host, auth_enabled=True, mode="developer")
+        server.set_pending_entities(entities)
+        app = server.get_app()
+        app.add_middleware(WorkshopAccessMiddleware, secret=os.environ["DEVUI_AUTH_TOKEN"])
+        uvicorn.run(app, host=args.host, port=args.port, log_level="info")
     return 0
 
 

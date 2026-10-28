@@ -16,6 +16,7 @@ FILES = [
     "demos/lab4-devui.py",
     "content/assets/common/__init__.py",
     "content/assets/common/livewell_common.py",
+    "content/assets/common/devui_access.py",
     "content/config/workshop.yaml",
     "content/prompts/test-prompts.json",
     "content/prompts/coach-instructions.md",

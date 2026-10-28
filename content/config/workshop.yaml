@@ -28,6 +28,8 @@ workshop:
 
   rails: [navigator, builder]
   default_rail: navigator
+  devui_access:
+    link_lifetime_hours: 10         # starts when the facilitator renders the private values sheet; maximum 12
   agent_naming:
     portal_agent: "livewell-<initials>"             # Lab 0 portal agent, reused by Navigator labs
     builder_agent: "livewell-<INITIALS>-<role>"     # created by content/assets/labN_*.py
@@ -255,27 +257,26 @@ labs:
     patterns: [10]
   - id: lab-01
     title: "Agents & Knowledge — Foundry IQ"
-    minutes: 40
+    minutes: 35
     rails: [navigator, builder]
     patterns: [1, 4]
   - id: lab-02
     title: "Guardrails, Evaluations & Tracing"
-    minutes: 40
+    minutes: 30
     rails: [navigator, builder]
     patterns: [5, 7, 10]
   - id: lab-03
     title: "Tools, MCP & Memory — hyper-personalisation"
-    minutes: 40
+    minutes: 30
     rails: [navigator, builder]
     patterns: [2, 3, 6, 8, 9]
     optional_step: fabric-step
   - id: lab-04
     title: "Multi-agent & Hosted deploy"
     minutes: 30
-    rails: [builder]
-    facilitator_only: true
+    rails: [navigator, builder]
     patterns: [3, 9, 10]
   - id: bridge-spotlight
     title: "Two IQs, one agent"
-    minutes: 10
+    minutes: 8
     facilitator_only: true

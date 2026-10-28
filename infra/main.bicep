@@ -96,7 +96,7 @@ param mcpImage string = ''
 param lab4DevUi bool = true
 
 @secure()
-@description('Bearer token for the hosted DevUI (LIVEWELL_DEVUI_TOKEN, generated once by scripts/select-params.py, printed on the values sheet). Empty = no DevUI app.')
+@description('Server-only DevUI bearer and launch-ticket signing secret (LIVEWELL_DEVUI_TOKEN, generated once by scripts/select-params.py). Empty = no DevUI app.')
 param devuiToken string = ''
 
 @description('Last deployed DevUI image (SERVICE_LAB4_DEVUI_IMAGE_NAME). Empty = placeholder.')
