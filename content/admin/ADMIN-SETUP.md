@@ -335,7 +335,7 @@ type. Cost Management lags by up to 24 h.
 | Attendees | Foundry User | Project | `seed-attendees.sh` |
 | Attendees | Search Index Data Reader | Search service | `seed-attendees.sh` |
 | Attendees | Log Analytics Reader | Application Insights | `seed-attendees.sh` (Tracing tab) |
-| Attendees | Cognitive Services OpenAI User (Builder Lab 2 judges call the account's OpenAI endpoint, which a project role does not reach) | Foundry account | `seed-attendees.sh` |
+| Attendees | Cognitive Services OpenAI User (allows approved after-workshop judge runs; not a request to run Lab 2 evaluations in class) | Foundry account | `seed-attendees.sh` |
 | Attendees | Fabric workspace Viewer (read on the data agent) | Fabric workspace | `seed-attendees.sh`, after Phase 3 |
 
 Role IDs are built-in and the same in every tenant. They live only in `workshop.yaml` → `rbac_roles`.
@@ -358,16 +358,54 @@ Gotchas:
   each re-provision.
 - Guests (B2B) must redeem the invitation before role assignments show up in the portal. Lab accounts are simpler.
 
+### Lab 2 shared evaluation
+
+**Prepare one completed comparison before the workshop, not one per participant.** The hands-on
+`lab2_govern.py` runs the guardrail ladder and saves the exact v1/v2 names and versions. Batch evaluation
+is now in [`lab2_evaluate.py`](../assets/lab2_evaluate.py), which participants read as a code step-through.
+They must not enable it during the workshop: response generation plus multiple LLM judges can take
+longer than the lab and exhaust the shared quota.
+
+In the selected environment, use your own facilitator initials (not the protected `demo` or `workshop`
+initials). Prepare the agents **without `--cleanup`**, then run the evaluation separately:
+
+```bash
+python content/assets/lab2_govern.py
+python content/assets/lab2_evaluate.py --run --eval-all --upload
+```
+
+The second command is **facilitator-only during preparation**. It reuses the saved versions and refuses a
+different project binding, a missing comparison or agents removed by cleanup; it does not import/rerun
+the hands-on script or create new agent versions. `--run` is mandatory even with `--eval-all` or `--upload`.
+A plain invocation or notebook **Run All** makes no cloud calls. Without `--eval-all`, an explicitly
+enabled run uses six rows for a small preparation/after-workshop check. Even that subset makes live
+agent and judge calls; do not ask the class to run it.
+
+Open the two completed runs under **Foundry → Evaluations**, or share the actual local summary
+`content/assets/.runs/lab2-evaluation-<initials>.json`. Input JSONL, detailed results and evaluator logs
+are kept in the separate `lab2-evaluation-<initials>-*` directory beside it. Check the named versions,
+dataset/row counts, groundedness and missing scores before presenting the comparison. The hands-on
+result file is not overwritten. If either groundedness score is unavailable, the evaluation exits
+with an incomplete-result error rather than declaring success.
+
+Participants finish by explaining one trade-off from these **shared reference results**, not by claiming
+the scores measure their own agents. Have a recorded completed comparison available as a fallback.
+Do not grant extra permissions or increase quota merely to let the whole room evaluate simultaneously.
+The evaluation script creates no agents, so its `--cleanup` flag reports that there is nothing to delete.
+
 ### Evaluation uploads
 
-`lab2_govern.py` scores locally by default and prints the headline. `--upload` also publishes the run to the project's
-**Evaluations** page through the project's storage connection (the knowledge storage account). The account allows
+Only the separate `lab2_evaluate.py --run` path evaluates; without `--upload`, results stay local.
+`--upload` also publishes the run to the project's **Evaluations** page through the project's storage
+connection (the knowledge storage account). The account allows
 public network access with Entra ID only (`storageNetworkDefaultAction='Allow'`, ASSUMPTIONS 4.4 and 4.15), so the
 upload works from a laptop or Codespace. The red-team script's `--upload` uses the same path.
 
 If a tenant requires the account to be locked down, set `storageNetworkDefaultAction = 'Deny'` in the env's
-`.bicepparam` and re-provision. Uploads then fail from outside Azure: the scripts say "upload to Foundry failed …
-scored locally instead", and the local scores are still valid. To publish a run in that mode, add your IP with
+`.bicepparam` and re-provision. Uploads then fail from outside Azure. The Lab 2 evaluation script surfaces the error and **does not automatically
+run the batch again locally**, which would duplicate paid judge calls. Inspect the saved files and logs before
+an intentional retry; omit `--upload` for a planned local-only run. The separate red-team script retains its
+existing local fallback. To publish a run in that mode, add your IP with
 `az storage account network-rule add` for the upload and remove it afterwards.
 
 ## Backup plans

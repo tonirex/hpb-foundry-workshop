@@ -20,6 +20,8 @@ Semantic signals (SPEC.md phase 4 verification):
 
 Needs the facilitator's azd env (AZURE_ENV_NAME) or content/assets/.env, and the shared resources: the
 knowledge base, the MCP app, the tool connections and livewell-guardrails. Takes about 15-20 minutes.
+Lab 2 covers the hands-on guardrail ladder only: batch evaluation is a separate, opt-in facilitator run
+in content/assets/lab2_evaluate.py, never part of this participant-path validation.
 Exit code 1 if any check fails, a lab crashes, or agents are left behind.
 """
 from __future__ import annotations

@@ -129,7 +129,7 @@ LABS = [
             "Inspect `livewell-guardrails` (self-harm blocked from Low, Prompt Shields, blocklist) and attach it.",
             "Append the `safety` block and **Save**; note the new version number next to your baseline.",
             "Re-run the ladder: three additional blocks, including one benign false positive.",
-            "Open a blocked and an allowed trace; run the `livewell-eval` batch and compare versions.",
+            "Open blocked/allowed traces; read evaluation code and compare shared results. Do not run a batch.",
         ],
         "shot": ("lab-02/13-guarded-medication-blocked.png", (0.52, 0.225, 0.98, 0.40)),
         "shots": [
@@ -469,7 +469,7 @@ def stack_slide(prs, titles: list[str]):
         ("Lab 3 · Act", "lab",
          "Coach on `gpt-4.1-mini`; `livewell_profile` OpenAPI tool, `livewell-activities-mcp` with approval, memory; `tools` block."),
         ("Lab 2 · Govern", "lab",
-         "`livewell-guardrails` policy + `safety` block; traces; `livewell-eval` evaluations; baseline vs guarded version."),
+         "`livewell-guardrails` + `safety`; traces; evaluation code walkthrough and shared baseline/guarded results."),
         ("Lab 1 · Know", "lab",
          "Foundry IQ knowledge base `livewell-guides-kb`; `knowledge` block; JSON schema response."),
         ("Lab 0 · Start", "lab",
@@ -553,7 +553,8 @@ def lab_page_slide(prs, titles: list[str]):
         "Every lab page has the same sections in the same order, so participants always know where they are. "
         "Navigator is the portal path and Builder is the Python path; both reach the same checkpoint. "
         "The checkpoint is self-check only: participants compare their result with the collapsed Expected output block "
-        "on the page. Nothing is submitted or graded.",
+        "on the page. Nothing is submitted or graded. Lab 2 batch evaluation is a separate read-only code walkthrough; "
+        "participants review the facilitator's completed comparison rather than starting their own batches.",
         titles,
     )
     steps = ["Shared objective", "Features", "Story", "Navigator or Builder", "Checkpoint", "Expected output",
@@ -584,7 +585,7 @@ def lab_page_slide(prs, titles: list[str]):
             ("Builder · Python", {"bold": True, "color": NAVY, "size": 15, "space_after": 6}),
             ("One script per lab in `content/assets/`:", {"size": 12, "space_after": 4}),
             ("`lab1_knowledge.py`", {"size": 11.5, "space_after": 1}),
-            ("`lab2_govern.py`", {"size": 11.5, "space_after": 1}),
+            ("`lab2_govern.py` (no batch evaluation)", {"size": 11.5, "space_after": 1}),
             ("`lab3_tools.py` (`--fabric` for the Fabric step)", {"size": 11.5, "space_after": 1}),
             ("`lab4_multiagent.py`", {"size": 11.5, "space_after": 5}),
             ("Each prints a CHECKPOINT and saves the run under `content/assets/.runs/`.", {"size": 12}),

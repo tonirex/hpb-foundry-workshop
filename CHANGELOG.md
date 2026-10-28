@@ -4,6 +4,21 @@ All notable changes to this workshop. One entry per phase PR.
 
 ## [Unreleased]
 
+### Lab 2 evaluation pacing
+
+- Split the Builder exercise into `lab2_govern.py` (guardrail ladder and traces, no batch evaluation)
+  and `lab2_evaluate.py` (read-only code walkthrough by default; paid calls require explicit terminal `--run`).
+  Plain execution and notebook Run All do not enable evaluation; legacy evaluation flags on the hands-on
+  script stop with migration guidance.
+- Pin the two compared agent versions and project binding in the hands-on result. The separate evaluation
+  reuses them without recreating agents, saves its own evidence, and never automatically repeats a batch
+  after an upload error.
+- Align the lab, checkpoint, specification, narrative, facilitator runbook and decks: participants read
+  the evaluation code and shared completed results, not run batches or wait for personal scores.
+  The old combined-output screenshot is a linked historical example only.
+- Add offline regression coverage for default execution, notebook cells, opt-in evaluation, version
+  provenance and failure paths. No live evaluations or cloud configuration changes are part of this revision.
+
 ### Participant journey consolidation
 
 - One canonical lab page per capability: screenshot-led Navigator steps, Builder, checkpoints and navigation

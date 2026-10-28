@@ -18,7 +18,7 @@ workshop**. Fabric built the Resident 360 that sees Rahim; today Foundry builds 
 |-----|-------|----------------|------|
 | **▶ [Lab 0](content/labs/lab-00.md)** | Setup & first agent | `livewell-<initials>`: model + instructions on gpt-5-mini, a safe refusal and its trace | 15 min |
 | [Lab 1](content/labs/lab-01.md) | Agents & Knowledge: Foundry IQ | Foundry IQ knowledge base, citations, JSON contract | 40 min |
-| [Lab 2](content/labs/lab-02.md) | Guardrails, Evaluations & Tracing | RAI policy, four red-flag prompts, traces, batch evaluation, v1 vs v2 | 40 min |
+| [Lab 2](content/labs/lab-02.md) | Guardrails, Evaluations & Tracing | RAI policy, red-flag prompts, traces; evaluation code walkthrough and shared v1/v2 results | 40 min |
 | [Lab 3](content/labs/lab-03.md) | Tools, MCP & Memory: hyper-personalisation | Profile tool, activities MCP with approval, memory, specialists | 40 min |
 | [Fabric step](content/labs/fabric-step.md) | Add the Fabric IQ tool (optional, in Lab 3) | Mei's region question answered by the Resident360 Ontology Agent | 15 min |
 | [Lab 4](content/labs/lab-04.md) | Multi-agent & Hosted deploy *(browser hands-on + facilitator deploy)* | Agent Framework orchestration, hosted agent with guardrails | 30 min |

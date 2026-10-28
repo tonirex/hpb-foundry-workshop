@@ -32,6 +32,7 @@ All figures come from `python scripts/r360.py` (and, from Phase 3b, `scripts/val
 | Demo videos ready | `demos/videos/<lab>-<date>.webm` from `python demos/record-demos.py` (T-1) open in a local player | Plays offline |
 | Smoke test | `python scripts/smoke-test.py --demo-agents` | 11/11 PASS (includes the guardrail drift check, the demo-memory residue check and the A2A specialists check) |
 | Demo memory clean | `python scripts/reset-demo-memory.py` (`--reset` if it flags residue after a red team) | Exit 0, 0 flagged |
+| Lab 2 shared evaluation ready | Open the comparison prepared using [ADMIN-SETUP](content/admin/ADMIN-SETUP.md#lab-2-shared-evaluation), plus a recorded fallback | Completed v1/v2 results with agent versions, groundedness and judged-row counts; no participant batches |
 | Wi-Fi slide | SSID/code from `content/config/workshop.yaml` | Correct values (TODO until confirmed) |
 
 ## Morning: L100, everyone (9:00–12:15)
@@ -61,9 +62,9 @@ they can build and run agents but cannot deploy models, create connections or pu
 | 1:15 | Agent Framework & multi-agent (40) | SDK agents, versioning, orchestration patterns. [Lab 1](content/labs/lab-01.md) walkthrough (Builder: KB MCP connection in code, JSON contract), with a preview of Lab 3 code. | `lab1_prediabetes_eat`, `lab1_intake` | Builder sees valid `lab1_contract` JSON with `cited_sources` |
 | 1:55 | Tools, MCP & integration (40) | MCP, approval workflows, OpenAPI, gateway; the three Fabric integration paths (Fabric IQ tool, OneLake as Foundry IQ source, ML `/score` endpoint). [Lab 3](content/labs/lab-03.md) walkthrough; activities MCP with approval. | `lab3_hazy_indoor_signup` | Approval card shown before `register_interest` |
 | 2:35 | Break (15) | Helpers fix `.env` and sign-in issues for Builder. | — | — |
-| 2:50 | Evaluation, Guardrails & Security (40) | Built-in + custom evaluators, continuous evaluation, runtime controls, Entra Agent ID, auditability. [Lab 2](content/labs/lab-02.md) walkthrough; compare two agent versions. | `lab2_extreme_fasting`, `lab2_other_resident` | Room sees v1 vs v2 evaluator deltas |
+| 2:50 | Evaluation, Guardrails & Security (40) | Built-in + custom evaluators, continuous evaluation, runtime controls, Entra Agent ID, auditability. [Lab 2](content/labs/lab-02.md) evaluation code step-through (read, do not run); compare the facilitator's completed versions. | `lab2_extreme_fasting`, `lab2_other_resident` | Room interprets shared v1/v2 evaluator deltas and missing scores |
 | 3:30 | **Part A Build** (35) | [Lab 1](content/labs/lab-01.md): attach the shared KB, add the JSON contract. | `lab1_prediabetes_eat`, `lab1_supplement`, `lab1_intake` | Paste a reply that cites ≥ 1 KB document and invents no source ([answer key](content/answer-keys/lab-01.json)) |
-| 4:05 | **Part B Govern** (30) | [Lab 2](content/labs/lab-02.md): the seven-prompt guardrail ladder (default, then `livewell-guardrails`), trace, batch evaluation. | `lab2_extreme_fasting`, `lab2_medication_double`, `lab2_injected_flyer`, `lab2_other_resident`, `lab2_skip_meals`, `lab2_benign_control`, `lab2_benign_dose_reminder` | Flyer injection blocked or ignored **and** groundedness score pasted ([answer key](content/answer-keys/lab-02.json)) |
+| 4:05 | **Part B Govern** (30) | [Lab 2](content/labs/lab-02.md): seven-prompt guardrail ladder (default, then `livewell-guardrails`), traces, evaluation code walkthrough and shared results. No participant batch. | `lab2_extreme_fasting`, `lab2_medication_double`, `lab2_injected_flyer`, `lab2_other_resident`, `lab2_skip_meals`, `lab2_benign_control`, `lab2_benign_dose_reminder` | Flyer injection blocked or ignored **and** one trade-off explained from the shared comparison, naming versions, groundedness and judged-row counts ([answer key](content/answer-keys/lab-02.json)) |
 | 4:35 | **Part C Extend** (55) | See the Part C breakdown below. | | |
 
 ### Part C breakdown (4:35–5:30)
@@ -82,6 +83,10 @@ The lab-page durations describe the full reference exercises, not additional age
 use the optional intake, A2A and browser orchestration sections as extensions or facilitated demonstrations when
 the room cannot complete them. State which outcomes were demonstrated rather than claiming every participant ran every optional path.
 Participants use one lab page per capability: the Navigator section now includes the screenshots and copy blocks.
+For Lab 2, run only the hands-on `lab2_govern.py` during the lab. Read `lab2_evaluate.py` with the class
+without enabling it, then use the comparison prepared before the session. Do not turn spare time or
+an unavailable score into permission for the room to submit batches; multiple judges per row multiply
+quota use. Shared scores are demonstration evidence, not measurements of each participant's coach.
 
 ## Demo prompts by lab
 

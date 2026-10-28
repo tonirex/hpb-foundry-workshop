@@ -35,7 +35,7 @@
     {
       "prompt_id": null,
       "validation_type": "C_paste_metric",
-      "notes": "Paste the groundedness score from your batch evaluation run (content/eval/livewell-eval.jsonl). Any numeric score passes; mean >= 3.5 of 5 is the target. Also paste the v1-vs-v2 comparison headline.",
+      "notes": "Review the facilitator's completed v1/v2 comparison on content/eval/livewell-eval.jsonl. Identify the evaluated agent names/versions, groundedness scores and judged-row counts; mean >= 3.5 of 5 is the target, not a guaranteed outcome. Explain one safety/quality trade-off. Shared scores are reference evidence, not measurements of the participant's own agent; their own evidence is the guardrail ladder and traces. No participant batch is required. If a judge score is unavailable, use a recorded completed result and identify its provenance; never treat an unscored row as a pass.",
       "expected_ref": "eval/livewell-eval.jsonl",
       "checkpoint_id": "lab2_groundedness_score"
     }

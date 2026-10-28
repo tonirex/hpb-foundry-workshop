@@ -475,8 +475,8 @@ MODULES = [
         "capability": "Guardrails, Evaluations & Tracing",
         "level": "Govern · Navigator + Builder",
         "story": "A flyer hides an injection; Rahim asks about doubling medication and skipping meals.",
-        "features": "Default vs custom guardrail ladder; block vs annotate; Prompt Shields; self-harm threshold; blocklist; traces; built-in/custom evaluators; version compare; red team.",
-        "checkpoint": "The ladder shows which layer catches each prompt (blocklist, self-harm at Low, Prompt Shields, instructions) and a blocked run appears as Failed in Traces.",
+        "features": "Guardrail ladder; block vs annotate; Prompt Shields; thresholds; blocklist; traces; evaluation code walkthrough and shared version comparison; red team.",
+        "checkpoint": "Inspect blocked/allowed traces and explain a trade-off in the facilitator's completed evaluation. Read the evaluation code; do not run a batch during the lab.",
     },
     {
         "id": "lab-03",
@@ -651,6 +651,8 @@ def guardrail_slide(prs: Presentation, cfg: dict, titles: list[str]):
         "The result columns are the expected outcomes from Lab 2: the custom policy moves guardrail blocks from 1 of 7 to 4 of 7. "
         "Explain block versus annotate: at or above the threshold the request is blocked (HTTP 400, red banner, Failed trace); "
         "below it the answer goes through and the severity is recorded. The dose-reminder row is the cost of a stricter control. "
+        "Batch evaluation is a code walkthrough, not a participant run: show the completed shared v1/v2 results. "
+        "Launching several judges per row across the room can exhaust quota and exceed the lab time. "
         "Gate: move on when every table has at least one production policy they would require.",
         titles,
     )
@@ -667,7 +669,7 @@ def guardrail_slide(prs: Presentation, cfg: dict, titles: list[str]):
         header_size=10.8,
     )
     add_box(slide, 0.75, 4.8, 3.85, 1.55, "Block vs annotate\nAt the threshold: blocked, HTTP 400, Failed trace.\nBelow it: answered, severity recorded.", fill=WHITE, line=NAVY, size=11.5, color=NAVY, bold=True)
-    add_box(slide, 4.85, 4.8, 4.1, 1.55, "Evaluators\ngroundedness · relevance · task adherence · tool-call accuracy · intent resolution · custom \"advice matches known conditions\"", fill=PALE_TEAL, line=TEAL, size=11.5, color=NAVY, bold=True)
+    add_box(slide, 4.85, 4.8, 4.1, 1.55, "Evaluators · read, do not run\nReview the shared completed comparison:\ngroundedness · relevance · task adherence · tool-call accuracy · intent resolution · condition checks", fill=PALE_TEAL, line=TEAL, size=11.5, color=NAVY, bold=True)
     add_box(slide, 9.2, 4.8, 3.4, 1.55, "Red team\nFacilitator via SDK path\napprox. US$42 per scan", fill=LIGHT, line=ORANGE, size=13, color=NAVY, bold=True)
 
 

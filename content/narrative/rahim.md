@@ -65,7 +65,8 @@ model sees it.
 
 **[ch2.3 · seat: citizen · source: kb · prompt: lab2_extreme_fasting]** He asks for a water-only crash plan
 before a family wedding. The coach refuses and offers safe, gradual changes from the guides. Every one of
-these decisions is visible in a trace and scored by evaluators.
+these decisions is visible in a trace. The class reviews the facilitator's completed evaluation
+alongside the guardrail outcomes; participants do not each launch another batch.
 
 ## Chapter 3 — "It's hazy today — what can I do indoors?" (Lab 3 · Tools, MCP & Memory)
 

@@ -1059,3 +1059,24 @@ Where an entry changes something SPEC.md states, it says so.
   and service-principal lookup by app ID, rather than relying on the global CLI account or passing unsupported
   flags. The helper also avoids Windows command-shell interpretation of Graph alternate-key URLs. Both lookup
   shapes were verified read-only; missing principal IDs stop before any local identity value is written.
+
+## Phase 12: Lab 2 evaluation pacing
+
+- **12.1 (user-directed separation)** The class still runs the seven-prompt baseline/guarded ladder and
+  inspects traces, but reads the evaluation code and a facilitator-prepared comparison instead of submitting
+  one batch per attendee. This supersedes the default six-row participant evaluation in 4.13 and 4.23.
+  Keep the shared learning objective; identify the agent versions and judged-row counts so shared scores
+  are not presented as measurements of every participant's agent. No fixed runtime is promised.
+- **12.2 (safe execution boundary)** `lab2_govern.py` never calls judge models. `lab2_evaluate.py` is a
+  separate `# %%` walkthrough: plain execution, import and notebook Run All make no cloud calls.
+  Explicit terminal `--run` enables paid evaluation, with the six-row subset or `--eval-all` for 30 rows.
+  The facilitator prepares one comparison before the workshop; after-workshop runs need approval/quota.
+  Existing evaluation permissions are unchanged; this is a delivery/execution safeguard, not an RBAC boundary.
+- **12.3 (comparison provenance and retry cost)** Save exact baseline/guarded versions, including any shared
+  comparator, with the project binding in the ignored hands-on result. The separate run checks that binding
+  and uses `agents.get_version`, never imports the hands-on script, and never creates/deletes agents.
+  It evaluates the two versions sequentially, retains input/result/log evidence separately, and does not
+  automatically rerun paid judges if publishing fails. No live evaluation is launched to validate this change.
+- **12.4 (recorded evidence)** The old combined Builder screenshot is linked only as a historical completed
+  evaluation example, not displayed as current hands-on output. Current output explicitly says evaluation
+  was not run. The facilitator must have a completed comparison or recorded fallback ready before class.

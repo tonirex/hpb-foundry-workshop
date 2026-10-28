@@ -145,3 +145,17 @@ PTU deployments and partner models are never used.
 - Principal lookup uses the shared subscription-scoped Graph REST helper, not unsupported `az ad --subscription`
   flags. The [service-principal alternate-key lookup](https://learn.microsoft.com/graph/api/serviceprincipal-get)
   and `/me` were verified read-only; no dependency version changed for this compatibility fix.
+
+## Lab 2 evaluation pacing
+
+- No model or package version changes. `lab2_govern.py` is hands-on only; `lab2_evaluate.py` is an
+  inactive-by-default code walkthrough with an explicit terminal `--run` gate. Participants review a
+  shared completed comparison; automatic Builder validation does not start batch evaluation.
+- The existing [Azure AI Evaluation SDK](https://learn.microsoft.com/python/api/azure-ai-evaluation/azure.ai.evaluation)
+  supplies `evaluate`, column mappings, local output and optional project upload. The
+  [agent-version lookup](https://learn.microsoft.com/python/api/azure-ai-projects/azure.ai.projects.operations.agentsoperations)
+  pins `agent_name` and `agent_version` from the saved hands-on result. These API shapes were checked
+  against Microsoft Learn; no new evaluation API or service was introduced.
+- Default/CLI/cell execution and the opt-in path are covered offline with mocked cloud boundaries.
+  No new live batch, judge score or runtime claim is made. Prepare the shared comparison before delivery;
+  do not use a historical combined-output screenshot as proof of the current participant run.
