@@ -140,6 +140,7 @@ class Lab2ExecutionTests(unittest.TestCase):
         self.lw.save_results.side_effect = self.save_results
         self.lw.say.side_effect = lambda *parts: print(" ".join(str(part) for part in parts))
         common = types.ModuleType("common")
+        common.__path__ = [str(ASSETS / "common")]
         common.livewell_common = self.lw
         exceptions = types.ModuleType("azure.core.exceptions")
         exceptions.HttpResponseError = HttpResponseError
@@ -210,7 +211,7 @@ class Lab2ExecutionTests(unittest.TestCase):
         self.assertTrue((self.runs_dir / "lab2-test.json").is_file())
 
     def test_legacy_eval_flags_stop_before_any_hands_on_calls(self):
-        for flag in ("--eval-all", "--upload"):
+        for flag in ("--run-eval", "--eval-all", "--upload"):
             with self.subTest(flag=flag), self.assertRaisesRegex(SystemExit, "moved to lab2_evaluate.py"):
                 self.execute(HANDS_ON, [flag])
         self.lw.kb_tool.assert_not_called()

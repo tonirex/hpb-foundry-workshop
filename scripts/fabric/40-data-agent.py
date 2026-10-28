@@ -1,10 +1,15 @@
 #!/usr/bin/env python3
-"""Step 40: create AND publish the Fabric data agent "Resident360 Ontology Agent" over resident_ontology.
+"""Step 40: create, configure and verify the Fabric data agent over resident_ontology.
+
+New Fabric deployments use ontology context (October 2026). The public SDK/REST source-attachment API
+does not expose that operation yet: attach it once in Sources > Add sources > Add an ontology, then
+re-run this step. The script verifies the documented item-definition ontology parts before publishing.
+Existing legacy ontology data sources keep their original configuration path.
 
 Uses the public Fabric data agent management API (the same calls as fabric-data-agent-sdk 0.1.32):
   POST  /v1/workspaces/{ws}/dataAgents                                  create (GET first)
   PATCH /v1/workspaces/{ws}/dataAgents/{id}/staging/settings            aiInstructions
-  POST  /v1/workspaces/{ws}/dataAgents/{id}/staging/datasources         ontology as a FabricItem source
+  POST  /v1/workspaces/{ws}/items/{id}/getDefinition                  read draft/published ontology context
   PATCH /v1/workspaces/{ws}/dataAgents/{id}/staging/datasources/{ds}/elements?id=  select every entity type
   PATCH /v1/workspaces/{ws}/dataAgents/{id}/staging/datasources/{ds}    data source instructions
   POST  /v1/workspaces/{ws}/dataAgents/{id}/staging/publish             publish
@@ -15,7 +20,8 @@ the ontology source's instructions its `datasource-instructions` block (they ste
 For ontology sources, instructions are the only tuning mechanism: POST .../fewShots answers 400 "Few shot
 examples are not supported for Ontology data sources".
 
-Idempotent: re-running re-applies the instructions, adds the ontology source only if missing and republishes.
+Idempotent: re-running re-applies instructions, verifies an attached ontology and publishes only when needed.
+Fresh ontology context attachments have one explicit portal step; they are not silently substituted.
 
   python scripts/fabric/40-data-agent.py [--no-publish] [--dry-run]     (normally run by deploy.sh)
 """
@@ -25,7 +31,6 @@ import argparse
 import json
 import re
 import sys
-import time
 import urllib.parse
 from pathlib import Path
 
@@ -46,6 +51,14 @@ def instructions_text(name: str = "data-agent-instructions") -> str:
 
 def mentions(obj, needle: str) -> bool:
     return needle.lower() in json.dumps(obj).lower()
+
+
+def has_ontology_context(definition: dict, stage: str, workspace: str, ontology: str) -> bool:
+    prefix = f"Files/Config/{stage}/ontologies/"
+    return any(path.startswith(prefix) and path.endswith("/ontology.json") and isinstance(part, dict)
+               and str(part.get("artifactId", "")).lower() == ontology.lower()
+               and str(part.get("workspaceId", "")).lower() == workspace.lower()
+               for path, part in definition.items())
 
 
 def main() -> int:
@@ -91,22 +104,36 @@ def main() -> int:
     if not same:
         return 1
 
+    definition = fab.definition(ws, agent)
+    if has_ontology_context(definition, "draft", ws, onto):
+        fl.say(f"  PASS  ontology context {onto_name} is attached to the draft")
+        if a.no_publish:
+            fl.say("  WARN  --no-publish: the draft was not published")
+        else:
+            published = fab.get(f"{base}/settings") or {}
+            if not (has_ontology_context(definition, "published", ws, onto)
+                    and (published.get("aiInstructions") or "").strip() == text):
+                fab.lro("POST", f"{base}/staging/publish", {"publishedDescription": DESCRIPTION}, what="publish")
+            definition = fab.definition(ws, agent)
+            published = fab.get(f"{base}/settings") or {}
+            if not (has_ontology_context(definition, "published", ws, onto)
+                    and (published.get("aiInstructions") or "").strip() == text):
+                fl.say("  FAIL  published ontology context or instructions do not match")
+                return 1
+            fl.say("  PASS  published ontology context and instructions verified")
+        fl.say("  info  ontology context uses source-native queries; legacy GQL data-source instructions are not applied")
+        print(json.dumps({"FABRIC_DATA_AGENT_ID": agent}))
+        return 0
+
     sources = fab.get(f"{base}/staging/datasources") or {}
     if mentions(sources, onto):
         fl.say(f"  PASS  ontology source {onto_name} already staged")
     else:
-        body = {"type": "FabricItem",
-                "itemReference": {"referenceType": "ById", "itemId": onto, "workspaceId": ws}}
-        fab.lro("POST", f"{base}/staging/datasources", body, what="add ontology source")
-        for _ in range(12):
-            sources = fab.get(f"{base}/staging/datasources") or {}
-            if mentions(sources, onto):
-                break
-            time.sleep(5)
-        if not mentions(sources, onto):
-            fl.say(f"  FAIL  ontology source not visible in staging: {json.dumps(sources)[:600]}")
-            return 1
-        fl.say(f"  PASS  ontology source {onto_name} added")
+        fl.say("  ACTION REQUIRED  Fabric no longer accepts new ontology attachments through the data-source API.")
+        fl.say(f"  Open {agent_name} in workspace {n['fabric_workspace']}: Sources > Add sources > Add an ontology "
+               f"> {onto_name}. Then re-run this step; no tenant setting or evaluation is needed.")
+        fl.say("  https://learn.microsoft.com/fabric/data-science/data-agent-ontology-sources")
+        return 2
 
     ds_id = next((d["id"] for d in (sources.get("value") or []) if mentions(d, onto)), onto)
     elements = fab.get_all(f"{base}/staging/datasources/{ds_id}/elements")

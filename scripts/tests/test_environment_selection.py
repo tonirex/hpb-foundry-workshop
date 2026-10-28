@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import contextlib
+import base64
 import importlib.util
 import io
 import json
@@ -29,6 +30,14 @@ spec.loader.exec_module(select_params)
 
 
 class EnvironmentSelectionTests(unittest.TestCase):
+    def setUp(self):
+        guard = patch.object(select_params, "guard_target", return_value=None)
+        principal = patch.object(select_params, "principal_from_token", return_value=None)
+        self.guard_target = guard.start()
+        self.principal_from_token = principal.start()
+        self.addCleanup(guard.stop)
+        self.addCleanup(principal.stop)
+
     def test_parameters_only_does_not_call_azure_or_create_tokens(self):
         with tempfile.TemporaryDirectory() as directory:
             infra = Path(directory).resolve()
@@ -47,6 +56,8 @@ class EnvironmentSelectionTests(unittest.TestCase):
             self.assertIn("from infra/env/mcaps.bicepparam", generated)
             self.assertIn("using 'main.bicep'", generated)
             self.assertEqual((infra / "env" / "mcaps.bicepparam").read_text(encoding="utf-8"), source)
+        self.guard_target.assert_not_called()
+        self.principal_from_token.assert_not_called()
 
     def test_preprovision_hook_still_rejects_a_stale_parameter_file(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -90,7 +101,7 @@ class EnvironmentSelectionTests(unittest.TestCase):
                 with patch.object(select_params, "INFRA", infra), patch.dict(os.environ, env, clear=True):
                     with patch.object(sys, "argv", ["select-params.py"]):
                         with (patch.object(select_params, "run", side_effect=run) as calls,
-                              patch.object(select_params, "Api") as api):
+                              patch.object(select_params.azrest, "Api") as api):
                             api.return_value.get.return_value = {"id": "selected-principal"}
                             with patch.object(select_params.secrets, "token_urlsafe") as token:
                                 with contextlib.redirect_stdout(io.StringIO()) as output:
@@ -116,7 +127,7 @@ class EnvironmentSelectionTests(unittest.TestCase):
             with patch.object(select_params, "INFRA", infra), patch.dict(os.environ, env, clear=True):
                 with patch.object(sys, "argv", ["select-params.py"]):
                     with (patch.object(select_params, "run", return_value='{"user":{"type":"user"}}') as run,
-                          patch.object(select_params, "Api") as api):
+                          patch.object(select_params.azrest, "Api") as api):
                         api.return_value.get.return_value = {}
                         with contextlib.redirect_stdout(io.StringIO()) as output:
                             self.assertEqual(select_params.main(), 1)
@@ -174,7 +185,7 @@ class EnvironmentNamesTests(unittest.TestCase):
         module_spec.loader.exec_module(stage)
         self.assertIn("scripts/lib/wsconfig.py", stage.FILES)
 
-    def test_values_sheet_pins_tenant_and_explains_missing_local_token(self):
+    def test_values_sheet_pins_tenant_and_never_exposes_a_backend_token(self):
         module_spec = importlib.util.spec_from_file_location("render_values", ROOT / "scripts" / "render-values.py")
         render = importlib.util.module_from_spec(module_spec)
         module_spec.loader.exec_module(render)
@@ -189,10 +200,17 @@ class EnvironmentNamesTests(unittest.TestCase):
                         self.assertEqual(render.main(), 0)
             text = (root / "content" / "config" / "values.md").read_text(encoding="utf-8")
             self.assertIn("wsid=selected-project&tid=selected-tenant", text)
-            self.assertIn("| Lab 4 DevUI token | not loaded locally;", text)
+            self.assertIn("| Lab 4 private launch link (no token entry) | (not yet provisioned) |", text)
+            self.assertNotIn("| Lab 4 DevUI token", text)
+            self.assertNotIn("containerapp secret", text)
 
 
 class CredentialScopeTests(unittest.TestCase):
+    @staticmethod
+    def token_for(tenant):
+        payload = base64.urlsafe_b64encode(json.dumps({"tid": tenant}).encode()).decode().rstrip("=")
+        return f"header.{payload}.signature"
+
     def test_cli_credentials_use_subscription_and_managed_identity_still_wins(self):
         identity = types.ModuleType("azure.identity")
         for name in ("AzureCliCredential", "AzureDeveloperCliCredential", "ChainedTokenCredential",
@@ -221,29 +239,36 @@ class CredentialScopeTests(unittest.TestCase):
             lw.credential.cache_clear()
 
     def test_rest_tokens_use_selected_subscription(self):
-        result = types.SimpleNamespace(returncode=0, stdout="test-token\n")
+        token = self.token_for("selected-tenant")
+        result = types.SimpleNamespace(returncode=0, stdout=token + "\n")
         with patch.dict(os.environ, {"AZURE_SUBSCRIPTION_ID": "selected-subscription"}, clear=True):
-            with patch.object(azrest.subprocess, "run", return_value=result) as run:
-                self.assertEqual(azrest.az_token("fabric", "selected-tenant"), "test-token")
+            with patch.object(azrest, "run_az", return_value=result) as run:
+                self.assertEqual(azrest.az_token("fabric", "selected-tenant"), token)
                 cmd = run.call_args.args[0]
                 self.assertEqual(cmd[cmd.index("--subscription") + 1], "selected-subscription")
                 self.assertNotIn("--tenant", cmd)
         with patch.dict(os.environ, {}, clear=True):
-            with patch.object(azrest.subprocess, "run", return_value=result) as run:
+            with patch.object(azrest, "run_az", return_value=result) as run:
                 azrest.az_token("fabric", "selected-tenant")
                 cmd = run.call_args.args[0]
                 self.assertEqual(cmd[cmd.index("--tenant") + 1], "selected-tenant")
                 self.assertNotIn("--subscription", cmd)
 
     def test_explicit_api_subscription_overrides_process_default(self):
-        result = types.SimpleNamespace(returncode=0, stdout="test-token\n")
+        result = types.SimpleNamespace(returncode=0, stdout=self.token_for("selected-tenant") + "\n")
         with patch.dict(os.environ, {"AZURE_SUBSCRIPTION_ID": "unrelated-subscription",
                                     "AZURE_TENANT_ID": "unrelated-tenant"}, clear=True):
-            with patch.object(azrest.subprocess, "run", return_value=result) as run:
-                azrest.Api("arm", subscription="selected-subscription")
+            with patch.object(azrest, "run_az", return_value=result) as run:
+                azrest.Api("arm", tenant="selected-tenant", subscription="selected-subscription")
                 cmd = run.call_args.args[0]
                 self.assertEqual(cmd[cmd.index("--subscription") + 1], "selected-subscription")
                 self.assertNotIn("--tenant", cmd)
+
+    def test_wrong_tenant_claim_still_blocks_an_explicit_subscription(self):
+        result = types.SimpleNamespace(returncode=0, stdout=self.token_for("other-tenant") + "\n")
+        with patch.dict(os.environ, {}, clear=True), patch.object(azrest, "run_az", return_value=result):
+            with self.assertRaisesRegex(SystemExit, "refusing to call"):
+                azrest.Api("arm", tenant="selected-tenant", subscription="selected-subscription")
 
     def test_knowledge_cli_wrapper_requires_and_passes_subscription(self):
         module_spec = importlib.util.spec_from_file_location("build_kb", ROOT / "scripts" / "build-kb.py")

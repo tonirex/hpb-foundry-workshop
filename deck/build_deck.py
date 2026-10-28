@@ -247,12 +247,12 @@ def agenda_slide(prs: Presentation, titles: list[str]):
         ["11:15", "Control Plane - CIO lab (40)", "Guardrails, tracing, monitoring, evaluation, red teaming, identity, cost", "Trip guardrail; trace; eval scorecard; policy checkpoint"],
         ["11:55", "Platform architecture (20)", "Runtime / tools + knowledge / app layer; identity + observability", "Two IQs, one agent diagram"],
         ["12:15", "Lunch", "Break", "Break"],
-        ["1:15", "Agent Framework & multi-agent (40)", "SDK agents, versioning, orchestration patterns", "Lab 1 walkthrough; preview Lab 3 Builder code"],
+        ["1:15", "Agent Framework & multi-agent (40)", "Choose a pattern; inspect execution evidence", "Lab 4 shared DevUI comparison (25); code and discussion (15)"],
         ["1:55", "Tools, MCP & integration (40)", "MCP, approvals, OpenAPI, gateway; Fabric integration paths", "Lab 3 walkthrough; activities MCP approval"],
         ["2:50", "Evaluation, Guardrails & Security (40)", "Built-in + custom evaluators, continuous eval, runtime controls", "Lab 2 walkthrough; compare versions"],
         ["3:30", "Part A Build (35)", "Hands-on build", "Lab 1"],
         ["4:05", "Part B Govern (30)", "Hands-on governance", "Lab 2"],
-        ["4:35", "Part C Extend (55)", "Hands-on extension", "Lab 3 incl. Fabric step; Lab 4 demo; bridge; close"],
+        ["4:35", "Part C Extend (55)", "Hands-on extension", "Lab 3; optional Fabric; Lab 4 pre-deployed hosted proof at 5:15; close"],
     ]
     slide = content_slide(
         prs,
@@ -279,20 +279,27 @@ def agenda_slide(prs: Presentation, titles: list[str]):
 def logistics_slide(prs: Presentation, cfg: dict, titles: list[str]):
     workshop = cfg["workshop"]
     wifi = workshop.get("guest_wifi", {})
+    tap = (cfg.get("environments", {}).get("mcaps", {}).get("lab_accounts", {}) or {}).get("sign_in") == "tap"
+    sign_in_gate = ("Temporary Access Pass entered once and the correct account ready"
+                    if tap else "Authenticator registration started and the correct account ready")
     slide = content_slide(
         prs,
         "Guest Wi-Fi & logistics",
         "Cover this before anyone opens the portal because sign-in is the first likely delay. "
         "Use the TODO labels visibly if the final Wi-Fi values have not been confirmed. "
         "Ask participants to use their own workshop account (the username on their sign-in card) for all Foundry and Fabric steps. "
-        "Gate: move on when everyone has Wi-Fi, Authenticator registration started and the correct account ready.",
+        + ("The card carries a Temporary Access Pass: a secret, valid only until the printed time; nobody registers Authenticator. "
+           "If a sign-in page asks for a method to be set up, stop and fetch a facilitator; never weaken a security setting. "
+           if tap else "")
+        + f"Gate: move on when everyone has Wi-Fi, {sign_in_gate}.",
         titles,
     )
     add_box(slide, 0.75, 1.2, 5.6, 1.05, f"Guest Wi-Fi SSID\n{as_display(wifi.get('ssid'))}", fill=PALE_TEAL, line=TEAL, size=16, color=NAVY, bold=True)
     add_box(slide, 6.85, 1.2, 5.6, 1.05, f"Guest Wi-Fi code\n{as_display(wifi.get('code'))}", fill=PALE_TEAL, line=TEAL, size=16, color=NAVY, bold=True)
     bullets = [
         "Bring and use personal laptops; WOG devices cannot sign in to external Entra tenants.",
-        "Authenticator registration happens at first sign-in; keep the phone nearby.",
+        ("Enter the Temporary Access Pass from your card as the password; there is no Authenticator to register."
+         if tap else "Authenticator registration happens at first sign-in; keep the phone nearby."),
         "Use your own workshop account (on your sign-in card) for Foundry portal, Fabric and workshop scripts.",
         "Portal-first Navigator rail and Python Builder rail share the same checkpoints.",
         "If sign-in stalls, stay with the facilitator; do not switch to personal Microsoft accounts.",
@@ -442,12 +449,12 @@ def foundry_features_slide(prs: Presentation, titles: list[str]):
 
 
 OBJECTIVES = {
-    "lab-00": "A Foundry agent is a model plus instructions, and instructions alone can make it safe; every answer leaves a trace you can inspect",
+    "lab-00": "Configure an agent's intended behaviour with a model and instructions, then inspect a response and its trace; one refusal is not proof of safety",
     "lab-01": "Ground every answer in curated knowledge with verifiable citations, never invent a source, and return machine-routable JSON",
-    "lab-02": "Safety is measured, not assumed: apply guardrails, prove behaviour with evaluators, and make every decision auditable in a trace",
+    "lab-02": "Compare safety layers using traces and prepared evaluation results; distinguish a refusal, a block, an over-block and an unavailable verdict",
     "lab-03": "An agent that acts: personalise on governed data, take real actions with a human in the loop, delegate to specialists, and route each kind of question to the right tool",
-    "fabric-step": "Continues Lab 3: add governed population evidence to a personal answer, without sending personal data",
-    "lab-04": "From playground to production: the same agent behind two doors (portal for people, endpoint for systems), governed by the same policy",
+    "fabric-step": "Use governed cohort evidence when guidance alone cannot answer a question, and inspect exactly what information the coach sends to Fabric",
+    "lab-04": "Choose between one agent, sequential and hand-off workflows; use execution evidence to explain the route, then inspect the pre-deployed hosted team",
 }
 
 MODULES = [
@@ -458,7 +465,7 @@ MODULES = [
         "level": "Intro · portal · all rails",
         "story": "Rahim opens the coach for the first time.",
         "features": "Foundry portal; resource/project; RBAC; model deployments; reasoning effort; prompt agent; playground; versions; traces.",
-        "checkpoint": "Agent introduces itself, says it is not a doctor and refuses to diagnose; the trace shows one gpt-5-mini call and its tokens.",
+        "checkpoint": "Inspect the introduction, refusal and model-call trace. Explain why this example is not a safety guarantee.",
     },
     {
         "id": "lab-01",
@@ -467,16 +474,16 @@ MODULES = [
         "level": "Core build · Navigator + Builder",
         "story": "Rahim asks what to eat after a high-glucose screening result.",
         "features": "Foundry IQ KB; Azure AI Search; agentic retrieval; citations; MCP connection; structured JSON output.",
-        "checkpoint": "Pre-diabetes food question cites at least one KB document; the supplement question routes to a clinician with no invented source.",
+        "checkpoint": "Connect a food-advice claim to a retrieved passage; explain the no-source clinician route. Optional intake uses its own agent/schema.",
     },
     {
         "id": "lab-02",
         "label": "Lab 2",
         "capability": "Guardrails, Evaluations & Tracing",
-        "level": "Govern · Navigator + Builder",
+        "level": "Guided comparison · Navigator + Builder",
         "story": "A flyer hides an injection; Rahim asks about doubling medication and skipping meals.",
-        "features": "Guardrail ladder; block vs annotate; Prompt Shields; thresholds; blocklist; traces; evaluation code walkthrough and shared version comparison; red team.",
-        "checkpoint": "Inspect blocked/allowed traces and explain a trade-off in the facilitator's completed evaluation. Read the evaluation code; do not run a batch during the lab.",
+        "features": "Default vs custom guardrail ladder; block vs annotate; Prompt Shields; self-harm threshold; blocklist; traces; the facilitator's pre-run evaluation (look-only); version compare; red team (facilitator demo).",
+        "checkpoint": "Identify the responsible layer; compare prepared same-model demo runs, distinguishing pass/fail from error/not scored. These are not participant-agent evaluations.",
     },
     {
         "id": "lab-03",
@@ -485,17 +492,17 @@ MODULES = [
         "level": "Extend · Navigator + Builder",
         "story": "Rahim asks for indoor hazy-day activities near Woodlands, approves the sign-up, and expects the coach to remember his preferences.",
         "features": "livewell_profile OpenAPI tool (get_citizen_profile function in Builder); activities MCP; approval-before-write; memory; optional A2A specialists.",
-        "checkpoint": "A compound question calls the profile tool and activities MCP, tailors to Rahim, and waits for approval before register_interest.",
+        "checkpoint": "Verify read-only profile/KB/activity discovery, then confirm and approve or deny the write. Inspect stored/search memory evidence. Synthetic data, not a real booking.",
     },
     {
         "id": "fabric-step",
         "label": "Fabric step",
         "capability": "Fabric IQ tool — Resident360 Ontology Agent",
-        "level": "Optional · gated on FABRIC_BRIDGE=true",
+        "level": "Optional · only when capacity and access are ready",
         "story": "Rahim asks which programme people his age stick with; Mei Lin asks which regions have the highest share of disengaged residents.",
         "features": "Fabric IQ tool; OneLake Catalog; published Fabric data agent; identity passthrough; profile → Fabric IQ → activities chaining; aggregate-only routing.",
-        "checkpoint": "Programme fit chains profile → Fabric IQ (age band only) → activities with approval; Mei's trace shows Fabric IQ; Rahim's food question makes no Fabric call.",
-        "minutes": 15,
+        "checkpoint": "Compare an aggregate question with guide retrieval and inspect userQuestion. Programme fit is a further optional extension; paused capacity can stay paused.",
+        "minutes": 10,
         "rails": "Navigator / Builder",
         "patterns": "#2, #3, #6, #8, #9",
     },
@@ -503,10 +510,10 @@ MODULES = [
         "id": "lab-04",
         "label": "Lab 4",
         "capability": "Multi-agent & Hosted deploy",
-        "level": "Browser hands-on · facilitator deploy",
-        "story": "LiveWell Coach goes live behind the simulated Healthy 365 channel.",
-        "features": "Agent Framework sequential and hand-off orchestration in DevUI; Programme-Insights specialist; azd deploy (code deploy); rai_config; hosted tracing.",
-        "checkpoint": "Sequential and hand-off runs are visible in DevUI; the hosted endpoint returns JSON and blocks a blocklisted prompt; hosted and playground traces compared.",
+        "level": "Guided browser comparison · optional Builder appendix",
+        "story": "Rahim's week plan and activity-only request reveal different routing choices.",
+        "features": "Prebuilt Agent Framework teams; DevUI graph, outputs and hand-off calls; existing hosted trace and guardrail proof. Fabric specialist optional.",
+        "checkpoint": "Explain when one agent is enough, identify a hand-off call and the final answerer, and recognise the hosted sequential team. No participant provisioning.",
     },
 ]
 
@@ -583,7 +590,7 @@ def iq_comparison_slide(prs: Presentation, titles: list[str]):
         prs,
         "Foundry IQ vs Fabric IQ — when to use",
         "Do not present these as competing products. "
-        "Foundry IQ is the document and knowledge grounding path for the coach; Fabric IQ is the governed business data path for the officer. "
+        "These are the workshop's design choices, not exclusive product capabilities. Fabric ontology supplies context; the underlying source executes SQL, KQL or DAX. "
         "Use the examples row to show that Rahim's guidance stays in Foundry IQ; Fabric only answers aggregate questions, from Mei Lin or from Rahim's one age-band cohort question. "
         "Gate: move on when participants can choose the correct IQ for a new prompt.",
         titles,
@@ -646,9 +653,9 @@ def guardrail_slide(prs: Presentation, cfg: dict, titles: list[str]):
     ]
     slide = content_slide(
         prs,
-        "Guardrail & evaluation scorecard",
-        "Run the default and custom ladder live if the environment is healthy; otherwise use the pre-captured traces. "
-        "The result columns are the expected outcomes from Lab 2: the custom policy moves guardrail blocks from 1 of 7 to 4 of 7. "
+        "Guardrail scorecard — captured examples",
+        "The table illustrates historical outcomes, not guaranteed classifications. "
+        "Keep prompts unchanged, inspect the actual filter and stage, and report differences rather than retrying for a desired result. "
         "Explain block versus annotate: at or above the threshold the request is blocked (HTTP 400, red banner, Failed trace); "
         "below it the answer goes through and the severity is recorded. The dose-reminder row is the cost of a stricter control. "
         "Batch evaluation is a code walkthrough, not a participant run: show the completed shared v1/v2 results. "
@@ -669,27 +676,30 @@ def guardrail_slide(prs: Presentation, cfg: dict, titles: list[str]):
         header_size=10.8,
     )
     add_box(slide, 0.75, 4.8, 3.85, 1.55, "Block vs annotate\nAt the threshold: blocked, HTTP 400, Failed trace.\nBelow it: answered, severity recorded.", fill=WHITE, line=NAVY, size=11.5, color=NAVY, bold=True)
-    add_box(slide, 4.85, 4.8, 4.1, 1.55, "Evaluators · read, do not run\nReview the shared completed comparison:\ngroundedness · relevance · task adherence · tool-call accuracy · intent resolution · condition checks", fill=PALE_TEAL, line=TEAL, size=11.5, color=NAVY, bold=True)
-    add_box(slide, 9.2, 4.8, 3.4, 1.55, "Red team\nFacilitator via SDK path\napprox. US$42 per scan", fill=LIGHT, line=ORANGE, size=13, color=NAVY, bold=True)
+    add_box(slide, 4.85, 4.8, 4.1, 1.55, "Prepared evaluation: look only\nCompare default/custom for the same model. Pass, fail and not scored are different. A judge error is not an unsafe-answer verdict. These are demo runs, not your agent versions.", fill=PALE_TEAL, line=TEAL, size=10.5, color=NAVY, bold=True)
+    add_box(slide, 9.2, 4.8, 3.4, 1.55, "Red team\nFacilitator only, shown on screen\nPaid (approx. US$42 per scan): needs approval; participants run none", fill=LIGHT, line=ORANGE, size=11.5, color=NAVY, bold=True)
 
 
-def cost_slide(prs: Presentation, titles: list[str]):
+def cost_slide(prs: Presentation, cfg: dict, titles: list[str]):
+    env = (cfg.get("environments") or {}).get("mcaps") or {}
+    alerts = " and ".join(f"US${a}" for a in env.get("budget_alerts_usd", []))
     rows = [
-        ["Model tokens (20 x 150 runs x buffer)", "12", "60"],
-        ["Quality evaluations", "4", "4"],
-        ["Red teaming / safety evals", "42", "42"],
-        ["Azure AI Search, 120 h", "12", "40"],
-        ["Semantic ranker, Bing, Code Interpreter, hosted agents, ACR, storage/App Insights", "~12", "~18"],
-        ["Total", "approx. 83", "approx. 166"],
-        ["Every participant runs a full red-team scan", "+126", "approx. 292"],
-        ["Fabric F2, 16 h active", "+6", "+6"],
+        ["Model tokens, 30 people, pay per token (no participant evaluations)", "25-50"],
+        ["Azure AI Search Basic, about 120 h", "~12"],
+        ["Fabric F2, 16-24 h active (about US$0.36/h)", "6-9"],
+        ["Container Apps, ACR, logs, storage, App Insights, judge tokens", "small, not itemised"],
+        ["Planning range for the whole window, with buffer", "approx. 100-160"],
+        ["Facilitator red-team scan (separate approval)", "+42 per documented scan"],
+        ["Participants run evaluations or red teaming", "not allowed"],
     ]
     slide = content_slide(
         prs,
         "Cost & controls",
-        "Anchor on sponsorship safety: the low path is the intended operating mode, not the high path. "
+        "Anchor on safety of spend: this is an indicative list-price planning range, not a measurement, and the model meters for gpt-5-mini "
+        "and gpt-4.1-mini were not confirmed, so check the pricing calculator before quoting a figure. "
         "Explain that Fabric F2 is cheap during the workshop but expensive if left running all month. "
-        "Controls are part of the design, not afterthoughts: shared search, small models, caps, budget alerts and teardown. "
+        f"The budget is US${env.get('budget_usd', 'TBC')} on the single resource group with alerts at {alerts}: it is a ceiling that alerts, it does not stop spend, and it is not an approved spend. "
+        "Controls are part of the design, not afterthoughts: one resource group, shared search, small models, capped units, budget alerts and a teardown that also covers Fabric and the temporary accounts. "
         "Gate: move on after naming who owns teardown and capacity pause.",
         titles,
     )
@@ -699,36 +709,38 @@ def cost_slide(prs: Presentation, titles: list[str]):
         1.05,
         7.25,
         4.85,
-        ["Line", "Low", "High"],
+        ["Line", "US$ (indicative)"],
         rows,
-        col_widths=[5.25, 1.0, 1.0],
+        col_widths=[5.25, 2.0],
         font_size=9.7,
         header_size=10.5,
     )
     controls = [
-        "One shared search service and KB",
-        "gpt-5-mini default (reasoning Low); TPM caps; no PTU",
-        "Red teaming facilitator-run; lite scan only if enabled",
-        "Bing off by default; budgets at US$150 and US$300",
-        "Fabric capacity paused nightly; teardown at T+1",
+        "One resource group in swedencentral; one shared search service and KB",
+        "gpt-5-mini default (reasoning Low), gpt-4.1-mini tools; capped units; no PTU, no model-router",
+        "Lab 2 is look-only: participants run no evaluation or red team",
+        f"Bing off by default; budget US${env.get('budget_usd', 'TBC')}, alerts at {alerts}",
+        "Fabric F2 paused when idle; teardown at T+1 incl. Fabric workspace and temporary accounts",
     ]
     add_box(slide, 8.15, 1.05, 4.55, 0.55, "Controls", fill=NAVY, line=NAVY, size=15, color=WHITE, bold=True)
-    add_bullets(slide, 8.25, 1.85, 4.35, 2.6, controls, size=12.2)
-    add_box(slide, 8.25, 5.0, 4.25, 0.85, "Fabric F2 line\napprox. US$0.36/h; approx. US$259/month if left on; F4 doubles it", fill=PALE_TEAL, line=TEAL, size=13, color=NAVY, bold=True)
+    add_bullets(slide, 8.25, 1.85, 4.35, 3.0, controls, size=11.6)
+    add_box(slide, 8.25, 5.0, 4.25, 0.85, "Fabric F2 line\napprox. US$0.36/h; approx. US$259/month if left on; resizing needs approval", fill=PALE_TEAL, line=TEAL, size=13, color=NAVY, bold=True)
 
 
 def resources_slide(prs: Presentation, cfg: dict, titles: list[str]):
+    repo = str(cfg["workshop"].get("repo_url", "")).replace("https://github.com/", "github.com/")
     slide = content_slide(
         prs,
         "Getting started / resources",
         "Keep this slide practical: the workshop repo first, then official repos and Learn titles. "
+        "The repo is private: Builder participants need a GitHub invite or the release ZIP, because their workshop account does not grant GitHub access. "
         "Do not send participants to generic marketing pages; these are the artefacts Antonia can merge into the master deck. "
         "If URLs are added later, keep them to GitHub or Microsoft Learn. "
         "Gate: close the setup section when participants know where the labs and references live.",
         titles,
     )
     add_box(slide, 0.65, 1.0, 5.85, 0.72, "Workshop repo", fill=NAVY, line=NAVY, size=15, color=WHITE, bold=True)
-    add_text(slide, 0.85, 1.95, 5.35, 0.65, cfg["workshop"]["repo_url"] + "\nOne lab page: Navigator + Builder", size=13, color=BODY)
+    add_text(slide, 0.85, 1.95, 5.35, 0.65, f"{repo}\nPrivate access; one lab page for Navigator + Builder", size=13, color=BODY)
     repos = [
         "microsoft/azure-skills (Foundry Skill)",
         "MicrosoftLearning/mslearn-ai-agents",
@@ -764,7 +776,7 @@ def close_slide(prs: Presentation, titles: list[str]):
         ["7", "Handling Uncertainty", "2", "Route to clinician / HealthHub; never dose medication"],
         ["8", "Institutional Memory", "3", "Memory of preferences and prior interactions"],
         ["9", "Collaboration Between Specialists", "3/4", "Nutrition + Activity + Programme-Insights merged reply"],
-        ["10", "Governance & Safety", "2 + cross-cutting", "Guardrails, evaluators, red-team scan, RBAC, Entra Agent ID"],
+        ["10", "Governance & Safety", "2 + cross-cutting", "Guardrails, evaluators (pre-run, facilitator), red-team demo (facilitator), RBAC, Entra Agent ID"],
     ]
     slide = content_slide(
         prs,
@@ -830,7 +842,7 @@ def build_deck(root: Path, out_path: Path) -> list[str]:
     iq_comparison_slide(prs, titles)
     fabric_paths_slide(prs, titles)
     guardrail_slide(prs, cfg, titles)
-    cost_slide(prs, titles)
+    cost_slide(prs, cfg, titles)
     resources_slide(prs, cfg, titles)
     close_slide(prs, titles)
 

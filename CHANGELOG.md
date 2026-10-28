@@ -4,6 +4,104 @@ All notable changes to this workshop. One entry per phase PR.
 
 ## [Unreleased]
 
+### Integrated GitHub publication (2026-10-29)
+
+- Combined the approved MCAPS infrastructure, prepared evaluation evidence and private DevUI access with
+  main's canonical Navigator guides, fresh screenshots, inline copy blocks and connection prerequisites.
+- Retained the separate default-inactive evaluator, read-only prepared-matrix reader, explicit human approval
+  and discovery-before-write safeguards. The participant checkpoint does not require another paid evaluation.
+- Kept concept-first core steps and expandable setup/FAQ, updated both decks, and preserved the local-only
+  review and all private access material outside version control. No cloud redeployment or full live sanity
+  check was part of this publication.
+
+### Lab 4 private launch access (2026-10-28)
+
+- Added expiring private launch links that open the prepared sequential demo without token entry or participant
+  deployment. Hand-off remains available for comparison; local loopback development is unchanged.
+- Browser sessions use Secure/HttpOnly cookies; backend bearer auth stays on and participant deploy/reload/proxy
+  actions are blocked. The values sheet issues a private link and expiry instead of exposing the permanent token.
+- Updated Lab 4, operator runbooks, values generation, staging and slides. Deployment is separately approved;
+  no new tenant identity, Fabric dependency or additional Azure resource is required.
+- Deployed to the existing MCAPS DevUI with separate approval. Fresh-browser link access and a hand-off run
+  worked; expiry and unauthorized access were rejected. Documented the pinned DevUI's separate saved-history
+  serialization limitation; no extra model run was used to recover the sequential capture.
+
+### Lab 2 prepared evaluation evidence (2026-10-26)
+
+- With explicit approval, completed the seven-prompt matrix on four model/policy demo-agent configurations.
+  Saved `content/data/lab2-prepared-eval.json` and linked it from both Lab 2 guides, with interpretation in the
+  collapsed expected-output section.
+- Kept the benign-reminder over-block and judge-filtered flyer visible as fail and not scored, respectively.
+  Detailed item evidence and recoverable run ids remain ignored.
+- Added GET-only `--read-eval` recovery and complete-matrix checks, avoiding duplicate paid work after an
+  eventually consistent listing. No console duplicate, red-team run, tenant change or Fabric action.
+
+### Remaining labs: concise instructions and trustworthy evidence (2026-10-26)
+
+- Applied concept-first core paths and expandable setup, screenshots, FAQ and extensions to Labs 0–3 and
+  the Fabric/bridge material. Aligned scheduled timing, objectives, portal paths, reference keys and decks.
+- Isolated optional intake in its own agent/schema; clarified citation validation, synthetic identity,
+  registration and memory evidence. Missing shared connections go to the facilitator, not participant provisioning.
+- Separated evaluation pass/fail/not-scored in the reader and facilitator exporter; schema-2 captures reject
+  ambiguous legacy counts. A missing prepared evaluation leaves its checkpoint incomplete.
+- Default approval now requires a human callback or terminal decision; non-interactive runs deny with an
+  explanation. Automated rehearsal approval remains explicit and labelled.
+- Current Fabric teaching uses ontology context and source-native queries; GQL diagnostic/replay material
+  is marked historical. No cloud, authentication, capacity or paid-evaluation changes.
+
+### Lab 4: concise, concept-first orchestration (2026-10-25)
+
+- Reframed the shared-browser lab around when one agent is sufficient and how to compare sequential and hand-off
+  execution. Technical detail, annotated screenshots, FAQ and optional Fabric are expandable.
+- Corrected final-answer expectations and tool visibility; removed speed promises. Added the activity-only prompt
+  to the prompt bank and a discussion-based checkpoint. Participants provision nothing for the core lab.
+- Aligned the specification, agenda, portal track and decks: comparison in the 1:15 Agent Framework block,
+  already-deployed hosted proof at 5:15. Default Builder execution no longer creates Programme-Insights from an
+  inherited Fabric flag; the facilitator must explicitly opt in. No cloud or authentication changes.
+
+### Approved Search regional exception (2026-10-24)
+
+- The rehearsal stack is deployed: Search Basic in France Central, all other customer-managed resources in Sweden
+  Central in the workshop group, including Fabric F2. All 11 guide PDFs indexed successfully; limited live checks
+  confirmed cited retrieval, profile routing, medication blocking, the hosted structured plan and Fabric region figures.
+- Applied the user-approved storage tag exception while retaining Entra authentication and disabling anonymous blobs
+  and shared keys. Fabric uses the verified unique capacity name `fabhpblivewell<env>`.
+- Updated Fabric setup for the new ontology-context surface: one portal attachment step on a fresh agent, then
+  idempotent script verification/publication. Hosted postdeploy now records its guarded version in azd, so the
+  generated playground link does not keep pointing at the earlier unguarded version.
+- Search Basic uses the user-approved France Central location from each environment's `search_location`; all other
+  customer-managed Azure resources stay in Sweden Central in the same workshop resource group.
+- Preflight checks live Search SKU offerings separately from quota. Scope verification follows module location
+  parameters and permits the exception only for Search. Cost checks and the ownership manifest use the same setting.
+- Standalone model/scope discovery explicitly selects the configured subscription for authentication. The obsolete
+  storage opt-out was initially removed, then restored only for MCAPS after the user's explicit approval.
+- Rehearsal deployment and limited facilitator readiness checks are approved. Participant identities, tenant policies,
+  evaluations, red-team scans and load tests remain separate work.
+
+### HPB MCAPS delivery: 30 participants, current models, one resource group (2026-10-23)
+
+Static changes only (see ASSUMPTIONS.md Phase 11). Nothing was deployed or changed in any tenant, no quota was requested,
+and no evaluation, red-team, compatibility or load test was run; the workshop is **not** deployment-ready.
+
+- **Target guard.** `scripts/lib/target.py` stops every script that touches Azure unless `az` points at the subscription
+  and tenant in `workshop.yaml` (and rejects stale `AZURE_*` values). The `az account set` in `provision.sh` is gone;
+  token requests are pinned to the configured subscription, time out, and have their tenant checked.
+- **Models from discovery.** `scripts/lib/modelcheck.py` reports catalogue, lifecycle, eligibility, quota (summed per pool) and
+  the capacity API separately, with RPM next to TPM, the 30-participant sizing and a saved T-3 record. Kept gpt-5-mini
+  (800 units), gpt-4.1-mini (1,000, also the judge) and text-embedding-3-small (100); no model-router. Versions, capacity per
+  environment and sizing assumptions are now single-sourced in `workshop.yaml` (the bicepparam files read them).
+- **One region, one resource group.** `location` is pinned to swedencentral; `SEARCH_LOCATION`, `fallback_location` and
+  the northcentralus columns are removed. New `scripts/verify-scope.py` (`plan`, `deployed`, `caller`, `manifest`), group and
+  Fabric-workspace adoption guards, and a plan-only-by-default `teardown.sh` that deletes by ID and stops on failure.
+- **Read-only preflight.** It no longer registers providers (`PREFLIGHT_REGISTER_PROVIDERS=1` to opt in), reads roles from ARM
+  instead of Graph, and `provision.sh` needs `--yes` to deploy; `--what-if-only` creates nothing.
+- **Budget.** US$500 on the group, alerts at US$250 and US$500 (a planning ceiling, not an approved spend).
+- **Identity.** TAP instead of passwords for the 30 `hpb.lab` accounts: plan-only tooling, TAP-aware sign-in cards, opt-in
+  break-glass, `--disable`.
+- **Lab 2 is look-only.** No participant evaluation or red teaming; the facilitator pre-run is explored instead (checkpoint
+  changed; red-flag round 2 workers; retry jitter).
+- **Docs.** New [HPB delivery runbook](content/admin/HPB-DELIVERY-RUNBOOK.md); README, ADMIN-SETUP, TENANT-BOOTSTRAP,
+  the run of show, `versions.md` and both decks aligned. Offline tests: `python -m unittest discover -s tests`.
 ### Lab 2 evaluation pacing and Navigator validation
 
 - Split the Builder exercise into `lab2_govern.py` (guardrail ladder and traces, no batch evaluation)

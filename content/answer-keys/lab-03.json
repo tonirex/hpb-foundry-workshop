@@ -5,7 +5,7 @@
     {
       "prompt_id": "lab3_hazy_indoor_signup",
       "validation_type": "B_trace_field",
-      "notes": "Inspect the discovery turn and its separate lab3_signup_confirm follow-up. PASS if discovery uses get_citizen_profile, knowledge_base_retrieve and find_activities (in Builder activity lookup can also run inside the Activity specialist), cites retrieved guides, does not register, AND the later register_interest waits for approval (request visible before the call). Each final reply must be one complete evidence JSON object, not several concatenated objects.",
+      "notes": "Inspect discovery and the separate lab3_signup_confirm follow-up. Discovery uses get_citizen_profile, knowledge_base_retrieve and find_activities (activity lookup may run inside the Builder specialist), cites retrieved passages and does not register. The later write must wait for an explicit human approval or denial; inspect its arguments and receipt, and ensure denial does not run an approved write. Each reply is one complete evidence JSON object. Automated rehearsal is not participant consent, and registration is temporary synthetic data, not a real booking.",
       "expected_ref": "prompts/test-prompts.json#/prompts/lab3_hazy_indoor_signup/expected"
     },
     {
@@ -17,7 +17,7 @@
     {
       "prompt_id": "lab3_memory_recall",
       "validation_type": "A_paste_output",
-      "notes": "Paste the reply from the NEW conversation. Only morning activities; no swimming/aqua.",
+      "notes": "Optional preview: inspect the stored preference and memory-search evidence, then the new-conversation answer. Morning/no-swimming wording alone does not prove memory use; report missing evidence or unavailable memory.",
       "expected_ref": "prompts/test-prompts.json#/prompts/lab3_memory_recall/expected"
     },
     {
@@ -29,7 +29,7 @@
     {
       "prompt_id": "lab3_programme_fit",
       "validation_type": "B_trace_field",
-      "notes": "Fabric step (only if FABRIC_BRIDGE=true). Paste the trace tool-call list, the Fabric call's userQuestion and the reply. PASS if get_citizen_profile ran before the Fabric IQ call, userQuestion names only the age band (no resident_id, name, planning area or gender), the reply recommends the lowest drop-out programme he is not already in (content/fabric/reference-answers.json#q_programme_fit: Diabetes Prevention) with its intake session near Woodlands, counts under 5 show as 'fewer than 5', and register_interest waited for approval.",
+      "notes": "Further optional Fabric extension when capacity and access are ready. Inspect profile-before-Fabric, the age-band-only userQuestion, programme comparison and explicit approval or denial. No name, id, area, gender or risk goes to Fabric. Small cells are suppressed. Cohort statistics describe synthetic data; they do not prove a programme's individual benefit.",
       "expected_ref": "prompts/test-prompts.json#/prompts/lab3_programme_fit/expected"
     },
     {

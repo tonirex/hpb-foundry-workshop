@@ -14,7 +14,7 @@
 # Run it all:            `python content/assets/lab3_tools.py` (INITIALS and endpoint from content/assets/.env)
 # Fabric step:           add `--fabric` only when the facilitator confirms FABRIC_BRIDGE=true
 # Flags:                 `--verbose` (tool calls and outputs), `--no-memory`, `--cleanup`.
-# Approvals:             in a terminal you are asked y/N; in a notebook or a scripted run they are approved.
+# Approvals:             answer y/N in a terminal; non-interactive runs deny unless explicitly in rehearsal mode.
 #
 # Lines marked `# 👉` are the ones to retype during the lab.
 
@@ -253,6 +253,8 @@ if memory:
             and not negated.search(s)]
     lw.expect("lab3_memory_recall: preference remembered",
               any(re.search(r"morning|swim", m, re.I) for m in remembered), remembered)
+    lw.expect("lab3_memory_recall: memory search recorded",
+              any(c.kind == "memory_search_call" for c in recall.tool_calls), recall.tool_names)
     lw.expect("lab3_memory_recall: suggests mornings", bool(re.search(r"morning|\b([6-9]|1[01])(:\d\d)?\s*a\.?m", advice, re.I)))
     lw.expect("lab3_memory_recall: no swimming or aqua suggestion", not swim, swim)
     lw.expect("lab3_memory_recall: activities fit the resident's conditions", *fits_profile(recall))

@@ -23,6 +23,7 @@ import functools
 import json
 import os
 import pathlib
+import random
 import re
 import sys
 import threading
@@ -426,18 +427,38 @@ def models():
 
 
 _TRANSIENT = {408, 429, 500, 502, 503, 504}
+RETRY_CAP = 60.0  # the longest wait we take from a retry-after header, in seconds
+RETRY_JITTER = 0.25  # every wait gets up to 25% extra, so a room of participants does not retry in step
 
 
 def _status(err: Exception) -> int | None:
     return getattr(err, "status_code", None) or getattr(getattr(err, "response", None), "status_code", None)
 
 
-def _retry_after(err: Exception) -> float | None:
+def _retry_hint(headers: Any) -> float | None:
+    """Seconds the server asked us to wait: `retry-after-ms` first, then `retry-after` (seconds), else None."""
     try:
-        value = err.response.headers.get("retry-after")  # type: ignore[attr-defined]
-        return min(float(value), 60.0) if value else None
+        lowered = {str(k).lower(): v for k, v in headers.items()}
     except Exception:
         return None
+    for key, per_second in (("retry-after-ms", 1000.0), ("retry-after", 1.0)):
+        try:
+            seconds = float(lowered[key]) / per_second
+        except (KeyError, TypeError, ValueError):
+            continue
+        if seconds > 0:
+            return seconds
+    return None
+
+
+def retry_delay(attempt_index: int, base_delay: float = 2.0, headers: Any = None,
+                rng: Callable[[], float] = random.random) -> float:
+    """Seconds to wait before the next try (attempt_index counts from 0). The server's hint wins, capped at 60 s;
+    without one, exponential backoff: base_delay * 2**attempt_index, at most 30 s. Every wait then gets 0-25%
+    random jitter on top (never less), so 30 participants who hit the same 429 do not all retry together."""
+    hint = _retry_hint(headers)
+    wait = min(hint, RETRY_CAP) if hint else min(base_delay * 2 ** min(max(attempt_index, 0), 10), 30.0)
+    return wait * (1.0 + RETRY_JITTER * min(max(rng(), 0.0), 1.0))
 
 
 def _session_not_ready(err: Exception) -> bool:
@@ -446,15 +467,14 @@ def _session_not_ready(err: Exception) -> bool:
 
 
 def retry(fn: Callable[[], Any], *, what: str = "call", attempts: int = 5, retry_timeouts: bool = True) -> Any:
-    """Exponential backoff (2, 4, 8, 16 s; honours Retry-After) on 429, 5xx, timeouts and dropped
-    connections, and at least 15 s between tries while a hosted agent's session starts (424
-    session_not_ready). Everything else, including guardrail blocks (400 content_filter), raises at once.
-    retry_timeouts=False raises a timeout at once: the server may still be running the request, so a
-    retry could repeat an approved write."""
+    """Exponential backoff (2, 4, 8, 16 s, plus 0-25% jitter; retry-after-ms and Retry-After win, see
+    retry_delay) on 429, 5xx, timeouts and dropped connections, and at least 15 s between tries while a
+    hosted agent's session starts (424 session_not_ready). Everything else, including guardrail blocks
+    (400 content_filter), raises at once. retry_timeouts=False raises a timeout at once: the server may
+    still be running the request, so a retry could repeat an approved write."""
     import openai
     from azure.core.exceptions import HttpResponseError, ServiceRequestError, ServiceResponseError
 
-    delay = 2.0
     for attempt in range(1, attempts + 1):
         try:
             return fn()
@@ -470,12 +490,11 @@ def retry(fn: Callable[[], Any], *, what: str = "call", attempts: int = 5, retry
             err = e
         if attempt == attempts:
             raise err
-        wait = _retry_after(err) or delay
+        wait = retry_delay(attempt - 1, 2.0, getattr(getattr(err, "response", None), "headers", None))
         if _session_not_ready(err):
-            wait = max(wait, 15.0)
+            wait = max(wait, retry_delay(0, 15.0))  # at least 15 s while the hosted session starts
         say(f"   (transient {type(err).__name__} {_status(err) or ''} on {what}; retry {attempt}/{attempts - 1} in {wait:.0f}s)")
         time.sleep(wait)
-        delay = min(delay * 2, 30.0)
 
 
 # ---------------------------------------------------------------------------------------------------
@@ -909,21 +928,30 @@ def new_conversation() -> str:
 
 
 def ask_human(call: ToolCall) -> bool:
-    """Approval callback: ask at the keyboard when there is one, otherwise approve (scripted/validation runs)."""
-    if sys.stdin is not None and sys.stdin.isatty() and not os.environ.get("LIVEWELL_AUTO_APPROVE"):
+    """Require a human decision; unattended approval is an explicit rehearsal-only setting."""
+    if os.environ.get("LIVEWELL_AUTO_APPROVE", "").strip() == "1":
+        say("   AUTOMATED REHEARSAL approval (LIVEWELL_AUTO_APPROVE=1); this is not a human decision.")
+        return True
+    if sys.stdin is None or not sys.stdin.isatty():
+        say("   Approval DENIED: no interactive terminal. Run the script in a terminal for the human-approval "
+            "exercise, or supply an explicit approval callback. No write is approved.")
+        return False
+    try:
         answer = input(f"   Approve {call.server}.{call.name}({_trunc(call.arguments, 160)})? [y/N] ")
-        return answer.strip().lower() in ("y", "yes")
-    return True
+    except (EOFError, OSError):
+        say("   Approval DENIED: input is unavailable. No write is approved.")
+        return False
+    return answer.strip().lower() in ("y", "yes")
 
 
 def ask(agent: Any, text: str | None = None, *, prompt_id: str | None = None,
-        functions: dict[str, Callable[..., Any]] | None = None, approve: bool | Callable[[ToolCall], bool] = True,
+        functions: dict[str, Callable[..., Any]] | None = None, approve: bool | Callable[[ToolCall], bool] | None = None,
         conversation: str | None = None, consent: bool = True, timeout: float | None = None,
         verbose: bool = False, max_rounds: int = 10) -> Run:
     """Send one user turn and drive the tool loop until the agent answers.
 
     * Local FUNCTION tools are answered from `functions` (name -> callable).
-    * MCP approval requests are approved or denied by `approve` (bool, or a callable per request) and
+    * MCP approval requests use `ask_human` by default, or explicit `approve` (bool/callback), and are
       printed, because the approval is the human-in-the-loop moment of Lab 3.
     * A guardrail block (HTTP 400 content_filter) returns Run(blocked=True) instead of raising.
     * The consent line is prepended so the Lab 0 consent rule does not stall scripted runs.
@@ -981,7 +1009,9 @@ def ask(agent: Any, text: str | None = None, *, prompt_id: str | None = None,
                 call.output = result if isinstance(result, str) else json.dumps(result, ensure_ascii=False)
                 pending.append({"type": "function_call_output", "call_id": item.call_id, "output": call.output})
             elif call.kind == "mcp_approval_request":
-                ok = approve(call) if callable(approve) else bool(approve)
+                ok = ask_human(call) if approve is None else (approve(call) if callable(approve) else approve)
+                if type(ok) is not bool:
+                    raise TypeError("Approval callback must return True or False; no approval response was sent.")
                 call.approved = ok
                 say(f"   APPROVAL requested: {call.server}.{call.name}({_trunc(call.arguments, 160)}) -> "
                     f"{'APPROVED' if ok else 'DENIED'}")

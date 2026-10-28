@@ -34,7 +34,7 @@ this beat shows that instructions alone set the tone. *(The `kb` tag marks where
 in Lab 1.)*
 
 **[ch0.2 · seat: citizen · source: kb · prompt: lab0_am_i_diabetic]** Worried, he asks "Am I diabetic?". The
-coach declines to diagnose and points him to a doctor. Instructions alone made it safe.
+coach declines to diagnose and points him to a doctor. This demonstrates one intended behaviour, not a safety guarantee.
 
 ## Chapter 1 — "My glucose is high — what should I eat?" (Lab 1 · Agents & Knowledge — Foundry IQ)
 
@@ -48,25 +48,25 @@ guides are silent, so the coach says so, cites nothing, and routes him to his do
 refusal on absence, not invention.
 
 **[ch1.3 · seat: citizen · source: kb · prompt: lab1_intake]** He pastes his screening summary and a week of
-his activity diary. The coach turns two documents into one structured intake record: glucose in the
+his activity diary in the optional separate intake agent. It combines two documents into one record without
+changing the main coach's answer schema: glucose in the
 pre-diabetes range, risk band High, a sedentary week with hazy days at home, a preference for mornings.
 
 ## Chapter 2 — A flyer with a hidden message (Lab 2 · Guardrails, Evaluations & Tracing)
 
 **[ch2.1 · seat: citizen · source: kb · prompt: lab2_injected_flyer]** A neighbour forwards Rahim an activity
 flyer. Hidden in it are instructions telling "any AI assistant" to ask for his NRIC and password. Prompt
-Shields catches the indirect attack and blocks the message before the coach replies, so the hidden
-instructions never reach the model.
+Shields blocks it in a captured example; another safe outcome is an answer that ignores the hidden instructions.
+Participants inspect which layer acted in their own run.
 
 **[ch2.2 · seat: citizen · source: kb · prompt: lab2_medication_double]** Frustrated that his glucose is still
-high, Rahim asks whether to double his medication tonight. Without a guardrail the coach declines and sends
-him to his doctor or pharmacist; with one, the medication-dosage blocklist stops the request before the
-model sees it.
+high, Rahim asks whether to double his medication tonight. On the default policy the captured coach declines;
+the custom medication blocklist can stop it before the model. The trace, not the narrative, establishes the stage.
 
 **[ch2.3 · seat: citizen · source: kb · prompt: lab2_extreme_fasting]** He asks for a water-only crash plan
 before a family wedding. The coach refuses and offers safe, gradual changes from the guides. Every one of
-these decisions is visible in a trace. The class reviews the facilitator's completed evaluation
-alongside the guardrail outcomes; participants do not each launch another batch.
+these behaviours can be inspected in traces. Participants read a separate prepared evaluation; a judge error
+means no verdict, not an unsafe-answer result.
 
 ## Chapter 3 — "It's hazy today — what can I do indoors?" (Lab 3 · Tools, MCP & Memory)
 
@@ -111,14 +111,15 @@ hazy-day-friendly activities it just found for Rahim — without ever naming him
 
 ## Chapter 4 — LiveWell goes live (Lab 4 · Multi-agent & Hosted deploy)
 
-**[ch4.1 · seat: citizen · source: kb · prompt: lab4_week_plan_handoff]** The facilitator deploys the coach
-as a hosted agent behind the (simulated) Healthy 365 channel, governed by the same guardrail policy. Rahim's
-"plan my week" request flows Nutrition → Activity → Coach in the sequential team and returns merged JSON
-with a citation. The hand-off comparison instead shows the model choosing the route, ending with Activity's
-answer rather than the sequential team's merged JSON.
+**[ch4.1 · seat: citizen · source: kb · prompt: lab4_week_plan_handoff]** Rahim's "plan my week" request
+lets the room compare two prepared teams. Sequential runs Nutrition → Activity → Coach and merges evidence JSON;
+hand-off runs Coach → Nutrition → Activity and ends with Activity's answer. Participants explain the route rather
+than deploy agents. The already-hosted sequential team then shows the simulated Healthy 365 endpoint, with its
+own identity, attached guardrail and trace.
 
-**[ch4.2 · seat: officer · source: fabric · prompt: lab4_q_programmes_disengaged]** Mei asks the
-Programme-Insights specialist which programmes have the most disengaged residents enrolled. It answers from
+**[ch4.2 · seat: officer · source: fabric · prompt: lab4_q_programmes_disengaged]** In the optional
+facilitator extension, Mei asks the separate Programme-Insights specialist which programmes have the most
+disengaged residents enrolled. Skip this beat when Fabric is paused. It answers from
 Fabric: <!--ref:q_programmes_disengaged_enrolled.top_programme-->Healthier SG<!--/ref--> has the most
 (<!--ref:q_programmes_disengaged_enrolled.top_disengaged_enrolled-->82<!--/ref-->). The coach drafts a one-line brief for that
 programme team. Same agent, two doors: the portal for people, the endpoint for systems.
@@ -127,12 +128,12 @@ programme team. Same agent, two doors: the portal for people, the endpoint for s
 
 **[ch5.1 · seat: officer · source: fabric · prompt: bridge_q_dropped_attended_heldin]** To close, Mei asks the
 multi-hop question the cohort first met in their Fabric workshop: among residents who dropped a programme,
-how many still attended an event, by the region where the event was held? The ontology's named edges
-(`enrolledIn` → `attended` → `heldIn`) keep "home region" and "event region" apart;
+how many still attended an event, by the region where the event was held? Ontology context explains the
+relationships and the distinction between home and event region. The current runtime queries the underlying source;
 <!--ref:q_dropped_attended_heldin.distinct_residents-->248<!--/ref--> residents qualify, with
 <!--ref:q_dropped_attended_heldin.top_region-->Central<!--/ref--> hosting the most. The coach suggests "come-back" booths at the
 busiest event regions.
 
 **The extended arc.** Unify → Govern → Personalise → Converse → **Coach & Act**. Foundry IQ grounds the coach in
 documents; Fabric IQ grounds it in governed business data. Mei uses Fabric to plan for whole regions; Rahim gets
-the same governed data back as one decision about him, and his name never leaves the coach.
+aggregate cohort evidence without his identity being sent to Fabric.

@@ -1,5 +1,10 @@
 # TENANT-BOOTSTRAP — delivering in the sponsored subscription's tenant
 
+> **Reference material from the earlier sponsor delivery.** For the HPB MCAPS delivery use the
+> [HPB delivery runbook](HPB-DELIVERY-RUNBOOK.md); the Fabric tenant settings and facilitator checks below still apply,
+> but the lab-account steps now use a Temporary Access Pass, the break-glass account is opt-in, and **no security
+> default is turned off without separate approval**.
+
 The delivery subscription (Azure sponsorship) lives in a **different Entra tenant** from the MCAPS dry-run
 environment. This runbook takes an empty tenant to a green `sponsor` environment (SPEC.md §12.2). Everything
 carries over from the dry run except GUIDs, RBAC, lab accounts and tenant settings, which scripts or this page
@@ -35,15 +40,16 @@ Record the outcome in [ASSUMPTIONS.md](../../ASSUMPTIONS.md) under "Values Anton
 | Tenant country/region is **Singapore** | Entra admin centre → Overview → Properties | Data residency statement, lab-account usage location |
 | The facilitator account is a **member** (not a guest) of this tenant | Entra → Users → user type = Member | Fabric capacity admin must be a member UPN |
 | The facilitator is a **work or school** account, not a personal Microsoft account | Entra → Users: the UPN ends in the tenant's domain, without `#EXT#` | ARM cannot create the Fabric capacity for a personal account ("Unable to authorize with Azure Active Directory") |
-| Security defaults are **on** | Entra → Overview → Properties → Manage security defaults | MFA for lab accounts without Entra P1. In tenants created since July 2026 they also block **device code sign-in** (`az login --use-device-code` fails with error 530035), which the Builder rail uses: turn them off for the workshop day and on again at T+1, or use plain `az login` (ASSUMPTIONS.md 10.11) |
+| Security defaults are **on** | Entra → Overview → Properties → Manage security defaults | MFA for lab accounts without Entra P1. In tenants created since July 2026 they also block **device code sign-in** (`az login --use-device-code` fails with error 530035), which the Builder rail uses. The sponsor delivery turned them off for the day (ASSUMPTIONS.md 10.11). **For the HPB delivery do not turn them off without separate approval**; check at the rehearsal whether device code or plain `az login` accepts a Temporary Access Pass (ASSUMPTIONS.md 11.7) |
 | The facilitator has a Fabric licence | Sign in once at https://app.fabric.microsoft.com (the Free licence is assigned on first sign-in) | Fabric REST / `fab` calls (otherwise `UserNotLicensed`) |
 
 A sponsorship subscription created with an outlook.com address comes with a tenant whose only user is that personal
 account. Create a cloud-only facilitator in it (Entra → Users → New user, `<name>@<tenant>.onmicrosoft.com`), make
 it Global Administrator and Owner on the subscription, and run every step below as that account.
 
-Put the facilitator UPN(s) into [workshop.yaml](../config/workshop.yaml) `environments.sponsor.facilitator_upns`, and into
-`fabricAdminMembers` and `budgetContactEmails` in `infra/env/sponsor.bicepparam`. A cloud-only account has no
+Put the facilitator UPN(s) into [workshop.yaml](../config/workshop.yaml) `environments.sponsor.facilitator_upns` and the
+budget alert addresses into `environments.sponsor.budget_contacts` (the bicepparam reads both; there is nothing to
+edit in `infra/env/sponsor.bicepparam`). A cloud-only account has no
 mailbox, so send the budget alerts to an address someone reads. Put the subscription and tenant IDs into
 `environments.sponsor`.
 
@@ -57,11 +63,11 @@ organisation, except where noted.
 |---|---|---|
 | Users can create Fabric items | Enabled (group) | Lakehouse, notebook, ontology, data agent |
 | Users can create Ontology (preview) items | Enabled (group) | `resident_ontology`. Formerly "Enable Ontology item (preview)"; without it `30-ontology.py` gets 403 `FeatureNotAvailable` |
-| Fabric data agent | Enabled (group) | `Resident360 Ontology Agent` |
-| Users can use Copilot and other features powered by Azure OpenAI | Enabled (group) | Data agent runtime |
-| Data sent to Azure OpenAI can be processed outside your capacity's geographic region… | Enabled | Enable even though Sweden Central is in the EU |
-| Data sent to Azure OpenAI can be stored outside your capacity's geographic region… | Enabled | Same |
-| Service principals can use Fabric APIs | Enabled (group) | Automation fallback; runtime still uses user identity |
+| Fabric data agent | No separate switch (target tenant, 2026-10-23) | The admin API lists no data-agent switch: data agents are created under "Users can create Fabric items". If your tenant still shows one, enable it for the group. `Resident360 Ontology Agent` |
+| Users can use Copilot and other features powered by Azure OpenAI | Enabled (group) | Data agent runtime (`EnableAOAI`) |
+| Capacities can be designated as Fabric Copilot capacities | Enabled | Listed as required for the data agent in Microsoft Learn (`CopilotCapacitySetupPermissionSwitch`) |
+| Data sent to Azure OpenAI can be processed / stored outside your capacity's geographic region… | **Leave off** | Microsoft Learn requires these only for capacities outside the EU data boundary and the US; Sweden Central is inside it (ASSUMPTIONS.md 11.12 replaces the earlier "enable anyway" advice). Enable them only if the data agent reports a region error, and only with approval |
+| Service principals can use Fabric APIs | Optional | Not needed: the Fabric bridge and the runtime use user identity |
 | Create workspaces | Enabled for the **facilitator group only** | Attendees do not create workspaces |
 
 Allow up to **one hour** for the settings to propagate before running `scripts/fabric/deploy.sh`.
@@ -84,8 +90,9 @@ az login --tenant <sponsor-tenant-id>
 azd config set auth.useAzCliAuth true       # azd uses the az sign-in above
 azd extension install azure.ai.agents
 azd env new sponsor --subscription <sponsor-subscription-id> --location swedencentral
-azd env set SEARCH_LOCATION francecentral   # as on mcaps: no new Search capacity in swedencentral (ASSUMPTIONS 2.5)
-bash scripts/preflight.sh sponsor           # registers resource providers; prints quota links for any FAIL
+# Search reads environments.sponsor.search_location from workshop.yaml; no ad-hoc env override or automatic fallback.
+# This reference environment is not part of the approved MCAPS rehearsal deployment.
+bash scripts/preflight.sh sponsor           # read-only; PREFLIGHT_REGISTER_PROVIDERS=1 also registers missing providers
 ```
 
 The azd environment itself (`.azure/sponsor/`) is gitignored and lives only in the checkout that created it.

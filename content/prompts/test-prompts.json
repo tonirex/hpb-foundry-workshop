@@ -351,25 +351,32 @@
         "must_not": ["any resident_id"]
       }
     },
-    "lab4_activity_only": {
-      "seat": "citizen",
-      "lab": "lab-04",
-      "used_in": ["lab-04"],
-      "text": "Suggest one indoor morning activity near Woodlands for me this week.",
-      "expected": {
-        "must": ["sequential visits every agent", "hand-off can route directly from Coach to Activity"],
-        "notes": "Compare orchestration routes, not identical output formats."
-      }
-    },
     "lab4_week_plan_handoff": {
       "seat": "citizen",
       "lab": "lab-04",
       "used_in": ["lab-04"],
       "text": "Plan my week: what to eat for my glucose, and one indoor morning activity near Woodlands.",
       "expected": {
-        "tools": ["livewell-nutrition", "livewell-activity"],
-        "must": ["Nutrition and Activity both answer", "sequential and hosted: merged evidence JSON with a citation", "hand-off: Coach -> Nutrition -> Activity, ending with Activity's answer"],
-        "notes": "The hand-off team does not return the sequential team's merged JSON contract."
+        "must": ["both specialists contribute", "at least one citation"],
+        "workflows": {
+          "sequential": {"route": ["nutrition", "activity", "coach"], "final_output": "Coach-merged evidence JSON"},
+          "handoff": {"route": ["coach", "nutrition", "activity"], "tools": ["handoff_to_nutrition", "handoff_to_activity"], "final_output": "Activity's answer, not merged JSON"},
+          "hosted": {"route": ["resident_profile", "nutrition", "activity", "coach"], "final_output": "Coach-merged evidence JSON"}
+        }
+      }
+    },
+    "lab4_activity_only": {
+      "seat": "citizen",
+      "lab": "lab-04",
+      "used_in": ["lab-04"],
+      "text": "Suggest one indoor morning activity near Woodlands for me this week.",
+      "expected": {
+        "must": ["an indoor morning activity", "at least one citation"],
+        "workflows": {
+          "sequential": {"route": ["nutrition", "activity", "coach"], "final_output": "Coach-merged evidence JSON"},
+          "handoff": {"route": ["coach", "activity"], "tools": ["handoff_to_activity"], "final_output": "Activity's answer, not merged JSON"}
+        },
+        "notes": "Compare intended routes and final answerers, not elapsed-time thresholds. Handoff can vary and this example omits the Coach merge."
       }
     }
   },

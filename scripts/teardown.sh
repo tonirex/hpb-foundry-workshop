@@ -1,25 +1,32 @@
 #!/usr/bin/env bash
-# teardown.sh — remove everything the workshop created in one environment (T+1, SPEC.md §12.1).
+# teardown.sh — remove what the workshop created in ONE environment (T+1, SPEC.md §12.1).
+# PLAN ONLY unless --yes: without it nothing is changed and the exact steps are listed.
 #
-#   scripts/teardown.sh [env] [--yes] [--pause-only] [--keep-fabric-workspace]
+#   scripts/teardown.sh [env]                              plan: lists what would be removed, changes nothing
+#   scripts/teardown.sh [env] --yes [--with-identity] [--keep-fabric-workspace]
+#   scripts/teardown.sh [env] --pause-only                 only suspend the Fabric capacity (between sessions)
 #
-#   --pause-only             only suspend the Fabric capacity (overnight / between sessions)
-#   --keep-fabric-workspace  skip deleting the Fabric workspace (normally deleted first)
-#   --yes                    no confirmation prompt
+#   --yes                    execute the plan (no further prompt: pass it only after the teardown is approved)
+#   --with-identity          also revoke TAPs and delete the lab accounts (and the break-glass account if it exists):
+#                            tenant-level Entra changes, run FIRST so no issued credential outlives the workshop
+#   --keep-fabric-workspace  do not delete the Fabric workspace (it is orphaned when the capacity goes)
 #
-# Order: Fabric workspace (fab rm "<ws>.Workspace" -f, or the Fabric REST API) -> azd down --purge
-# (deletes the resource group incl. the Fabric capacity and budget, and purges the soft-deleted
-# Foundry account) -> verify nothing is left -> clear Fabric IDs from .azure/<env>/.env.
-# Entra lab accounts are NOT deleted here (scripts/tenant/create-lab-users.sh --delete).
+# With --yes the order is: 0 manifest (ids, no secrets) -> 1 identity (only --with-identity) -> 2 Fabric workspace,
+# deleted BY ID after checking it sits on the workshop capacity -> 3 azd down --purge, then verify: group gone, our
+# soft-deleted Foundry account purged, nothing tagged workshop/env left, no platform-managed group left -> 4 clear
+# runtime ids. EVERY step stops the run on failure: nothing is skipped silently and a failed step is never reported
+# as done. Deleting the resource group alone is NOT complete cleanup: Entra accounts / TAPs and Fabric workspace
+# items live outside it (content/admin/HPB-DELIVERY-RUNBOOK.md, "Teardown").
 . "$(dirname "$0")/lib/common.sh"
 
-ENV_ARG=""; YES=0; PAUSE_ONLY=0; KEEP_WS=0
+ENV_ARG=""; YES=0; PAUSE_ONLY=0; KEEP_WS=0; WITH_ID=0
 for arg in "$@"; do
   case "$arg" in
     --yes|-y) YES=1 ;;
     --pause-only) PAUSE_ONLY=1 ;;
     --keep-fabric-workspace) KEEP_WS=1 ;;
-    -h|--help) sed -n '2,14p' "$0"; exit 0 ;;
+    --with-identity) WITH_ID=1 ;;
+    -h|--help) sed -n '2,23p' "$0"; exit 0 ;;
     -*) die "unknown option $arg" ;;
     *) ENV_ARG="$arg" ;;
   esac
@@ -30,6 +37,7 @@ SUB="${AZURE_SUBSCRIPTION_ID:?}"
 RG="${AZURE_RESOURCE_GROUP:-$(cfg names.resource_group)}"
 ACCOUNT="$(cfg names.foundry_account)"
 WS_NAME="$(cfg names.fabric_workspace)"
+CAP_NAME="$(cfg names.fabric_capacity)"
 LOCATION="${AZURE_LOCATION:-$(cfg names.location)}"
 cd "$ROOT"
 
@@ -37,73 +45,117 @@ if [ "$PAUSE_ONLY" = "1" ]; then
   exec bash "$ROOT/scripts/capacity.sh" suspend "$ENV"
 fi
 
-if [ "$YES" != "1" ]; then
-  echo "This deletes resource group $RG (subscription $SUB), purges $ACCOUNT and deletes the Fabric"
-  echo "workspace \"$WS_NAME\". Type the environment name to continue:"
-  read -r answer
-  [ "$answer" = "$ENV" ] || die "aborted"
-fi
+fabric_found() { "$PY" "$ROOT/scripts/lib/fabric_ws.py" find --env "$ENV" 2>&1 | tr -d '\r' || true; }
+tsv_ok() { [ -z "$1" ] || printf '%s\n' "$1" | awk -F'\t' 'NF != 3 { exit 1 }'; }
 
-# 1 Fabric workspace (items on it stop working once the capacity is gone, so remove them first).
-if [ "$KEEP_WS" = "1" ]; then
-  warn "keeping Fabric workspace \"$WS_NAME\""
-elif [ -n "$FAB" ] && "$FAB" auth status >/dev/null 2>&1; then
-  if "$FAB" exists "$WS_NAME.Workspace" 2>/dev/null | tr -d '\r' | grep -qi true; then
-    log "fab rm \"$WS_NAME.Workspace\" -f"
-    "$FAB" rm "$WS_NAME.Workspace" -f && ok "Fabric workspace deleted" || bad "fab rm failed"
-  else
-    ok "Fabric workspace \"$WS_NAME\" not present"
-  fi
+# -- discover (read-only) ---------------------------------------------------------------------------------
+RG_EXISTS="$(azq group exists -n "$RG" --subscription "$SUB" || echo unknown)"
+N_RES="-"
+[ "$RG_EXISTS" = "true" ] && N_RES="$(azq resource list -g "$RG" --subscription "$SUB" --query 'length(@)' -o tsv || echo '?')"
+FOUND="$(fabric_found)"
+tsv_ok "$FOUND" || { warn "could not look up the Fabric workspaces: $FOUND"; FOUND=""; }
+N_WS="$(printf '%s\n' "$FOUND" | grep -c . || true)"
+LAB_ROWS=0; TAP_ROWS=0
+[ -f "$ROOT/.azure/$ENV/lab-accounts.csv" ] && LAB_ROWS="$(( $(wc -l <"$ROOT/.azure/$ENV/lab-accounts.csv") - 1 ))"
+[ -f "$ROOT/.azure/$ENV/tap-issued.csv" ] && TAP_ROWS="$(( $(wc -l <"$ROOT/.azure/$ENV/tap-issued.csv") - 1 ))"
+
+echo "LiveWell teardown — env=$ENV subscription=$SUB"
+echo "  Azure   : resource group $RG exists=$RG_EXISTS ($N_RES resources); Foundry account $ACCOUNT is purged after the delete"
+echo "  Fabric  : $N_WS workspace(s) named \"$WS_NAME\" (capacity $CAP_NAME is deleted with the group)"
+[ -n "$FOUND" ] && printf '%s\n' "$FOUND" | awk -F'\t' '{ printf "            id %s  capacity %s  -> %s\n", $1, $2, $3 }'
+echo "  Entra   : lab accounts and TAPs are tenant-level, NOT in the group. Local records: $LAB_ROWS lab account row(s), $TAP_ROWS TAP row(s)"
+if [ "$WITH_ID" = "1" ]; then
+  echo "            --with-identity: scripts/tenant/issue-tap.sh $ENV revoke --apply ; scripts/tenant/create-lab-users.sh $ENV --delete"
 else
-  WS_ID="${FABRIC_WORKSPACE_ID:-}"
-  if [ -z "$WS_ID" ]; then
-    WS_ID="$(fabric_api GET /v1/workspaces | pyrun -c 'import json,sys
-try:
-    d=json.load(sys.stdin)
-except ValueError:
-    sys.exit(0)
-print(next((w["id"] for w in d.get("value",[]) if w.get("displayName")==sys.argv[1]),""))' "$WS_NAME" || true)"
-  fi
-  if [ -n "$WS_ID" ]; then
-    fabric_api DELETE "/v1/workspaces/$WS_ID" >/dev/null && ok "Fabric workspace $WS_ID deleted (REST)" ||
-      bad "could not delete Fabric workspace $WS_ID — delete \"$WS_NAME\" in the Fabric portal"
-  else
-    warn "Fabric workspace not found or Fabric API unavailable (fab not signed in) — check app.fabric.microsoft.com"
-  fi
+  echo "            NOT touched by this run. Do it separately: scripts/tenant/issue-tap.sh $ENV revoke --apply ; scripts/tenant/create-lab-users.sh $ENV --disable|--delete"
+fi
+echo "  Not removed by anyone: subscription quota, resource-provider registrations, other resource groups."
+
+if [ "$YES" != "1" ]; then
+  echo
+  echo "PLAN ONLY: nothing was changed. Re-run with --yes after the teardown has been approved."
+  exit 0
+fi
+echo
+
+# 0 manifest -------------------------------------------------------------------------------------------------
+if [ "$RG_EXISTS" = "true" ]; then
+  log "0/4 manifest (ids only, no secrets)"
+  "$PY" "$ROOT/scripts/verify-scope.py" manifest --env "$ENV" | tr -d '\r' || die "could not write the manifest: stopping before anything is deleted"
+else
+  ok "0/4 resource group already gone: no manifest to take"
 fi
 
-# 2 Azure resources.
+# 1 identity -------------------------------------------------------------------------------------------------
+if [ "$WITH_ID" = "1" ]; then
+  log "1/4 identity: revoke TAPs, delete lab accounts"
+  bash "$ROOT/scripts/tenant/issue-tap.sh" "$ENV" revoke --apply || die "TAP revocation failed: stopping; fix it, then re-run (the run is idempotent)"
+  bash "$ROOT/scripts/tenant/create-lab-users.sh" "$ENV" --delete || die "deleting the lab accounts failed: stopping"
+  rm -f "$ROOT/.azure/$ENV/tap-issued.csv" "$ROOT/.azure/$ENV/lab-accounts.csv" && ok "local TAP and lab-account records removed"
+else
+  warn "1/4 identity skipped: lab accounts, TAPs and any break-glass account still exist (see the runbook)"
+fi
+
+# 2 Fabric workspace (by id, only if it sits on the workshop capacity) ---------------------------------------
+log "2/4 Fabric workspace"
+if [ "$KEEP_WS" = "1" ]; then
+  warn "keeping Fabric workspace \"$WS_NAME\": it is orphaned (no capacity) once the group is deleted"
+elif [ "$N_WS" -eq 0 ]; then
+  ok "no Fabric workspace named \"$WS_NAME\""
+elif [ "$N_WS" -gt 1 ]; then
+  die "$N_WS Fabric workspaces are named \"$WS_NAME\": ambiguous, nothing deleted. Resolve in the Fabric portal, then re-run"
+else
+  WS_ID="$(printf '%s\n' "$FOUND" | cut -f1)"
+  FORCE=()
+  [ "${FABRIC_FORCE_DELETE_WORKSPACE_ID:-}" = "$WS_ID" ] && FORCE=(--force)
+  "$PY" "$ROOT/scripts/lib/fabric_ws.py" delete --env "$ENV" --id "$WS_ID" ${FORCE[@]+"${FORCE[@]}"} | tr -d '\r' ||
+    die "Fabric workspace $WS_ID was not deleted: stopping so the capacity is not removed from under it"
+  ok "Fabric workspace $WS_ID deleted"
+fi
+
+# 3 Azure resources, then verify ------------------------------------------------------------------------------
+log "3/4 Azure: resource group $RG"
 if [ "$(azq group exists -n "$RG" --subscription "$SUB")" = "true" ]; then
   log "azd down --purge --force (≈10 min)"
-  azd_ down --purge --force --no-prompt || warn "azd down reported an error — verifying below"
-else
-  ok "resource group $RG already gone"
+  azd_ down --purge --force --no-prompt || warn "azd down reported an error: checking, then falling back to az group delete"
 fi
-
-# 3 Verify: resource group gone, Foundry account not left soft-deleted, no stray workshop resources.
 if [ "$(azq group exists -n "$RG" --subscription "$SUB")" = "true" ]; then
-  log "resource group still exists — deleting it"
-  az group delete -n "$RG" --subscription "$SUB" --yes && ok "resource group $RG deleted" || bad "az group delete $RG failed"
-else
-  ok "resource group $RG deleted"
+  log "resource group still exists: az group delete"
+  az group delete -n "$RG" --subscription "$SUB" --yes || die "az group delete $RG failed: the group is NOT deleted"
 fi
+[ "$(azq group exists -n "$RG" --subscription "$SUB")" = "true" ] && die "resource group $RG still exists"
+ok "resource group $RG is gone"
+
 DELETED="$(azq cognitiveservices account list-deleted --subscription "$SUB" --query "[?name=='$ACCOUNT'].name" -o tsv || true)"
 if [ -n "$DELETED" ]; then
-  log "purging soft-deleted $ACCOUNT"
-  az cognitiveservices account purge -n "$ACCOUNT" -g "$RG" -l "$LOCATION" --subscription "$SUB" &&
-    ok "$ACCOUNT purged" || bad "purge failed: az cognitiveservices account purge -n $ACCOUNT -g $RG -l $LOCATION"
+  log "purging our soft-deleted $ACCOUNT (no other account is touched)"
+  az cognitiveservices account purge -n "$ACCOUNT" -g "$RG" -l "$LOCATION" --subscription "$SUB" ||
+    die "purge of $ACCOUNT failed: az cognitiveservices account purge -n $ACCOUNT -g $RG -l $LOCATION --subscription $SUB"
+  ok "$ACCOUNT purged"
 else
-  ok "no soft-deleted Foundry account left"
+  ok "no soft-deleted $ACCOUNT left"
 fi
-LEFT="$(azq resource list --subscription "$SUB" --tag workshop=livewell --query "[?tags.env=='$ENV'].id" -o tsv || true)"
-if [ -n "$LEFT" ]; then bad "workshop resources still present:"; echo "$LEFT" | sed 's/^/    /'
-else ok "no resources tagged workshop=livewell env=$ENV remain"; fi
+LEFT="$(azq resource list --subscription "$SUB" --tag workshop=livewell --query "[?tags.\"azd-env-name\"=='$ENV'].id" -o tsv || true)"
+if [ -n "$LEFT" ]; then echo "$LEFT" | sed 's/^/    /'; die "workshop resources are still present (listed above)"; fi
+ok "no resource tagged workshop=livewell azd-env-name=$ENV remains in the subscription"
+MANAGED="$(azq group list --subscription "$SUB" --query "[?starts_with(name,'ME_') || starts_with(name,'MC_')].name" -o tsv | grep -i "$ENV" || true)"
+if [ -n "$MANAGED" ]; then warn "platform-managed resource group(s) still present (they go with the Container Apps environment; re-check later): $MANAGED"
+else ok "no platform-managed resource group left for this environment"; fi
+AFTER="$(fabric_found)"
+if [ -z "$AFTER" ]; then ok "no Fabric workspace named \"$WS_NAME\" remains"
+elif [ "$KEEP_WS" = "1" ]; then warn "Fabric workspace kept as requested"
+else die "a Fabric workspace named \"$WS_NAME\" still exists"; fi
 
 # 4 Clear runtime IDs that no longer exist (lab pages use names; the next provision rewrites the rest).
 # AZURE_AI_ACCOUNT_NAME too: while it is set, Bicep links the guardrail blocklist, which fails on a new account.
+log "4/4 clear runtime ids from the azd env"
 for key in FABRIC_WORKSPACE_ID FABRIC_WORKSPACE_URL FABRIC_LAKEHOUSE_ID FABRIC_ONTOLOGY_ID FABRIC_GRAPH_MODEL_ID \
            FABRIC_DATA_AGENT_ID FABRIC_DATA_AGENT_URL FABRIC_IQ_CONNECTION_ID BUDGET_START_DATE AZURE_AI_ACCOUNT_NAME; do
   if [ -n "${!key:-}" ]; then azd_ env set "$key" "" >/dev/null; fi
 done
 rm -f "$ROOT/content/config/values.md"
+echo
+if [ "$WITH_ID" != "1" ]; then
+  warn "NOT cleaned by this run: Entra lab accounts, TAPs, any break-glass account, and the local secret files (.azure/$ENV/tap-issued.csv, lab-accounts.csv, printed sign-in cards)"
+fi
 summary_and_exit

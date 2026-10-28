@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Bridge spotlight facilitator demo: what happens inside the Fabric data agent for one question.
+"""Historical Fabric GQL diagnostic and replay; not a viewer for the current ontology-context runtime.
 
 The Foundry trace shows the Fabric IQ call as a single tool call (`userQuestion` in, answer out). This script asks
 the published data agent the same question through its OpenAI-compatible Assistants endpoint and reads the run
@@ -522,8 +522,9 @@ def render(data: dict) -> str:
                      f'<div class="stepn">2. GQL generated (analyze.database.nl2code)</div><pre>{pretty_gql(q["gql"])}</pre>'
                      f'<div class="stepn">3. Rows returned (analyze.database.execute)</div>{rows}</div>')
     if not qs:
-        cards.append('<p class="bad">No ontology queries in this run: the agent answered without querying (numbers are '
-                     'not grounded). Check the data agent is published and the capacity is Active.</p>')
+        cards.append('<p class="bad">No legacy GQL query records recognised. This viewer does not interpret current '
+                     'source-native SQL/KQL/DAX run steps. Absence here is not proof that no query ran; inspect '
+                     'the native Fabric run steps.</p>')
     edges = list(dict.fromkeys(e for q in qs for e in EDGE_RE.findall(q["gql"])))
     run = data["run"]
     replay = " &middot; <b>replayed from a saved run</b>" if data.get("_replayed") else ""
@@ -532,6 +533,9 @@ def render(data: dict) -> str:
 <style>{CSS}</style></head><body><main>
 <section id="overview">
 <h1>Inside the Fabric data agent</h1>
+<p class="q"><b>Historical GQL diagnostic.</b> Current ontology context guides source-native SQL, KQL or DAX.
+This is a separate data-agent run, not a correlated expansion of the coach's Foundry trace.
+Use Fabric run steps for current execution evidence.</p>
 <div class="meta">{esc(qid or 'free-text question')} &middot; env {esc(data.get('env', ''))} &middot; captured {esc(data.get('captured_at', ''))}
  &middot; run {esc(run.get('status'))} in {data.get('seconds', 0):g} s &middot; {len(qs)} ontology quer{'y' if len(qs) == 1 else 'ies'}{replay}</div>
 <div class="q">{esc(question)}</div>
@@ -605,6 +609,7 @@ def replay_page(arg: str) -> Path:
 
 def summary(data: dict) -> None:
     qs = queries(data)
+    print("HISTORICAL GQL diagnostic: not current source-native execution proof. Inspect Fabric run steps.")
     print(f"Q: {data['question']}\n   {data['run'].get('status')} in {data.get('seconds')} s, {len(qs)} ontology queries")
     for k, q in enumerate(qs):
         print(f"\n[Q{k + 1}] {q['nl']}  ({q['t1'] - q['t0']:.0f} s)\n  GQL: {q['gql']}")

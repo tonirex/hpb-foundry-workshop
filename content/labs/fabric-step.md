@@ -1,291 +1,225 @@
 # Fabric step · Add the Resident 360 data agent as a Fabric IQ tool
 
-**15 min** · **Optional** · **When:** `FABRIC_BRIDGE=true` · **Level:** L300 · **Rails:** 🟢 Navigator + 🔵 Builder · **Patterns:** #2 Evidence-Based Decision Support · #3 Workflow Orchestration · #6 Human-in-the-Loop Review · #8 Institutional Memory · #9 Collaboration Between Specialists
+**10 min guided · 5:05–5:15** · **Optional, preview** · **Rails:** 🟢 Navigator + 🔵 Builder · **Patterns:** #2 Evidence-Based Decision Support · #3 Workflow Orchestration · #6 Human-in-the-Loop Review · #8 Institutional Memory · #9 Collaboration Between Specialists
 
-**You are here:** [Lab 0](lab-00.md) → [Lab 1](lab-01.md) → [Lab 2](lab-02.md) → [Lab 3](lab-03.md) (**Fabric step**) → [Lab 4](lab-04.md) → [Bridge spotlight](bridge-spotlight.md) · [README](../../README.md)
+**You are here:** [Lab 3](lab-03.md) → **Fabric step** → [Lab 4 hosted proof](lab-04.md#hosted-proof) → [Bridge spotlight](bridge-spotlight.md) · [README](../../README.md)
 
 **Your path:** [Navigator](#navigator) · [Builder](#builder) · [Checkpoint](#checkpoint) · [Troubleshooting](#troubleshooting)
 
 ## Shared objective
 
-> An agent that acts: personalise on governed data, take real actions with a human in the loop, delegate to specialists, and route each kind of question to the right tool
-
-Patterns: #2 Evidence-Based Decision Support; #3 Workflow Orchestration; #6 Human-in-the-Loop Review; #8 Institutional Memory; #9 Collaboration Between Specialists.
+> Use governed cohort evidence when guidance alone cannot answer a question, and inspect exactly what information the coach sends to Fabric
 
 ## Foundry features covered
 
-- Fabric IQ tool ⚠️ preview, connected to a published Fabric data agent through OneLake Catalog and MCP.
-- Project connection **`livewell-fabric-resident360`**.
-- Identity passthrough: participants must use the same workshop account in Foundry and Fabric. For what this means in a real deployment, see [what is fixed for the workshop](lab-03.md#workshop-shortcuts).
-- Multi-step tool chaining in one turn: profile tool → Fabric IQ → activities MCP → approval-gated action.
-- Privacy by design: the coach asks Fabric an aggregate cohort question (age band only), never about a person.
-- Tool routing instructions that separate citizen guide questions, Rahim's one cohort question and officer programme questions.
-- Trace validation: what the coach sent to Fabric, Fabric IQ for Mei's question, and no Fabric call for Rahim's food question.
-- Fabric ontology and data agent ⚠️ preview over the Resident 360 estate, including the `droppedOut` edge.
+Fabric IQ tool (**preview**) · existing project connection · user identity passthrough · aggregate-only questions · comparison with Foundry IQ retrieval.
 
 ## Story chapter
 
-[Chapter 3](../narrative/rahim.md#chapter-3--its-hazy-today--what-can-i-do-indoors-lab-3--tools-mcp--memory) ends with two Fabric beats. In ch3.6 Rahim admits he dropped out of <!--ref:q_programme_fit.dropped_programme-->Healthier SG<!--/ref--> and asks which programme people his age actually stick with. The guides know *what* helps with pre-diabetes; only the governed Resident 360 knows *who stays*. In ch3.7 Mei asks a region-level planning question. The coach calls Fabric for both, but for Rahim it asks about his age band, never about him, and it still answers his food questions from Foundry IQ.
-
-### Why Fabric makes this answer better
-
-Without Fabric the coach can only say "any of these programmes could help". With Fabric it can reason over four sources in one turn:
-
-| Step | Source | What the coach learns |
-|---|---|---|
-| 1 | `livewell_profile` (his own record) | Age band <!--ref:q_programme_fit.age_band-->60-64<!--/ref-->, pre-diabetes, High screening risk, Woodlands, the programmes he is in or dropped |
-| 2 | Fabric IQ (Resident 360 ontology) | For the <!--ref:q_programme_fit.cohort_residents-->97<!--/ref--> residents in his age band: how many joined each programme and how many dropped out |
-| 3 | Its own reasoning | <!--ref:q_programme_fit.dropped_programme-->Healthier SG<!--/ref--> lost <!--ref:q_programme_fit.dropped_programme_dropout_pct-->37.1<!--/ref-->% of them; <!--ref:q_programme_fit.recommended_programme-->Diabetes Prevention<!--/ref--> lost <!--ref:q_programme_fit.recommended_dropout_pct-->21.6<!--/ref-->%, the lowest of the programmes he is not already in, and it targets his glucose |
-| 4 | Activities MCP | The <!--ref:q_programme_fit.recommended_programme-->Diabetes Prevention<!--/ref--> intake session near Woodlands, then `register_interest` after he approves |
-
-```mermaid
-sequenceDiagram
-    actor R as Rahim
-    participant C as LiveWell Coach
-    participant P as livewell_profile
-    participant F as Fabric IQ (Resident360 Ontology Agent)
-    participant A as Activities MCP
-    R->>C: Which programme do people my age stick with? Sign me up near Woodlands
-    C->>P: get_citizen_profile(me)
-    P-->>C: age band, pre-diabetes, Woodlands, his programmes
-    C->>F: For residents in age band 60-64, how many enrolled in each programme and how many dropped out?
-    F-->>C: enrolled and dropped per programme (aggregates only)
-    Note over C: lowest drop-out he is not in, and fits pre-diabetes
-    C->>A: find_activities(area Woodlands, pre-diabetes)
-    A-->>C: Diabetes Prevention intake session
-    C-->>R: recommendation, cohort numbers, shall I register you?
-    R->>C: Yes
-    C->>A: register_interest (waits for approval)
-```
-
-Privacy is part of the design. The question sent to Fabric names only the age band: no name, resident_id, planning area or gender. Adding his screening risk would shrink the cohort to about twenty people and every drop-out count would fall under the "fewer than 5" rule, so the cohort stays at age band only. Any count under five is reported as "fewer than 5".
+Mei needs region statistics, not generic advice. Rahim's optional programme-fit question asks what his age-band cohort tends to stick with. [Chapter 3](../narrative/rahim.md#chapter-3--its-hazy-today--what-can-i-do-indoors-lab-3--tools-mcp--memory) links cohort facts to actions without sending his identity to Fabric.
 
 ## 🟢 Navigator
 
 <a id="navigator"></a>
 
-**Only proceed when the facilitator enables Fabric.** Otherwise [continue to Lab 4](lab-04.md); the main Lab 3 profile,
-activity and approval checkpoints still work without it.
-Switching from Builder? Complete [Navigator Lab 3](lab-03.md#navigator) first: its OpenAPI profile tool runs in Foundry,
-whereas the Builder profile function requires your Python client.
+**Start only when the facilitator confirms active capacity, published data-agent context and your access. Otherwise skip.** Paused Fabric does not prevent core Labs 3 or 4.
 
-Prerequisites the facilitator completed:
+**Already prepared:** `HPB Resident 360`, its data/ontology context, published `Resident360 Ontology Agent`, and `livewell-fabric-resident360`. You attach a connection, not provision items or resume capacity. Switching from Builder? Complete [Navigator Lab 3](lab-03.md#navigator) first.
 
-- Fabric workspace **`HPB Resident 360`** is deployed.
-- Lakehouse **`lh_resident360`** is loaded.
-- Ontology **`resident_ontology`** exists; see [ontology blueprint](../fabric/ontology.blueprint.yaml).
-- Published data agent **`Resident360 Ontology Agent`** exists with instructions from [data-agent instructions](../fabric/data-agent-instructions.md).
-- Project connection **`livewell-fabric-resident360`** exists.
-- Participants are signed in with the same account in Foundry and Fabric.
-- User identity passthrough is enabled, and published agents appear in the OneLake Catalog.
+### 1. Choose the evidence source
 
-Steps:
-
-1. Open your Lab 3 agent and check that **Model** shows **`gpt-4.1-mini`** (Lab 3 step 1). The programme-fit prompt chains the Fabric IQ tool with the OpenAPI profile tool, which needs that model; if the agent is still on `gpt-5-mini`, switch it now and select **Save**.
-2. Select **Tools → Add → Add tools → Configured → `livewell-fabric-resident360` → Add tool** ⚠️ preview. Use the existing connection; creating a connection is a facilitator task.
-
-   ![Existing Fabric IQ connection on the Configured tab](screenshots/lab-03/17-existing-fabric-connection.png)
-
-3. If the connection is missing, ask the facilitator or watch their prepared agent. They can discover the published
-   **Resident360 Ontology Agent** through **Fabric IQ (OneLake Catalog)**, filtered by `Resident360`. Do not create a second connection yourself.
-
-   <details>
-   <summary>Facilitator reference: the published agent in OneLake Catalog</summary>
-
-   ![OneLake Catalog with Resident360 Ontology Agent](screenshots/lab-03/16-fabric-iq-onelake-catalog.png)
-
-   </details>
-
-4. In **Instructions**, keep the previous blocks and **append** these Fabric routing rules, then **Save**:
-
-   <!-- copy:instructions fabric -->
-   ```text
-   Fabric routing rules:
-   - For programme-level questions about regions, age bands, programmes, events or challenges (for example
-     from an HPB programme officer), use the Fabric tool (Resident360 Ontology Agent). Report aggregates only.
-   - Never ask the Fabric tool about an individual resident and never include a resident_id in a question to it
-     or in your reply.
-   - When a resident asks which programme to join, or which one people like them stick with, follow these steps
-     in order. Never guess their age.
-     a. Call get_citizen_profile on its own and wait for the result. Do not call the Fabric tool until you have it.
-     b. Ask the Fabric tool ONE question, copying the age_band field from the profile exactly (for example
-        "60-64"), in exactly this form:
-        "For residents in age band <age_band>, how many enrolled in each programme and how many dropped out?"
-        Never add their name, area, region, gender or screening risk.
-     c. Recommend the programme with the lowest drop-out share that they are not already in and have not
-        dropped, say why it fits their profile, and quote the cohort numbers as Fabric gives them (keep "fewer
-        than 5" as it is, and write "fewer than 5" for any count from 1 to 4 that Fabric did not mask).
-     d. Use find_activities to find that programme's intake session near them, and ask before register_interest.
-   - Other citizen questions about food, activity, sleep or screening still go to the knowledge base and the
-     profile tool, never to Fabric.
-   ```
-   <!-- /copy -->
-
-   <!-- historical-screenshot: screenshots/lab-03/18-fabric-instructions.png -->
-5. Start a new conversation as Rahim. Send (`lab3_programme_fit`):
-
-   <!-- copy:prompt lab3_programme_fit -->
-   ```text
-   I dropped out of Healthier SG last year. Which programme do people my age actually stick with? Find me a way to start near Woodlands and sign me up.
-   ```
-   <!-- /copy -->
-
-   Expect, in order: the profile call, one Fabric IQ call (**30-90 s**), `find_activities`, then an approval card for
-   `register_interest`. The reply should recommend **<!--ref:q_programme_fit.recommended_programme-->Diabetes Prevention<!--/ref-->**
-   (<!--ref:q_programme_fit.recommended_dropout_pct-->21.6<!--/ref-->% drop-out in his age band against
-   <!--ref:q_programme_fit.dropped_programme_dropout_pct-->37.1<!--/ref-->% for <!--ref:q_programme_fit.dropped_programme-->Healthier SG<!--/ref-->) and offer
-   its intake session in Woodlands.
-
-   Open the trace and select the Fabric IQ call. Its `userQuestion` argument is what left the coach. It should name
-   the age band and nothing else. If the coach asks whether to sign up, send this in the same chat (`lab3_programme_confirm`):
-
-   <!-- copy:prompt lab3_programme_confirm -->
-   ```text
-   Yes, please sign me up for the Diabetes Prevention intake session.
-   ```
-   <!-- /copy -->
-
-   Inspect the intake session, then select **Approve → Approve once** on the tool card. A chat message saying yes does not replace tool approval.
-
-   <!-- historical-screenshot: screenshots/lab-03/21-programme-fit-approved.png -->
-
-6. Start a new conversation as Mei, the programme officer. Send (`fabric_q_disengaged_regions`):
-
-   <!-- copy:prompt fabric_q_disengaged_regions -->
-   ```text
-   Which regions have the highest share of disengaged residents?
-   ```
-   <!-- /copy -->
-
-   Expect the trace to show a Fabric IQ MCP call. Latency of **30-90 s** is normal for the preview path.
-   The reference answer ranks **<!--ref:q_disengaged_regions.top_region-->North<!--/ref-->** first (<!--ref:q_disengaged_regions.top_share_pct-->20.0<!--/ref-->% of
-   its residents are disengaged), then <!--ref:q_disengaged_regions.second_region-->West<!--/ref--> (<!--ref:q_disengaged_regions.second_share_pct-->17.1<!--/ref-->%).
-
-   <!-- historical-screenshot: screenshots/lab-03/23-fabric-iq-trace.png -->
-
-7. Start a new conversation as Rahim. Send (`lab1_prediabetes_eat`):
-
-   <!-- copy:prompt lab1_prediabetes_eat -->
-   ```text
-   My screening says my glucose is high. What should I eat to manage pre-diabetes?
-   ```
-   <!-- /copy -->
-
-   Confirm the trace shows knowledge-base retrieval and **no Fabric call**.
-
-Routing rule to keep in mind:
-
-| Seat | Question type | Expected tool |
+| Question | Workshop source | Why |
 |---|---|---|
-| Rahim | Food, activity, sleep, screening, personal self-care | Foundry IQ knowledge base plus profile tool |
-| Rahim | Which programme people like him stick with | Profile tool, then Fabric IQ with his age band only, then activities MCP |
-| Rahim | Individual profile | Profile tool only, never Fabric |
-| Mei | Region, programme, event, challenge aggregates | Fabric IQ tool |
-| Anyone | Another resident's data | Refuse |
+| “What should I eat?” | Foundry IQ guides | Approved guidance and cited passages |
+| “Which regions have more disengaged residents?” | Fabric data agent | A calculation over governed records |
+| “What is my profile?” | Profile API | The fixed synthetic session record |
 
-Routing matters as much as the answer. A correct region table that came through the wrong tool is still wrong. A good programme recommendation is still a failure if the question sent to Fabric included Rahim's name or area.
+These are our design choices, not exclusive product capabilities.
+
+### 2. Attach the existing tool
+
+On your Lab 3 coach, keep **`gpt-4.1-mini`**. **Tools → Add → Add tools → Configured → `livewell-fabric-resident360` → Add tool**. Append the Fabric block below, then **Save**.
+
+Use the same workshop account in Foundry and Fabric. Missing connection or access goes to the facilitator; do not create a replacement.
+
+<details>
+<summary><strong>Required copy block and connection screenshots</strong></summary>
+
+<!-- copy:instructions fabric -->
+```text
+Fabric routing rules:
+- For programme-level questions about regions, age bands, programmes, events or challenges (for example
+  from an HPB programme officer), use the Fabric tool (Resident360 Ontology Agent). Report aggregates only.
+- Never ask the Fabric tool about an individual resident and never include a resident_id in a question to it
+  or in your reply.
+- When a resident asks which programme to join, or which one people like them stick with, follow these steps
+  in order. Never guess their age.
+  a. Call get_citizen_profile on its own and wait for the result. Do not call the Fabric tool until you have it.
+  b. Ask the Fabric tool ONE question, copying the age_band field from the profile exactly (for example
+     "60-64"), in exactly this form:
+     "For residents in age band <age_band>, how many enrolled in each programme and how many dropped out?"
+     Never add their name, area, region, gender or screening risk.
+  c. Recommend the programme with the lowest drop-out share that they are not already in and have not
+     dropped, say why it fits their profile, and quote the cohort numbers as Fabric gives them (keep "fewer
+     than 5" as it is, and write "fewer than 5" for any count from 1 to 4 that Fabric did not mask).
+  d. Use find_activities to find that programme's intake session near them, and ask before register_interest.
+- Other citizen questions about food, activity, sleep or screening still go to the knowledge base and the
+  profile tool, never to Fabric.
+```
+<!-- /copy -->
+
+![Existing Fabric IQ connection](screenshots/lab-03/17-existing-fabric-connection.png)
+
+Only the facilitator uses OneLake Catalog to create the connection if missing:
+
+![Facilitator reference: published agent in OneLake Catalog](screenshots/lab-03/16-fabric-iq-onelake-catalog.png)
+
+<!-- historical-screenshot: screenshots/lab-03/18-fabric-instructions.png -->
+
+</details>
+
+### 3. Predict → run → inspect
+
+**Predict:** would a guide PDF be enough to calculate this? As Mei, send `fabric_q_disengaged_regions` in a new chat:
+
+<!-- copy:prompt fabric_q_disengaged_regions -->
+```text
+Which regions have the highest share of disengaged residents?
+```
+<!-- /copy -->
+
+Open **Response metrics → Traces → Fabric IQ call → Input**. Inspect **`userQuestion`**: region aggregates, not an individual record. Inspect the returned groups and any errors. Allow time for the preview; do not repeatedly resend.
+
+### 4. Compare with a guide question
+
+In another new chat, send `lab1_prediabetes_eat`:
+
+<!-- copy:prompt lab1_prediabetes_eat -->
+```text
+My screening says my glucose is high. What should I eat to manage pre-diabetes?
+```
+<!-- /copy -->
+
+Expect knowledge retrieval and **no Fabric call in a complete trace**. Missing telemetry is not routing proof.
+
+**Explain:** why did the source change, and which argument shows what left the coach?
+
+<details>
+<summary><strong>Optional extension: programme fit, then an approved action</strong></summary>
+
+Only with extra time and facilitator approval. The core comparison is enough for the guided slot.
+
+As Rahim, send `lab3_programme_fit` in a new chat:
+
+<!-- copy:prompt lab3_programme_fit -->
+```text
+I dropped out of Healthier SG last year. Which programme do people my age actually stick with? Find me a way to start near Woodlands and sign me up.
+```
+<!-- /copy -->
+
+Inspect **profile → Fabric cohort question → activities → proposed registration**. Fabric's `userQuestion` must contain **age band only**: no name, resident ID, area, gender or screening risk. Counts below five should say “fewer than 5”; this workshop output rule is not proof of complete privacy protection.
+
+If asked to confirm, send `lab3_programme_confirm` in the same chat:
+
+<!-- copy:prompt lab3_programme_confirm -->
+```text
+Yes, please sign me up for the Diabetes Prevention intake session.
+```
+<!-- /copy -->
+
+Then inspect the tool card and choose **Approve → Approve once** or **Deny**. Chat “yes” does not replace approval. Registration is synthetic and temporary.
+
+The computed reference recommends **<!--ref:q_programme_fit.recommended_programme-->Diabetes Prevention<!--/ref-->** among applicable programmes he is not already in: drop-out **<!--ref:q_programme_fit.recommended_dropout_pct-->21.6<!--/ref-->%**, versus **<!--ref:q_programme_fit.dropped_programme_dropout_pct-->37.1<!--/ref-->%** for **<!--ref:q_programme_fit.dropped_programme-->Healthier SG<!--/ref-->**. Descriptive cohort evidence does not prove a programme will work for an individual.
+
+<!-- historical-screenshot: screenshots/lab-03/19-programme-fit-recommendation.png -->
+<!-- historical-screenshot: screenshots/lab-03/20-programme-fit-fabric-question.png -->
+<!-- historical-screenshot: screenshots/lab-03/21-programme-fit-approved.png -->
+
+</details>
+
+<details>
+<summary><strong>FAQ: ontology context, identity and current execution</strong></summary>
+
+**What does ontology do?** It provides terms, relationships and source mappings. The data agent generates **source-native SQL, KQL or DAX**, executed by the underlying source. Ontology is not itself the query endpoint.
+
+**Where is the internal query?** Foundry records the external request/response where available. Inspect Fabric run steps for the selected source, generated query and errors; do not assume GQL or a specific internal tool name.
+
+**Does sharing the agent grant data access?** No. Users also need relevant ontology and source permissions; the request uses the caller's identity.
+
+**Citizen sign-in design?** No. Tenant users act out a synthetic scenario. A public citizen app needs its own authentication and authorised data-access design.
+
+**What was configured?** The facilitator attached `resident_ontology` through **Sources → Add sources → Add an ontology**, then published and verified it. Check stale downloaded context and source bindings before assuming graph refresh is the fix.
+
+Further reading: [ontology as context](https://learn.microsoft.com/fabric/data-science/data-agent-ontology-sources) · [share a data agent](https://learn.microsoft.com/fabric/data-science/data-agent-sharing).
+
+</details>
 
 ## 🔵 Builder
 
 <a id="builder"></a>
 
+Watching the guided comparison is sufficient. Optional execution:
+
 ```bash
 python content/assets/lab3_tools.py --fabric
 ```
 
-Same in bash and PowerShell. Run it only once the facilitator confirms the Fabric step is on. Run Cell ignores flags, so for cell-by-cell runs set `FABRIC_BRIDGE=true` in `content/assets/.env` instead of `--fabric`.
+<details>
+<summary><strong>Optional: running and inspecting the Fabric cells</strong></summary>
 
-Or open `content/assets/lab3_tools.py` and run the Fabric cells after the main Lab 3 cells. Use this only when the facilitator confirms `FABRIC_BRIDGE=true`.
+Only run after readiness is confirmed. This runs Lab 3 **and** Fabric, not just a trace viewer, and creates a new version of your Builder coach.
 
-What the script does per cell:
+`FABRIC_BRIDGE=true` also enables Lab 3's Fabric section without the flag. Turn it off afterwards. Lab 4 separately requires explicit `--fabric` for its facilitator-only specialist.
 
-1. Loads the Fabric-enabled tool configuration from the environment.
-2. Attaches the project connection **`livewell-fabric-resident360`** to the coach.
-3. Appends the `fabric` instruction block from [coach-instructions.md](../prompts/coach-instructions.md).
-4. Runs `fabric_q_disengaged_regions` and records the Fabric IQ MCP trace line.
-5. Runs `lab1_prediabetes_eat` in the same agent and asserts no Fabric tool call is used.
-6. Runs `lab3_programme_fit`, approves `register_interest`, and checks that the profile was read before the Fabric
-   call, that the question sent to Fabric names the age band and no personal detail, and that the reply recommends
-   the reference programme. The sent question is saved in `.runs/lab3-<INITIALS>.json`.
-
-Use `--verbose` to print tool-call timing. Use `--cleanup` to delete only `livewell-<INITIALS>-*` agents. Optional extension: if a Fabric ML `/score` endpoint exists, the facilitator may expose it as a function tool, but it is not required for the checkpoint.
-
-When `FABRIC_BRIDGE=false`, run Lab 3 without `--fabric`; the profile tool still personalises from [citizens.json](../data/citizens.json).
-
-Keep Fabric disabled in local experiments unless the facilitator confirms the shared connection is ready.
+Use an interactive terminal for approval; unattended runs deny. `--verbose` exposes outgoing `userQuestion`, tool order and approval. `--cleanup` removes only your agents.
 
 ### How the code works
 
-The Fabric step is section 10 of `lab3_tools.py`. It creates a new version of the same coach; there is no new agent.
+Section 10 of [`lab3_tools.py`](../assets/lab3_tools.py) adds `FabricIQPreviewTool` to the same coach via [`fabric_tool()`](../assets/common/livewell_common.py). It asks Mei's question, the guide control and programme fit. Recorded arguments establish the age-band-only boundary and profile-before-Fabric order; the separate tool approval gates registration.
 
-- **The tool.** [`fabric_tool`](../assets/common/livewell_common.py#L540-L544) returns a `FabricIQPreviewTool` on the project connection `livewell-fabric-resident360`. Foundry calls the published data agent with your own identity (identity passthrough), so Fabric's permissions still apply to you. It only reads aggregates, so no approval is needed. [`fabric_enabled`](../assets/common/livewell_common.py#L128-L129) gates the whole step on `--fabric` or `FABRIC_BRIDGE=true`.
-- **The coach, next version.** [Lines 285–290](../assets/lab3_tools.py#L285-L290) call `create_agent` with the Lab 3 tools plus the Fabric tool, and the Lab 3 blocks plus `fabric`. After one run each of Labs 1–3 this is version 4. The `fabric` block is the routing rule from the table above, written for the model.
-- **Mei, then the control.** [Lines 292–311](../assets/lab3_tools.py#L292-L311) ask the region question with a longer timeout (`FABRIC_TIMEOUT`, 300 s). The script compares the first region named with `content/fabric/reference-answers.json`, then asks Rahim's food question on the same coach and checks that no Fabric call was made.
-- **Programme fit.** [Lines 313–325](../assets/lab3_tools.py#L313-L325) send one prompt. The model chains four tools on its own: profile, then Fabric, then `find_activities`, then the approval for `register_interest`. If it asks "shall I sign you up?" in text instead of raising the approval, the script says yes in the same conversation.
-- **The privacy check.** `question_sent` ([lines 327–333](../assets/lab3_tools.py#L327-L333)) pulls the `userQuestion` argument out of each Fabric call: the exact text that left your project for Fabric. [Lines 334–356](../assets/lab3_tools.py#L334-L356) check that it names the age band and not Rahim's id, name or planning area, that the profile call came before the Fabric call, and that the approval came before the write.
+![Historical Builder reference, not current-runtime proof](screenshots/lab-03/builder-output-fabric.png)
 
-`lw.ask` keeps every tool call with its arguments, in order (`run.tool_calls`). That is what makes order and argument checks like these possible in your own tests.
+</details>
 
 ## Checkpoint
 
-✅ **Built** a coach that chains profile, Fabric IQ and activities tools to make one personal decision, and routes officer aggregate questions to Fabric IQ while keeping citizen guidance in Foundry IQ.
+✅ **Built** a connection to prepared cohort evidence, or followed the facilitator's run.
 
-✅ **Did** a programme-fit run with an approval, one Fabric IQ trace check for Mei and one no-Fabric citizen check.
+✅ **Did** one aggregate and one guide question, checking their routes.
 
-✅ **Learned** that Fabric IQ adds governed population evidence to a personal answer, as long as the question sent to it stays aggregate.
+✅ **Learned** to inspect outgoing arguments and distinguish cohort evidence from personal advice.
 
-There is nothing to submit. Try the steps first, then open **Expected output** to compare.
+Nothing to submit. Optional programme fit brings #3/#6/#8/#9 together; it is not required when capacity is paused or time is short.
 
 <details>
-<summary><b>Expected output</b> (open after you have tried it)</summary>
+<summary><strong>Expected output</strong></summary>
 
-**What this demonstrates.** Fabric IQ adds population evidence to a personal decision. For `lab3_programme_fit` the coach reads Rahim's profile, asks Fabric one aggregate question about his age band, picks a programme people his age stay in and that he is not already in, finds its intake session near Woodlands, and asks before registering him. The same coach routes Mei's aggregate question to Fabric and keeps Rahim's food question on the guides. Foundry IQ answers "what is good advice"; Fabric IQ answers "what happens to people like me".
-
-**The question that left the project.** In the `lab3_programme_fit` trace, select the Fabric call. `userQuestion` names the age band and nothing else. The output is a table by programme with enrolled, dropped and drop-out %. Counts under 5 show as "fewer than 5", the small-cell rule from the data-agent instructions.
-
-<!-- historical-screenshot: screenshots/lab-03/20-programme-fit-fabric-question.png -->
-
-**The recommendation.** Active Ageing has the lowest drop-out in the table, but Rahim is already in it. The coach recommends **<!--ref:q_programme_fit.recommended_programme-->Diabetes Prevention<!--/ref-->** (<!--ref:q_programme_fit.recommended_dropout_pct-->21.6<!--/ref-->% drop-out against <!--ref:q_programme_fit.dropped_programme_dropout_pct-->37.1<!--/ref-->% for <!--ref:q_programme_fit.dropped_programme-->Healthier SG<!--/ref-->, which he dropped) and offers its intake session. The tool chips show `openapi_call` (profile), `resident360` (Fabric) and `livewell_activities`.
-
-<!-- historical-screenshot: screenshots/lab-03/19-programme-fit-recommendation.png -->
-
-**Mei's question.** `fabric_q_disengaged_regions` returns **<!--ref:q_disengaged_regions.top_region-->North<!--/ref-->** first (±1 rank is fine), by region and with no `resident_id`. `resident360` appears in the chips.
+Mei's reference ranks **<!--ref:q_disengaged_regions.top_region-->North<!--/ref-->** first (**<!--ref:q_disengaged_regions.top_share_pct-->20.0<!--/ref-->%**), then **<!--ref:q_disengaged_regions.second_region-->West<!--/ref-->** (**<!--ref:q_disengaged_regions.second_share_pct-->17.1<!--/ref-->%**). Check computed reference figures, not confidence labels.
 
 <!-- historical-screenshot: screenshots/lab-03/22-fabric-disengaged-regions.png -->
-
-**The control.** `lab1_prediabetes_eat` on the same coach: the profile and the knowledge base only, with **no Fabric call**.
-
+<!-- historical-screenshot: screenshots/lab-03/23-fabric-iq-trace.png -->
 <!-- historical-screenshot: screenshots/lab-03/24-no-fabric-for-citizen-question.png -->
 
-**Builder.** Look for:
-
-- `fabric coach = livewell-<INITIALS>-coach version 4` (one above your Lab 3 version if you re-ran a lab);
-- the region answer with `DataAgent_Resident360_Ontology_Agent` in its tools (first call 60–120 s) and `top region matches the reference`;
-- the food question with `get_citizen_profile` and `knowledge_base_retrieve`, but no Fabric tool;
-- programme fit: `profile at 0, Fabric at 2`, the question sent (`For residents in age band 60-64, how many enrolled in each programme and how many dropped out?`), then `APPROVAL requested: …register_interest({"activity_id":"ACT047",…}) -> APPROVED` and a Diabetes Prevention intake confirmation.
-
-![lab3_tools.py --fabric output: new Fabric coach version, region answer, no-Fabric food answer, and programme fit with the question sent to Fabric, the approval and PASS lines](screenshots/lab-03/builder-output-fabric.png)
+Earlier portal captures remain archived rather than presented as current-runtime evidence. Inspect live or facilitator-prepared evidence with its provenance.
 
 </details>
 
 ## Troubleshooting
 
-| Symptom | Fix |
+<details>
+<summary><strong>Capacity, permissions and query errors</strong></summary>
+
+| Symptom | What to do |
 |---|---|
-| Data agent is not in OneLake Catalog | It may not be published, or you may be signed into a different tenant/account. Use the same workshop account in Foundry and Fabric. |
-| 403 from Fabric | Ask the facilitator to confirm read access on **`Resident360 Ontology Agent`** for your workshop account. |
-| "Remote MCP server error while enumerating tools … did not return a valid MCP JSON-RPC response" | The Fabric capacity is paused (it is paused overnight). Ask the facilitator to resume it (`bash scripts/capacity.sh resume <env>`), wait a minute and run again. |
-| Graph query failing | Facilitator refreshes the graph model `resident_ontology_graph_*` from Fabric: Schedule → Refresh now. |
-| Fabric call is slow | Normal preview latency is **30-90 s**; wait before retrying. |
-| Citizen food question calls Fabric | Re-copy the `fabric` routing block and verify the knowledge base remains attached. |
-| Programme-fit question sent Rahim's area, name or risk to Fabric | Re-copy the `fabric` block; it fixes the question to the age band only. Run the prompt again in a new chat. |
-| Programme-fit question names the wrong age band (not <!--ref:q_programme_fit.age_band-->60-64<!--/ref-->), with no profile call before Fabric | The model guessed his age. Re-copy the current `fabric` block: step a makes the profile call come first and step b copies `age_band` from it. Run the prompt again in a new chat. |
-| Coach recommends a programme Rahim is already in, or <!--ref:q_programme_fit.dropped_programme-->Healthier SG<!--/ref--> again | Check the profile call ran first; the `programmes` field lists his active and dropped programmes. |
-| No intake session found | The activities MCP server needs the latest `activities.json` (the intake session has a `programme` field). The facilitator runs `azd deploy mcp-activities`. |
-| Fabric shows a count under 5 as a number | Ask the facilitator to re-apply the [data-agent instructions](../fabric/data-agent-instructions.md) small-cell rule. |
-| Fabric answer includes individual detail | Stop and re-run after the facilitator checks [data-agent instructions](../fabric/data-agent-instructions.md); Fabric answers must be aggregate-only. |
-| `FABRIC_BRIDGE=false` | Skip this page. Lab 3 profile still works from [citizens.json](../data/citizens.json). |
+| Capacity paused / connection missing | Skip or watch the facilitator; do not resume or create resources. |
+| 403 | Check the account and underlying source permissions with the facilitator. |
+| Query error / wrong result | Inspect Fabric run steps, selected source, query and ontology mappings. |
+| Personal details leave the coach | Stop and report the run; inspect instructions and arguments before retrying. |
+| Stale context | Facilitator checks downloaded ontology context and refreshes if appropriate. |
+| No approval for a write | Stop and return to Lab 3's approval configuration. |
+
+</details>
 
 ## Where next
 
-**Previous:** [Lab 3](lab-03.md) · **Next:** [Lab 4](lab-04.md) · **Home:** [Workshop map](../../README.md)
+[Lab 4 hosted proof](lab-04.md#hosted-proof) at 5:15, then [Bridge spotlight](bridge-spotlight.md).

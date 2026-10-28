@@ -8,7 +8,7 @@ Where an entry changes something SPEC.md states, it says so.
 | Value | Where it goes | Status |
 |---|---|---|
 | Workshop date | `content/config/workshop.yaml` → `workshop.date` | TODO |
-| Confirmed participant count (planning default 20) | `workshop.participant_count` | 6 (sponsor quota sized for it, 9.1) |
+| Confirmed participant count (planning default 20) | `environments.<env>.participants` | mcaps 30 (HPB delivery, Phase 11); sponsor 6 (9.1, reference) |
 | Guest Wi-Fi SSID and code | `workshop.guest_wifi` (rendered on the deck logistics slide) | TODO |
 | Sponsor subscription ID and tenant ID | `environments.sponsor` and `infra/env/sponsor.bicepparam` (Phase 2) | Done 2026-10-04: subscription "HPB-workshop_HPB_Customer" (Azure Sponsorship) in its own tenant `hpbsub2026outlook.onmicrosoft.com`, kept separate from MCAPS (no Change directory) |
 | Sponsor facilitator UPN(s) | `environments.sponsor.facilitator_upns` | Done 2026-10-04: `hpb.facilitator@hpbsub2026outlook.onmicrosoft.com`, a cloud-only work account (Global Administrator, subscription Owner) that runs the sponsor environment. The tenant's creator `hpb.sub2026@outlook.com` keeps its rights and receives the budget alerts (10.1) |
@@ -957,69 +957,268 @@ Where an entry changes something SPEC.md states, it says so.
   Adding the exception showed that the content check's Container Apps pattern missed real hosts
   (`<app>.<env>.<region>.azurecontainerapps.io`); it now catches them.
 
-## Phase 11: participant journey consolidation
+## Phase 11: HPB MCAPS delivery (30 participants, one resource group, current models)
 
-- **11.1 (user-directed)** Keep GitHub Markdown, merge the screenshot walkthroughs into each main lab's Navigator
+Added 2026-10-23 on branch `antoniachen-msdemo-workshop-infrastructure-requirements`. **Static checks and offline unit
+tests only: nothing was deployed, no tenant or Entra change was made, no TAP was issued, no provider was registered, no
+quota was requested, and no evaluation, red-team scan, live compatibility run or load test was run.** The workshop is not
+deployment-ready until the items in 11.10 are verified at a rehearsal. Everything below overrides earlier entries where it
+says so. The linear procedure is [HPB-DELIVERY-RUNBOOK.md](content/admin/HPB-DELIVERY-RUNBOOK.md).
+
+- **11.1** **Models and quota (changes 9.1 and SPEC.md §13 caps).** Read-only discovery against the MCAPS subscription in
+  `environments.mcaps`, region swedencentral, on 2026-10-23 (catalogue, eligibility, quota and the capacity API are
+  separate lines in `scripts/lib/modelcheck.py`; the capacity API turned out to mirror the quota headroom, so it is not an
+  independent proof). Kept `gpt-5-mini` 2025-08-07 as the default (GlobalStandard, reasoning effort Low, 800 units =
+  800K TPM and 800 RPM) and `gpt-4.1-mini` 2025-04-14 as the tools model and facilitator pre-run judge (GlobalStandard,
+  1,000 units, the Bicep maximum); `text-embedding-3-small` stays at 100 units, 1536 dimensions, so **no re-index is
+  needed**. Free quota at the check: gpt-5-mini 1,275 of 3,000 (475 left after this plan), gpt-4.1-mini 5,830 of 15,000
+  (4,830 left), embeddings 750 of 1,000 (650 left). Lifecycle: gpt-5-mini GA, retires 2027-02-09 (the preflight warns
+  inside 180 days); gpt-4.1-mini is **Legacy** in the catalogue ("Deprecated" in the docs), retires 2027-04-14, and is
+  existing-customers-only: this subscription already deploys it, which is the eligibility evidence; embeddings GA, retires
+  2028-02-09. Newer models were considered and **not** chosen: `gpt-5.4-mini` has only 75 units free on GlobalStandard
+  (1,000 on DataZoneStandard) and the Learn tool-support table lists Functions as No for it, which conflicts with this
+  repo's own 2026-10-01 records (4.10, 4.16, 6.4), so it is the documented fallback for the default role only and needs a
+  live test first. `model-router` is **not** deployed, quota-checked or allowed (preflight and cost-guardrails fail on one):
+  earlier runs routed the default pool to a non-approved provider (6.3, 6.5). No quota request is ever made automatically.
+  The inventory goes stale: the runbook requires another preflight at T-3, and a record is saved under `.azure/<env>/`.
+- **11.2** **One region, no overrides (changes 2.5, 10.3 and SPEC.md §8.2).** `location` is allowed to be only
+  `swedencentral`; the `SEARCH_LOCATION` override, `fallback_location` and the `northcentralus` matrix columns are gone,
+  and preflight fails if `SEARCH_LOCATION` is still set. The 2026-09-29 Search capacity block was seen on an earlier
+  subscription and is not carried over: **Search capacity here is unproven until the first provision**. If it fails with
+  `ResourcesForSkuUnavailable`, stop and report; never switch region or SKU silently. Consequence: the `sponsor`
+  environment (which ran Search in francecentral) is reference-only and must not be re-provisioned from this branch.
+- **11.3** **One resource group.** Every customer-managed Azure resource is in `rg-livewell-workshop-mcaps`, named once in
+  `names.resource_group`. `scripts/verify-scope.py plan` compiles the Bicep and fails on any cross-scope module,
+  resource-group-scope role assignment or second region; `deployed` (after an approved deployment) checks the inventory,
+  every connection and endpoint target, workshop-tagged resources elsewhere, role scopes, the budget and the Fabric
+  workspace-to-capacity link. `select-params.py` refuses to adopt an existing group that holds resources and is not tagged
+  as this workshop's; `10-workspace.sh` refuses to adopt a Fabric workspace that is not on the workshop capacity
+  (`FABRIC_ADOPT_WORKSPACE_ID` is the reviewed override); `teardown.sh` is plan-only without `--yes` and deletes by ID.
+  **Literal single-group containment is not achievable.** Outside the group by design: Entra users, TAPs and directory
+  roles (tenant); quota and provider registration (subscription); the Fabric workspace, lakehouse, notebooks, ontology,
+  graph model and data agent (Fabric service, linked to the F2 in the group); the Foundry Agent Service platform storage,
+  a Microsoft-managed Key Vault and hosted-agent sandboxes (service-managed); and possibly a Container Apps
+  infrastructure group (`ME_...`), because the environment uses workload profiles (unverified until the first deployment).
+  Deleting the group is therefore not complete cleanup; the runbook has one teardown covering all of it.
+- **11.4** **Storage policy opt-out kept (4.4).** `mcaps.bicepparam` still sets the `SecurityControl: Ignore` tag. Only four
+  policy assignments were visible on the HPB subscription (none on storage), so whether the Modify policy exists there is
+  **unverified**. `verify-scope.py deployed` and the rehearsal show the resulting storage network setting.
+- **11.5** **Budget (changes 2.15 and SPEC.md §13).** US$500 a month on the workshop group with Actual alerts at
+  US$250 and US$500, from `environments.mcaps.budget_usd` / `budget_alerts_usd` (the bicepparam reads them). This is a
+  planning ceiling, **not an approved spend**; budgets alert, they do not stop spend. The alert address
+  (`budget_contacts`) is the facilitator login and must be confirmed to be a mailbox that receives mail. Indicative cost for the
+  whole window (30 people, no participant evaluations or red teaming): about US$100-160 at list prices (models 25-50,
+  Search about 12, Fabric F2 6-9 while active, the rest Container Apps, logs and storage). The gpt-5-mini and gpt-4.1-mini
+  meters did not resolve in the retail price API, so the model figure is **unverified**; confirm in the pricing calculator.
+- **11.6** **Target guard.** The shell's default `az` subscription was the previous MCAPS subscription, and the target tenant
+  holds two subscriptions. `scripts/lib/target.py` (called from `common.sh`, `select-params.py`) stops on a mismatch of
+  subscription, tenant or stale `AZURE_SUBSCRIPTION_ID` / `AZURE_TENANT_ID` and prints the `az account set` command; no script
+  switches subscription itself (the `az account set` in `provision.sh` was removed). Tokens are requested by
+  `--subscription` (az then picks the right signed-in account); a `--tenant` request from the wrong active account waited for
+  an interactive sign-in and hung, so token requests now have a hard timeout that kills the whole process tree, and their
+  `tid` claim is checked. Roles are read from ARM, not Graph (a Graph lookup goes to the active tenant). The facilitator
+  `kychan@...` holds Owner on the subscription (read from ARM). Recommended: a dedicated `AZURE_CONFIG_DIR` for this
+  workshop.
+- **11.7** **Participant identity: Temporary Access Pass (changes 10.8, 10.11 and SPEC.md §12.2).** 30 accounts
+  `hpb.lab01..30`, TAP instead of passwords, no Authenticator registration (`lab_accounts.sign_in: tap`). The tooling
+  (`scripts/lib/issue_tap.py`, `scripts/tenant/issue-tap.sh`, `lab_users.py`, `sign-in-cards.py`) is **plan-only by default**,
+  writes secrets only to gitignored files and was tested with a fake client only. **Unverified:** that the TAP method is
+  enabled in the target tenant, that `kychan@...` holds Authentication (Policy) Administrator, that its `az` token carries
+  `UserAuthenticationMethod.ReadWrite.All`, and whether device-code or browser `az login` accepts a TAP in this tenant or
+  in a Codespace (10.11 found device code blocked by security defaults in a new tenant): no security default is
+  turned off without separate approval. TAP expiry neither disables the account nor ends issued sessions, so teardown
+  revokes TAPs and deletes the accounts. The break-glass Global Administrator is now opt-in (`--break-glass`). The repo is
+  private: Builder participants need a GitHub invite or the release ZIP; an Entra account does not grant GitHub access.
+- **11.8** **Lab 2 is look-only (changes SPEC.md §5.1 detail and the §5.2 Lab 2 checkpoint; supersedes 1.x `lab2_groundedness_score`, 4.13, 4.15,
+  5.12, 5.16 and 10.10 for participants).** Participants run the
+  guardrail round (seven prompts on v1 and v2, now 2 parallel workers instead of 7) and explore a facilitator pre-run
+  evaluation; they do not run evaluations, upload results or red-team. Evaluation needs the facilitator-only `--run-eval`.
+  The pre-run (`demos/guardrail-matrix.py --cloud --save`) has criteria `guardrail_blocked`, `handled_safely` and `self_harm`,
+  **no groundedness**, so the old checkpoint "groundedness score pasted" is replaced by naming the v1 versus v2
+  `handled_safely` result. It is paid and needs separate approval; until then the page and script fall back to a clear
+  "not published yet" message, never to invented numbers. Whether a participant role can read the evaluation list in the
+  portal is **unverified**; the fallback is a facilitator screen share. `livewell_common.retry` now adds jitter and honours
+  `retry-after-ms`. Implementation choices: the look-only cell reads `client.evals.list(order="desc", limit=100)` (falling
+  back to a plain `list()` if the service rejects the options), counts `results[*].passed` per criterion for each output
+  item, and maps a run named `... + default` to v1 and `... + custom` to v2 (the matrix agents carry only the `base`
+  instructions, so it isolates the guardrail); the captured JSON holds no ids and no report URL. Foundry User can still *create*
+  evaluations by RBAC, so look-only is enforced by the pages, the flags and the script, not by a role. The account-scope
+  Cognitive Services OpenAI User role stays in `attendee_roles` (the judges no longer run as the attendee) until a rehearsal
+  shows whether the prepared evaluation can be read without it; then drop it.
+- **11.9** **Sizing (assumptions, not measurements).** 30 participants at a peak minute of 18K tokens and 6 requests on each chat
+  pool, 2K tokens and 3 requests on embeddings, plus 40K tokens and 20 requests of facilitator demo, times a 1.25 burst
+  factor: 725K TPM and 250 RPM needed against 800K and 800 planned (default), 1,000K and 1,000 (tools), 82K and 119 against
+  100K and 600 (embeddings). The constants live in `models.sizing` and `modelcheck` warns when the plan falls short. A start
+  where all 30 press Run at once can exceed the per-10-second request limit even when the per-minute figure fits, so start
+  in waves of ten. Fabric F2 has 2 capacity units: many simultaneous Fabric-step queries may queue, so run that step in waves or as a
+  facilitator demo; resizing to F4 is a separate approval (not performed). The hosted DevUI stays one replica with 8 seats.
+- **11.10** **Unverified until a rehearsal or approval** (none of these was run): TAP policy and Entra roles; whether a TAP works
+  for device-code or browser `az login`; Fabric tenant settings and existing workspaces in the HPB tenant; Search Basic capacity
+  in swedencentral; Container Apps quota and the `ME_` group; the storage Modify policy; gpt-5-mini and gpt-4.1-mini prices;
+  `gpt-5.4-mini` with function tools; burst RPM adequacy at 30 people; Builder login flows and GitHub or Codespaces access
+  for 30 people; participant read access to the prepared evaluation; and the live compatibility of every lab with the
+  chosen models (static checks do not prove runtime support).
+- **11.11** **Tests.** `python -m unittest discover -s tests` runs offline checks (config consistency, target guard, modelcheck,
+  scope check, Fabric ownership, Lab 2 gating, TAP planning) with hand-made fixtures containing no real identifiers.
+- **11.12** **Fabric and name checks (2026-10-24).** The target operator can read Fabric tenant settings. Fabric item
+  creation, OntologyPreview, EnableAOAI and CopilotCapacitySetupPermissionSwitch are enabled. The cross-geo processing
+  and storage switches are off; current Learn guidance requires these only outside the EU data boundary and the US,
+  so they are not enabled for this Sweden Central capacity. This supersedes the earlier "enable anyway" advice.
+  The original Foundry and Search DNS names were taken globally; the configured `aif-hpb-livewell-<env>` and
+  `srch-hpb-livewell-<env>` names were available. No foreign resource is adopted or purged.
+- **11.13** **User-approved Search-only region exception (2026-10-24; supersedes 11.2 and the one-region part of 11.3).**
+  The target tenant's Search FetchOfferings response listed no SKUs for Sweden Central, corroborating the current Learn
+  region-capacity warning despite Basic quota of 2/12. France Central listed Basic with 0/12 used. The user approved
+  Search in France Central and everything else in Sweden Central, with all customer-managed Azure resources still in
+  the same resource group. `environments.<env>.search_location` feeds Bicep, preflight, cost checks and the scope manifest;
+  only the Search resource type may use that location. Regional offerings are preview discovery and not a capacity
+  reservation; recheck before provisioning and at T-3. The existing embedding model/dimensions stay unchanged; the new
+  Search service needs initial ingestion, not an embedding migration. Cross-region latency and transfer charges are
+  possible; no end-to-end EU-only processing claim is made for GlobalStandard models. Deployment and limited facilitator
+  readiness checks are approved; tenant policies, participant identities/TAPs, evaluations, red teaming and load tests
+  remain excluded.
+- **11.14** **Do not inherit a policy bypass (supersedes 11.4).** Removed the old tenant's `SecurityControl: Ignore`
+  storage tag from MCAPS parameters. Read-only discovery did not find that storage Modify policy in the target
+  subscription. Any policy denial must be reported; no policy exemption or tenant setting is changed automatically.
+- **11.15** **First-deployment findings (2026-10-24).** The empty group created by azd preview was incorrectly rejected
+  by the ownership guard because Windows `az.cmd` mangled the `length(@)` query. The guard now reads ARM JSON and
+  refuses unreadable inventories; no bypass is used. Fabric rejected `fablivewellmcaps` as occupied. That failed
+  attempt left no capacity in the workshop group, so the configured name is now `fabhpblivewell<env>` (availability
+  confirmed with the Fabric CheckNameAvailability API). Preflight checks this name as well as CU quota. No existing
+  capacity is adopted, renamed or deleted.
+- **11.16** **User-approved storage tag exception (supersedes 11.14, 2026-10-24).** The deployed storage account had
+  public network access forced off by the inherited MCAPSGov SFI-NS2.2.1 Modify policy. The user explicitly approved
+  `SecurityControl: Ignore` on workshop Blob storage, declining the proposed OneLake source change. The tag is now
+  environment-scoped in `storage_policy_opt_out_tag`; Blob ingestion remains the selected path. Re-enable the intended
+  public endpoint while keeping anonymous blob access and shared-key access disabled; use Entra RBAC for uploads.
+  No policy assignment is edited. The user also allowed the tag on Foundry if API keys are needed, but they are not:
+  retain Entra authentication and do not apply that conditional exception unnecessarily.
+- **11.17** **Fabric ontology-context transition.** Current Learn guidance (2026-10-13) supersedes the legacy
+  ontology-as-data-source steps: the live service returned `OntologyAddAsDataSourceBlocked`. The user attached and
+  published `resident_ontology` through the documented portal surface. Its matching draft/published ontology
+  definition parts and instructions were verified through the public item-definition API. The deployment script
+  now recognises that format and gives an explicit portal action for fresh agents rather than retrying the removed
+  API or silently substituting a lakehouse. The public SDK 0.1.33a0 was inspected, not installed. No tenant setting,
+  trial capacity or evaluation was enabled. Legacy GQL-specific screenshots and query expectations need review for
+  the new source-native context runtime before participant delivery.
+- **11.18** **User-approved Lab 4 teaching revision (2026-10-25).** Lab 4 is a guided shared-browser comparison,
+  not a participant provisioning exercise: 25 minutes within the existing 1:15 Agent Framework block, plus five
+  minutes of already-deployed hosted proof at 5:15. The remaining afternoon slots stay fixed. Main instructions
+  use predict/run/observe/explain; screenshots, FAQ, optional Fabric and implementation detail are collapsed.
+  Sequential ends with the Coach's merged JSON; this hand-off sample ends with Activity's answer. Timings are
+  observations, not a benchmark or acceptance threshold. DevUI's local hand-off evidence does not expose every
+  Foundry-hosted MCP call; token counts are not tool-call proof. The source captures are unchanged; callouts are
+  rendered offline by `demos/annotate-lab4-screenshots.py`. The Builder's documented Fabric opt-in now requires
+  both `--fabric` and `FABRIC_BRIDGE=true`, preventing inherited environment settings from creating an agent
+  during the default run. No deployed app, token/auth flow, identity, resource or Fabric capacity was changed.
+- **11.19** **Remaining lab revisions (2026-10-26, user-approved).** Labs 0–3, their portal guides, Fabric and
+  bridge follow the same concise core/expandable-detail format as Lab 4. Lab 1 optional intake uses a separate
+  agent and generated schema; Lab 2 compares prepared same-model demo runs, not participant versions. Shared
+  pure result classification preserves pass/fail/not-scored in live reads and schema-2 captures; legacy captures
+  are rejected because their counts cannot distinguish grader errors. Missing evidence leaves the checkpoint
+  incomplete. `ask_human` denies non-interactive requests with an explanation; only explicit rehearsal setting
+  `LIVEWELL_AUTO_APPROVE=1` auto-approves and prints that distinction. Default `ask` uses that callback. Memory
+  checks require stored/search evidence. No paid evaluation, live model call or deployed resource change occurred.
+- **11.20** **Current Fabric teaching boundary (2026-10-26).** Follow current Learn ontology-context guidance:
+  context supplies business semantics; underlying sources execute SQL/KQL/DAX using user permissions. The old
+  GQL diagnostic and screenshots are labelled historical, and unrecognised query records are not treated as proof
+  that retrieval did not happen. Lab timings match the agenda (35/30/30 minutes, Fabric 10-minute guided
+  comparison, bridge eight-minute no-build recap). Programme-fit work remains an optional extension. These are
+  delivery allocations, not a claim that a full 30-person timed rehearsal has passed.
+- **11.21** **Approved Lab 2 pre-run (2026-10-26).** The user explicitly approved four isolated demo agents,
+  seven existing prompts per agent and paid judge/evaluator processing. Read-only checks found no prior matrix
+  and no guardrail/blocklist drift in the MCAPS target. The existing documented SDK agent-target evaluation path
+  was used (no Foundry MCP tools are available in this session); no synthetic dataset, console duplicate, red team,
+  tenant policy or Fabric action was added. All four runs completed. Full items and run ids persist under ignored
+  `demos/runs/lab2-evaluations/`; the names/counts-only schema-2 capture is participant-readable.
+  Default/custom handled_safely is respectively 6/0/1 and 5/1/1 (pass/fail/not-scored) for both models. The custom
+  failure is the benign reminder over-block; the unscored flyer is a judge-side content-filter error, not an unsafe
+  target verdict. The service briefly listed no runs immediately after creation, so the collector now resumes
+  saved ids using GET only and refuses incomplete publication. No new paid run was submitted to recover.
+  The operator read path and offline fallback are verified; participant-account portal access is still pending.
+- **11.22** **Private Lab 4 launch links (2026-10-28).** The user selected a private, time-limited link rather
+  than Entra app registration. Ten hours covers the workshop day when generated shortly before use; maximum
+  lifetime is twelve hours. HMAC-signed audience-bound launch tickets travel in the URL fragment, are removed
+  before exchange, and establish separate-purpose Secure/HttpOnly/SameSite cookies with the original expiry.
+  Backend bearer authentication stays enabled. The adapter handles the pinned DevUI frontend's metadata gate
+  only after session verification, preserves streaming and blocks participant deployment/reload/model-proxy
+  endpoints. It never writes the backend secret into HTML, JavaScript, localStorage or the values sheet.
+  One link defaults to the prepared sequential demo; hand-off remains selectable. Reissuing a link is not
+  revocation; rotating the backend secret and restarting the app revokes all links/sessions. Session lists stay
+  shared, so this is not multi-user production authorisation. No Fabric/tenant changes are needed.
+- **11.23** **DevUI rollout verification (2026-10-28).** The user separately approved the existing MCAPS
+  DevUI-only rollout and one sequential plus one hand-off check. The app is healthy on the new revision;
+  fresh Edge access, default sequential selection, removal of the access fragment, HttpOnly/Secure cookie,
+  anonymous/expired denial and cross-origin write rejection were verified live. The first rollout exposed a
+  same-document fragment-navigation edge case, fixed and rechecked before model calls. The hand-off run emitted
+  response completion with both hand-off calls and was captured. The sequential run was submitted once and
+  returned the UI to Run Again, but the browser's stream-body retrieval failed; history recovery hit the pinned
+  DevUI's `WorkflowMessage` JSON-serialization limitation. Its final output was not independently recovered,
+  and it was not rerun. No claim of a full load rehearsal or retained-history support is made. No resource
+  provisioning, tenant identity/role changes, Fabric action or evaluation was included.
+## Phase 11b: participant journey consolidation
+
+- **11b.1 (user-directed)** Keep GitHub Markdown, merge the screenshot walkthroughs into each main lab's Navigator
   section, and retain Builder separately. Old portal filenames and their checkpoint/troubleshooting anchors remain
   compatibility links. The optional Fabric step has one canonical page.
-- **11.2 (user-directed)** Retain the existing age-band-only programme-fit exercise from 6.7 and align SPEC.md with
+- **11b.2 (user-directed)** Retain the existing age-band-only programme-fit exercise from 6.7 and align SPEC.md with
   it. Ordinary citizen guidance and individual profile lookups never use Fabric; the optional cohort question sends
   only the age band. The core learning objectives remain verbatim.
-- **11.3 (user-directed)** Participant entry links now use `tonirex/hpb-foundry-workshop`, including generated
+- **11b.3 (user-directed)** Participant entry links now use `tonirex/hpb-foundry-workshop`, including generated
   sign-in cards and the Day 1 deck. The older `tonirex/livewell-foundry-workshop` is a separate repository that had
   the same starting revision, not a dead link. This guide consolidation did not rename Azure resources or
-  deterministic ID namespaces; the later environment-binding correction is recorded in 11.15.
-- **11.4** `sync-lab-blocks.py` generates inline copy payloads from canonical sources and fails on missing markers,
+  deterministic ID namespaces; the later environment-binding correction is recorded in 11b.15.
+- **11b.4** `sync-lab-blocks.py` generates inline copy payloads from canonical sources and fails on missing markers,
   unknown sources or drift. Instructions explicitly say append or replace. Schemas include their full wrapper,
   intake includes both documents, and the flyer's hidden HTML survives exactly as in the tested portal message.
   The Lab 3 OpenAPI endpoint exception now applies only to `lab-03.md`; its generator remains separate.
-- **11.5** Navigator's optional intake previously asked for an intake object while the strict knowledge-answer
+- **11b.5** Navigator's optional intake previously asked for an intake object while the strict knowledge-answer
   schema was active. It now uses a separate `livewell-<initials>-intake` agent, matching Builder. The existing
   Builder intake rules moved verbatim into the shared instruction file; the schema comes from `lw.intake_schema()`.
-- **11.6** Lab 4's sequential/hosted team merges evidence JSON; the hand-off team ends with Activity's answer.
+- **11b.6** Lab 4's sequential/hosted team merges evidence JSON; the hand-off team ends with Activity's answer.
   The story, checkpoints and decks now distinguish these outcomes. Browser DevUI and hosted chat are participant
   activities; publishing remains facilitator-only. Accounts with broader permissions must still follow that boundary.
-- **11.7 (user-directed)** Retake only outdated existing screenshots, not the five missing sign-in/MFA,
+- **11b.7 (user-directed)** Retake only outdated existing screenshots, not the five missing sign-in/MFA,
   evaluation-comparison or participant-role illustrations. Those steps are text-only. All 83 PNGs decode and
   their linked paths resolve, but visual review found 50 captures showing obsolete model/schema or trace content,
   plus two unused historical assets. Those captures are omitted from participant rendering and retained only as
   hidden maintenance references; the lab-flow deck uses text-only reference cards instead of embedding them.
-- **11.8 (unverified live)** No PNG was retaken in this pass. A fresh isolated Edge session was signed out, and
+- **11b.8 (unverified live)** No PNG was retaken in this pass. A fresh isolated Edge session was signed out, and
   the existing Foundry window exposed no verified page to the UI tool, which required stopping that attempt.
   No main-checkout files, browser profiles, credentials, tenant settings or permissions were copied or changed.
   `capture-screenshots.py --list-outdated` lists the pending subset and exits nonzero; file integrity must not be
   mistaken for a completed live retake. Retakes require an authorized worktree-local capture session.
-- **11.9** Content validation now covers inline payload fidelity, case-sensitive paths, source-line bounds,
+- **11b.9** Content validation now covers inline payload fidelity, case-sensitive paths, source-line bounds,
   compatibility anchors and PNG decoding, with offline regression tests in `scripts/tests/`. Network reachability
   and authenticated live behaviour remain separate checks. The fixed agenda is unchanged; full reference exercises
   and optional participant extensions are distinguished from facilitated demonstrations.
-- **11.10** Rail switching is not an implicit agent conversion. Navigator's `livewell-<initials>` and Builder's
+- **11b.10** Rail switching is not an implicit agent conversion. Navigator's `livewell-<initials>` and Builder's
   `livewell-<initials>-coach` remain separate. The README and entry checks require missing target-rail setup before
   continuing; a Builder Lab 3 function-tool agent cannot be used directly in the portal without its Python client.
-- **11.11** GitHub's authenticated Markdown renderer preserved the exact text of all 37 generated required
+- **11b.11** GitHub's authenticated Markdown renderer preserved the exact text of all 37 generated required
   copy blocks, including the hidden flyer markup and both intake documents. The committed profile OpenAPI block
   also matched the reachable anonymous server's current `/openapi.json`. This is not a new authenticated Foundry
   lab run or a claim that the historical portal screenshots were retaken.
-- **11.12 (capture readiness, not a live retake)** The capture SDK could not install on the host's ARM64 Python
+- **11b.12 (capture readiness, not a live retake)** The capture SDK could not install on the host's ARM64 Python
   because `cryptography` required unavailable native build tools. An already-installed x64 Python 3.13 now runs an
   isolated `.venv/capture-x64` with binary wheels and `azure-ai-projects==2.6.1`. Read-only management calls populated
   a gitignored sponsor capture context from existing resource metadata; no credentials or main-checkout files were copied.
   SDK reads verified all seven sponsor demo agents' models and all four structured response schemas against the
   canonical helpers. The knowledge/guarded demo schema label is `livewell_lab1_answer`; its schema is identical to
   the participant's `livewell_answer`, so the guide explains that cosmetic difference rather than changing the cloud agent.
-- **11.13 (initial wrong-target checks; superseded by 11.15)** The sponsor and legacy-MCAPS capacities inspected
+- **11b.13 (initial wrong-target checks; superseded by 11b.15)** The sponsor and legacy-MCAPS capacities inspected
   initially were Paused. Those results did **not** describe the user's intended MCAPS subscription. No capacity
   was resumed, no new capture sign-in was saved, and no model was invoked. An unavailable approval prompt was
   not treated as authorization. Future retakes need an authorized capture session and a fresh check of the chosen
   environment, not these historical capacity observations.
   `--outdated-only --dry-run` now proves the exact 50-image selection offline and never broadens an empty selection.
-- **11.14 (approved fallback applied)** The plan explicitly permits complete text-only guidance when an outdated
+- **11b.14 (approved fallback applied)** The plan explicitly permits complete text-only guidance when an outdated
   screenshot cannot be refreshed. That fallback is now applied without leaving historical images in expandable
   participant sections. The image files remain unchanged, hidden markers keep the optional retake inventory usable,
   and validation fails if an archived capture is rendered in a canonical guide. This is not a claim that a live
   retake occurred. The sponsor password prompt reached during that attempt was the wrong target; no password
   was submitted. The later MCAPS canvas correction is recorded below, and guides do not depend on a new sign-in.
-- **11.15 (user-directed MCAPS correction)** The user supplied the authoritative subscription, now recorded in
+- **11b.15 (user-directed MCAPS correction)** The user supplied the authoritative subscription, now recorded in
   `environments.mcaps`. Live ARM verification identifies it as `ME-MngEnvMCAP261533-antoniachen-1`, Enabled.
   The stale config and CLI default described a different MCAPS subscription. The selected local azd environment,
   tenant, generated parameters and endpoint metadata now match the user-selected target. Effective names are
@@ -1031,18 +1230,18 @@ Where an entry changes something SPEC.md states, it says so.
   The browser canvas opens the correct project using the existing MCAPS session; no password was entered and
   no account was created. The existing capacity administrator supplies the configuration's facilitator defaults.
   The CLI's global default and all cloud resources, roles and capacity states were left unchanged.
-- **11.16 (binding safeguards)** CLI credentials and standalone REST helpers explicitly select the environment's
+- **11b.16 (binding safeguards)** CLI credentials and standalone REST helpers explicitly select the environment's
   subscription instead of accidentally using another signed-in account. `az account get-access-token` accepts
   subscription **or** tenant, not both; subscription wins when supplied. `azure-identity>=1.20` is required for
   `AzureCliCredential(subscription=...)`. `--parameters-only` never creates access or resources. A restored
   environment with an existing DevUI but no local token stops normal provisioning rather than rotating the token.
   Account creation remains the user's separate task; no attendee seeding or RBAC operation was run.
-- **11.17 (initial readiness finding; resolved in 11.18)** Read-only `apply-guardrail.py --check` on the corrected
+- **11b.17 (initial readiness finding; resolved in 11b.18)** Read-only `apply-guardrail.py --check` on the corrected
   MCAPS target found drift in `livewell-guardrails`: its mode, blocking filters and custom-blocklist attachment
   differed from `guardrails.yaml`. The four blocklist items and deployment-level policies matched. That initial
   validation did not change the cloud policy or claim a model-behaviour run; the user subsequently authorized
   the targeted repair below.
-- **11.18 (user-directed guardrail repair, 2026-10-28)** Reapplied the canonical `livewell-guardrails` policy on
+- **11b.18 (user-directed guardrail repair, 2026-10-28)** Reapplied the canonical `livewell-guardrails` policy on
   `aif-hpb-livewell-mcaps` with `scripts/apply-guardrail.py`. Only the policy changed: the four existing blocklist
   items and all deployment-level policies were already correct. The subsequent `--check` reports zero drift
   across Blocking mode, all 13 configured filters and the prompt-side blocking attachment to
@@ -1054,7 +1253,7 @@ Where an entry changes something SPEC.md states, it says so.
   on 2026-10-27 at 09:19 SGT; its display name could not be resolved in the workshop tenant. That writer was not
   disabled or modified. Keep the existing day-of/pre-Lab-2 drift check: this repair is not a permanent exemption
   from tenant governance.
-- **11.19 (principal lookup compatibility)** Verification exposed that `az ad` does not accept `--subscription`
+- **11b.19 (principal lookup compatibility)** Verification exposed that `az ad` does not accept `--subscription`
   on this installed CLI. `select-params.py` now uses the existing subscription-scoped Graph helper for `/me`
   and service-principal lookup by app ID, rather than relying on the global CLI account or passing unsupported
   flags. The helper also avoids Windows command-shell interpretation of Graph alternate-key URLs. Both lookup
@@ -1117,3 +1316,17 @@ Where an entry changes something SPEC.md states, it says so.
   connection under the elevated account. On the same coach, v8 changed only the KB binding; saved YAML
   retained the other tools, per-tool approval, canonical instructions, memory and guardrail, and a live
   read-only discovery verified the prepared connection. This still does not certify attendee permissions.
+
+## Phase 13: publishing the combined workshop changes
+
+- **13.1 (2026-10-29)** Publication integrates the previously local MCAPS/DevUI work with main's canonical
+  Navigator pages, fresh core screenshots, generated copy blocks, connection prerequisites and discovery-before-write
+  safeguards. Phase 11b keeps the parallel journey history separate from the original Phase 11 numbering.
+- **13.2** Preserve the separately gated `lab2_evaluate.py`; the hands-on script never evaluates, but retains
+  the prepared matrix's GET-only reader, schema-2 fallback and pass/fail/not-scored counts. The current checkpoint
+  needs `handled_safely` evidence, not an unprepared groundedness run.
+- **13.3** Keep the short concept-first core and expandable setup/FAQ alongside canonical inline payloads.
+  Lab 4 uses private links and already-deployed teams; expired links, shared sessions and unreliable saved-history
+  reopening remain explicit. No secret, launch link or local-only participant-review report is published.
+- **13.4** This publication performs offline integration checks only. It authorizes no new deployment,
+  tenant/RBAC change, capacity action, model call, evaluation or full live lab sanity check.

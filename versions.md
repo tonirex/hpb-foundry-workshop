@@ -2,7 +2,48 @@
 
 Last checked: 2026-09-30 (Phase 4). Re-check before each delivery with `bash scripts/preflight.sh <env>`.
 
+## HPB regional exception (2026-10-24)
+
+The user approved **Search Basic in France Central only**; all other customer-managed resources remain in Sweden
+Central in the same resource group. This supersedes the single-region statements in older phase records.
+Search FetchOfferings (`2026-09-01-preview`, read-only) returned Basic for France Central but no SKUs for Sweden
+Central; subscription Basic usage was 0/12 and 2/12 respectively. `scripts/lib/searchcheck.py` now gates new creation
+on advertised SKU availability, separately from quota. Neither reserves physical capacity.
+
+Sources: [Search regions](https://learn.microsoft.com/azure/search/search-region-support),
+[embedding placement](https://learn.microsoft.com/azure/search/cognitive-search-skill-azure-openai-embedding#best-practices),
+[keyless enrichment billing](https://learn.microsoft.com/azure/search/cognitive-search-attach-cognitive-services#bill-through-a-keyless-connection),
+[resource-group locations](https://learn.microsoft.com/azure/azure-resource-manager/management/overview#what-is-a-resource-group).
+The approved rehearsal deployment indexed all 11 Blob PDFs and returned the expected cited guides across regions.
+
+## Fabric ontology context (2026-10-24)
+
+The live service rejects new ontology attachments through `/staging/datasources` with
+`OntologyAddAsDataSourceBlocked`. [Current Learn guidance](https://learn.microsoft.com/fabric/data-science/data-agent-ontology-sources)
+uses **Sources > Add sources > Add an ontology** and treats the ontology as context for source-native SQL/KQL/DAX,
+not as the query execution endpoint. The inspected public SDK `fabric-data-agent-sdk==0.1.33a0` and public REST
+specification do not expose the new attachment operation, so new deployments have one explicit portal step.
+`40-data-agent.py` then verifies the matching draft/published ontology item-definition parts and instructions.
+The ontology part uses the [official ontology schema](https://developer.microsoft.com/json-schemas/fabric/item/dataAgent/definition/ontology/1.0.0/schema.json).
+Older GQL-based teaching examples describe the legacy path and need a table-read against the new runtime before delivery.
+
 ## Participant / facilitator tooling
+
+Integration for GitHub publication (2026-10-29): retained the same deployed DevUI pins and added the
+environment-aware configuration loader to its build context. The separate default-inactive evaluator from
+main coexists with the prepared matrix's schema-2 reader; no new evaluation or runtime deployment was started.
+
+Teaching revision (2026-10-26): no SDK upgrades or cloud changes. Lab 2 captures use schema 2 to separate
+pass/fail/not-scored; old aggregate counts cannot be reinterpreted reliably. The current
+[Fabric ontology-context documentation](https://learn.microsoft.com/fabric/data-science/data-agent-ontology-sources)
+was rechecked: execution uses source-native SQL/KQL/DAX, not the historical GQL visualiser's expected records.
+That visualiser is retained only as a labelled legacy diagnostic/replay, not current-runtime proof.
+
+Lab 4 teaching clarification (2026-10-25): DevUI remains pinned below; no package upgrade or authentication change.
+It is Microsoft's MIT-licensed [development sample](https://learn.microsoft.com/agent-framework/integrations/by-component/ui/devui/),
+not a production portal. In this workshop its Tools panel exposes local hand-offs, not the server-side Foundry MCP
+operations. [Foundry tracing](https://learn.microsoft.com/azure/foundry/observability/how-to/trace-agent-framework)
+is the complementary cloud view; large input-token counts alone cannot establish tool execution.
 
 | Tool | Pin | Why |
 |---|---|---|
@@ -12,7 +53,7 @@ Last checked: 2026-09-30 (Phase 4). Re-check before each delivery with `bash scr
 | Azure Developer CLI (`azd`) | ≥ 1.31 (1.34 available) | `azd provision`, `azd down --purge` |
 | Fabric CLI (`fab`) | `ms-fabric-cli==1.7.0` | Workspace, lakehouse, notebook, ontology import |
 | Playwright for Python | `playwright>=1.47` (1.63.0 tested), `requirements-demos.txt` | Facilitator demo kit (`demos/`): drives the installed Microsoft Edge (`channel="msedge"`), so no browser download |
-| Agent Framework DevUI | `agent-framework-devui==1.0.0b260918`, `requirements-demos.txt` | Lab 4 (`demos/lab4-devui.py`): workflow graph, execution timeline and traces. Navigators use the hosted copy (`lab4-devui` container app, token, developer mode so the trace panel shows); locally it serves 127.0.0.1. Pre-release, so pinned |
+| Agent Framework DevUI | `agent-framework-devui==1.0.0b260918`, `requirements-demos.txt` | Lab 4 (`demos/lab4-devui.py`): shared workflow graph and traces. Private expiring links establish secure cookie access; backend bearer remains enabled. `DevServer` is the public extension point; authenticated `/meta` avoids the frontend token gate. Local loopback development is unchanged. |
 
 Verified end to end on 2026-09-29 (Phase 2, `mcaps` environment): az 2.87.0, azd 1.34.2, Bicep 0.47.16,
 azd extension `azure.ai.agents` 1.0.0-beta.17, fab 1.7.0, Git Bash (Git for Windows) on Windows ARM64.
@@ -83,15 +124,24 @@ Guardrails and Evaluations pages. The playground accepts only png, jpg, jpeg, we
 
 ## Models
 
-Deployment names equal model names (see `models:` in `content/config/workshop.yaml`).
+Deployment names equal model names (see `models:` in `content/config/workshop.yaml`; versions, capacity per
+environment and the 30-participant sizing assumptions live there, and `scripts/lib/modelcheck.py` checks them).
+Inventory read-only against the HPB MCAPS subscription, swedencentral, **2026-10-23**: re-run `scripts/preflight.sh`
+at T-3 (quota can be consumed by other workloads). Catalogue, eligibility, quota and capacity are four separate facts.
 
-| Role | Model | SKU | Region |
-|---|---|---|---|
-| Default | gpt-5-mini (2025-08-07), reasoning effort Low | GlobalStandard, 400K TPM cap | swedencentral (Labs 0–2, Lab 3 specialists, memory store, KB query planning, Lab 4) |
-| Tools | gpt-4.1-mini (2025-04-14) | GlobalStandard, 200K TPM cap | swedencentral (Lab 3 coach on: OpenAPI, A2A, function and Fabric tools are not supported on gpt-5-mini; also the evaluation judges) |
-| Embeddings | text-embedding-3-small (1) | GlobalStandard, 100K TPM cap | swedencentral |
+| Role | Model | SKU | Units (1K TPM each) / RPM | Lifecycle (retires) | Free quota then |
+|---|---|---|---|---|---|
+| Default | gpt-5-mini (2025-08-07), reasoning effort Low | GlobalStandard | 800 / 800 RPM (Labs 0–2, Lab 3 specialists, memory store, KB query planning, Lab 4) | GA (2027-02-09) | 1,275 of 3,000 |
+| Tools and facilitator pre-run judge | gpt-4.1-mini (2025-04-14) | GlobalStandard | 1,000 / 1,000 RPM (Lab 3 coach on: OpenAPI, A2A, function and Fabric tools are not supported on gpt-5-mini) | **Legacy**, existing customers only (2027-04-14) | 5,830 of 15,000 |
+| Embeddings | text-embedding-3-small (1) | GlobalStandard | 100 / 600 RPM (1,536 dimensions: no re-index) | GA (2028-02-09) | 750 of 1,000 |
+| Router | none | n/a | not deployed, not checked, not allowed | n/a | n/a |
 
-PTU deployments and partner models are never used.
+Fallback for the default role only: `gpt-5.4-mini` (2026-03-17, GA, retires 2027-09-21) on DataZoneStandard (1,000 free;
+GlobalStandard has 75), switched by `models.default` and `models.deployment_type`. Not deployed: the Learn tool-support table
+lists function tools as No for it, so it needs a live compatibility test first. Live compatibility and load tests are
+**pending separate approval**; static checks do not prove runtime support.
+
+PTU deployments, model-router and partner models are never used.
 
 ## Preview surfaces (may change; each has a fallback in `foundry-workshop-plan.md`)
 
@@ -114,7 +164,7 @@ PTU deployments and partner models are never used.
   Azure Identity minimum to 1.20 for explicit CLI subscription selection.
 - Optional intake uses the existing strict intake schema on a separate agent. A2A remains the Navigator specialist
   path; sequential and hand-off output contracts are documented separately.
-- At the Phase 11 consolidation, all 83 files decoded and 50 archived captures were hidden behind complete
+- At the Phase 11b consolidation, all 83 files decoded and 50 archived captures were hidden behind complete
   text-only directions. That historical count and no-retake status are superseded for Labs 0-3 by the native
   canvas walkthrough below. `python demos/capture-screenshots.py --list-outdated` lists the remaining archived
   subset; never treat file integrity alone as proof that an illustration is current.
