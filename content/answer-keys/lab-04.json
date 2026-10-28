@@ -5,7 +5,7 @@
     {
       "prompt_id": "lab4_week_plan_handoff",
       "validation_type": "A_paste_output",
-      "notes": "Facilitator demo. Paste the hosted endpoint JSON. Valid JSON with >= 1 citation; trace shows Nutrition then Activity.",
+      "notes": "Sequential/hosted: merged evidence JSON with >= 1 citation; trace shows Nutrition -> Activity -> Coach. Hand-off: trace shows Coach -> Nutrition -> Activity and both specialists answer; Activity ends the run, without a merged-JSON requirement. Participants may run DevUI and hosted chat; deployment is facilitator-only.",
       "expected_ref": "prompts/test-prompts.json#/prompts/lab4_week_plan_handoff/expected"
     },
     {

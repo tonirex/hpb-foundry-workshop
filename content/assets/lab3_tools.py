@@ -208,7 +208,7 @@ signup = lw.ask(coach, prompt_id="lab3_hazy_indoor_signup", functions=FUNCTIONS,
 lw.show_run(signup, verbose=args.verbose)
 turns = [signup]
 if not signup.approvals:
-    follow = lw.ask(coach, "Yes, please sign me up for the first indoor option you found.", functions=FUNCTIONS,
+    follow = lw.ask(coach, prompt_id="lab3_signup_confirm", functions=FUNCTIONS,
                     approve=lw.ask_human, conversation=conversation, consent=False)
     lw.show_run(follow, verbose=args.verbose)
     turns.append(follow)
@@ -317,7 +317,7 @@ if lw.fabric_enabled(args.fabric):
     lw.show_run(fit, verbose=args.verbose)
     fit_turns = [fit]
     if not fit.approvals:
-        more = lw.ask(fabric_coach, f"Yes, please sign me up for the {fit_ref['recommended_programme']} intake session.",
+        more = lw.ask(fabric_coach, prompt_id="lab3_programme_confirm",
                       functions=FUNCTIONS, approve=lw.ask_human, conversation=conversation, consent=False,
                       timeout=lw.FABRIC_TIMEOUT)
         lw.show_run(more, verbose=args.verbose)

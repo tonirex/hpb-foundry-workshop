@@ -106,3 +106,24 @@ PTU deployments and partner models are never used.
 | Fabric ontology (preview), graph model and data agent over the ontology | Phase 3 | Fabric data agent over the lakehouse tables |
 | Hosted agents (Agent Framework, code deploy) | Lab 4: the facilitator deploys; participants chat with it | Run the same team locally (`lab4_multiagent.py` section 4); prompt agent published to Teams / M365 |
 | Foundry MCP server | Admin | `az` and SDK scripts |
+
+## Participant guide revision
+
+- Canonical Navigator pages now include the screenshot directions and generated copy blocks. The old portal
+  filenames are compatibility pages. No SDK/model versions changed in this revision.
+- Optional intake uses the existing strict intake schema on a separate agent. A2A remains the Navigator specialist
+  path; sequential and hand-off output contracts are documented separately.
+- All 83 screenshot files decode. **50 archived captures are not displayed in participant guides**; complete
+  text-only steps and copy blocks replace those illustrations under the approved fallback.
+  No live retakes are claimed. Use `python demos/capture-screenshots.py --list-outdated` for the optional maintenance
+  subset after authorized sign-in. Do not recapture current images or manufacture the five uncaptured illustrations.
+- Microsoft Learn's current Fabric Lab 28 marks its ontology experience as preview and notes a January 31, 2027
+  retirement. This content revision does not migrate the Fabric deployment; reassess that preview dependency before
+  a future delivery. See [Fabric Lab 28](https://microsoftlearning.github.io/mslearn-fabric/Instructions/Labs/28-build-data-agent-ontology.html).
+- Copy rendering is offline (`sync-lab-blocks.py --check`); environment-specific OpenAPI freshness is checked
+  separately with `sync-openapi-block.py <env> --check` when the selected environment is available.
+- Follow-up capture readiness: an isolated x64 Python 3.13 environment with `azure-ai-projects==2.6.1` resolves the
+  ARM64 `cryptography` build failure. Read-only sponsor checks confirm the intended demo models and schema shapes.
+  Both Fabric capacities were Paused, and the requested browser canvas reached the sponsor password prompt.
+  Live capture still requires the user's sign-in and any necessary capacity authorization. No cloud configuration,
+  capacity state or screenshot changed. Use `--outdated-only --dry-run` to inspect the optional bounded retake job.

@@ -4,6 +4,23 @@ All notable changes to this workshop. One entry per phase PR.
 
 ## [Unreleased]
 
+### Participant journey consolidation
+
+- One canonical lab page per capability: screenshot-led Navigator steps, Builder, checkpoints and navigation
+  together. Old portal URLs remain compatibility links; participant entry links point to `tonirex/hpb-foundry-workshop`.
+- Source-backed inline copy blocks for instructions, complete JSON schemas, prompts, confirmations and attachments.
+  `sync-lab-blocks.py --check` detects drift; the endpoint-bearing OpenAPI block keeps its dedicated generator.
+- Fixed the optional Navigator intake schema mismatch using a separate intake agent. Clarified Lab 4's sequential
+  JSON versus hand-off output and participant versus facilitator roles. Retained the aggregate-only Fabric cohort exercise.
+- Rebuilt both decks and expanded offline content/regression checks, including filename casing and image decoding.
+- **Approved text-only fallback for outdated illustrations.** Existing images all load, and 50 archived captures
+  are no longer rendered in participant guides; complete instructions and copy blocks remain, with text-only deck
+  reference cards. No PNGs were changed or live retakes claimed. Hidden metadata preserves the optional retake
+  inventory; the five uncaptured steps also remain text-only.
+- Added `--outdated-only` and an offline capture `--dry-run`, with regression coverage preventing an empty filtered
+  selection from becoming a blanket capture. Verified live sponsor demo models/schema shapes read-only; prepared an
+  isolated x64 capture runtime. Sign-in approval and the paused Fabric capacity remain explicit live-capture prerequisites.
+
 ### Sponsor environment (2026-10-04)
 
 - **Sponsor values filled in.** `workshop.yaml` → `environments.sponsor` and `infra/env/sponsor.bicepparam` hold the

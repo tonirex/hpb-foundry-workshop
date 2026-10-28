@@ -956,3 +956,64 @@ Where an entry changes something SPEC.md states, it says so.
   (and commit and push) first, and anyone who can read the repo sees the address (anonymous API, synthetic data).
   Adding the exception showed that the content check's Container Apps pattern missed real hosts
   (`<app>.<env>.<region>.azurecontainerapps.io`); it now catches them.
+
+## Phase 11: participant journey consolidation
+
+- **11.1 (user-directed)** Keep GitHub Markdown, merge the screenshot walkthroughs into each main lab's Navigator
+  section, and retain Builder separately. Old portal filenames and their checkpoint/troubleshooting anchors remain
+  compatibility links. The optional Fabric step has one canonical page.
+- **11.2 (user-directed)** Retain the existing age-band-only programme-fit exercise from 6.7 and align SPEC.md with
+  it. Ordinary citizen guidance and individual profile lookups never use Fabric; the optional cohort question sends
+  only the age band. The core learning objectives remain verbatim.
+- **11.3 (user-directed)** Participant entry links now use `tonirex/hpb-foundry-workshop`, including generated
+  sign-in cards and the Day 1 deck. The older `tonirex/livewell-foundry-workshop` is a separate repository that had
+  the same starting revision, not a dead link. Azure resource names and deterministic ID namespaces are unchanged.
+- **11.4** `sync-lab-blocks.py` generates inline copy payloads from canonical sources and fails on missing markers,
+  unknown sources or drift. Instructions explicitly say append or replace. Schemas include their full wrapper,
+  intake includes both documents, and the flyer's hidden HTML survives exactly as in the tested portal message.
+  The Lab 3 OpenAPI endpoint exception now applies only to `lab-03.md`; its generator remains separate.
+- **11.5** Navigator's optional intake previously asked for an intake object while the strict knowledge-answer
+  schema was active. It now uses a separate `livewell-<initials>-intake` agent, matching Builder. The existing
+  Builder intake rules moved verbatim into the shared instruction file; the schema comes from `lw.intake_schema()`.
+- **11.6** Lab 4's sequential/hosted team merges evidence JSON; the hand-off team ends with Activity's answer.
+  The story, checkpoints and decks now distinguish these outcomes. Browser DevUI and hosted chat are participant
+  activities; publishing remains facilitator-only. Accounts with broader permissions must still follow that boundary.
+- **11.7 (user-directed)** Retake only outdated existing screenshots, not the five missing sign-in/MFA,
+  evaluation-comparison or participant-role illustrations. Those steps are text-only. All 83 PNGs decode and
+  their linked paths resolve, but visual review found 50 captures showing obsolete model/schema or trace content,
+  plus two unused historical assets. Those captures are omitted from participant rendering and retained only as
+  hidden maintenance references; the lab-flow deck uses text-only reference cards instead of embedding them.
+- **11.8 (unverified live)** No PNG was retaken in this pass. A fresh isolated Edge session was signed out, and
+  the existing Foundry window exposed no verified page to the UI tool, which required stopping that attempt.
+  No main-checkout files, browser profiles, credentials, tenant settings or permissions were copied or changed.
+  `capture-screenshots.py --list-outdated` lists the pending subset and exits nonzero; file integrity must not be
+  mistaken for a completed live retake. Retakes require an authorized worktree-local capture session.
+- **11.9** Content validation now covers inline payload fidelity, case-sensitive paths, source-line bounds,
+  compatibility anchors and PNG decoding, with offline regression tests in `scripts/tests/`. Network reachability
+  and authenticated live behaviour remain separate checks. The fixed agenda is unchanged; full reference exercises
+  and optional participant extensions are distinguished from facilitated demonstrations.
+- **11.10** Rail switching is not an implicit agent conversion. Navigator's `livewell-<initials>` and Builder's
+  `livewell-<initials>-coach` remain separate. The README and entry checks require missing target-rail setup before
+  continuing; a Builder Lab 3 function-tool agent cannot be used directly in the portal without its Python client.
+- **11.11** GitHub's authenticated Markdown renderer preserved the exact text of all 37 generated required
+  copy blocks, including the hidden flyer markup and both intake documents. The committed profile OpenAPI block
+  also matched the reachable anonymous server's current `/openapi.json`. This is not a new authenticated Foundry
+  lab run or a claim that the historical portal screenshots were retaken.
+- **11.12 (capture readiness, not a live retake)** The capture SDK could not install on the host's ARM64 Python
+  because `cryptography` required unavailable native build tools. An already-installed x64 Python 3.13 now runs an
+  isolated `.venv/capture-x64` with binary wheels and `azure-ai-projects==2.6.1`. Read-only management calls populated
+  a gitignored sponsor capture context from existing resource metadata; no credentials or main-checkout files were copied.
+  SDK reads verified all seven sponsor demo agents' models and all four structured response schemas against the
+  canonical helpers. The knowledge/guarded demo schema label is `livewell_lab1_answer`; its schema is identical to
+  the participant's `livewell_answer`, so the guide explains that cosmetic difference rather than changing the cloud agent.
+- **11.13 (authorization outstanding)** Both existing Fabric capacities were Paused. No capacity was resumed,
+  no new capture sign-in was saved, and no model was invoked. Approval for a dedicated capture-browser sign-in
+  could not be obtained because the user was unavailable. The remaining live retakes still require that sign-in
+  and authorization for temporarily running the chosen Fabric capacity; neither can be assumed from this readiness check.
+  `--outdated-only --dry-run` now proves the exact 50-image selection offline and never broadens an empty selection.
+- **11.14 (approved fallback applied)** The plan explicitly permits complete text-only guidance when an outdated
+  screenshot cannot be refreshed. That fallback is now applied without leaving historical images in expandable
+  participant sections. The image files remain unchanged, hidden markers keep the optional retake inventory usable,
+  and validation fails if an archived capture is rendered in a canonical guide. This is not a claim that a live
+  retake occurred. The user-requested browser canvas is at the correct sponsor password prompt; password/MFA stays
+  with the user, and the guide does not depend on completing that sign-in.

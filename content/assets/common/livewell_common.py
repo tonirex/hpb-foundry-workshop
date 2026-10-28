@@ -239,6 +239,15 @@ def attachment_text(ref: str) -> str:
 def prompt_text(prompt_id: str, with_attachments: bool = True) -> str:
     p = prompt(prompt_id)
     text = p["text"]
+    if p.get("reference_fields"):
+        references = json.loads((ROOT / "content" / "fabric" / "reference-answers.json").read_text(encoding="utf-8"))
+        values = {}
+        for field, key in p["reference_fields"].items():
+            value = references
+            for part in key.split("."):
+                value = value[part]
+            values[field] = value
+        text = text.format_map(values)
     if with_attachments:
         for ref in p.get("attachments_ref", []):
             text += f"\n\n--- {pathlib.PurePosixPath(ref).name} ---\n{attachment_text(ref)}"

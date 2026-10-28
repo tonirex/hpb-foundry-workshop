@@ -11,7 +11,7 @@ workshop:
   short_name: "livewell"
   customer: "Health Promotion Board (Singapore)"
   owner: "Antonia Chen (Sr Solution Engineer, Microsoft Singapore)"
-  repo_url: "https://github.com/tonirex/livewell-foundry-workshop"  # lab instructions, printed on the sign-in cards
+  repo_url: "https://github.com/tonirex/hpb-foundry-workshop"  # lab instructions, printed on the sign-in cards
   date: "TODO"                     # workshop day (YYYY-MM-DD)
   participant_count: 6              # confirmed HPB head-count; sponsor quota sized for it (ASSUMPTIONS.md 9.1)
   planning_cohort_size: 20
@@ -220,8 +220,8 @@ labs:
   - id: lab-04
     title: "Multi-agent & Hosted deploy"
     minutes: 30
-    rails: [builder]
-    facilitator_only: true
+    rails: [navigator, builder]
+    facilitator_deploy_only: true
     patterns: [3, 9, 10]
   - id: bridge-spotlight
     title: "Two IQs, one agent"

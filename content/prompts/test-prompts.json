@@ -1,5 +1,5 @@
 {
-  "_comment": "Single source of truth for every canned and red-flag prompt (SPEC.md §5). Lab pages, lab scripts, answer keys, the eval set, smoke-test.py and validate-narrative.py reference prompts by id. Never copy prompt text elsewhere -- use text_ref or look it up by id.",
+  "_comment": "Single source of truth for every canned and red-flag prompt (SPEC.md §5). Lab pages, lab scripts, answer keys, the eval set, smoke-test.py and validate-narrative.py reference prompts by id. scripts/sync-lab-blocks.py renders checked participant copies; edit prompts here, not in generated blocks.",
   "version": "1.0.0",
   "session_resident_id": "RESIDENT_00061",
   "consent_line": "(Consent: I am a workshop participant using synthetic data and I agree to proceed without further confirmation.)",
@@ -223,6 +223,29 @@
         "must_not": ["registers without approval", "recommends outdoor activity"]
       }
     },
+    "lab3_signup_confirm": {
+      "seat": "citizen",
+      "lab": "lab-03",
+      "used_in": ["lab-03", "lab3_tools", "demos"],
+      "text": "Yes, please sign me up for the first indoor option you found.",
+      "expected": {
+        "approval_required": "register_interest",
+        "must": ["asks for tool approval before registering"]
+      }
+    },
+    "lab3_programme_confirm": {
+      "seat": "citizen",
+      "lab": "fabric-step",
+      "used_in": ["fabric-step", "lab3_tools", "demos"],
+      "text": "Yes, please sign me up for the {recommended_programme} intake session.",
+      "reference_fields": {
+        "recommended_programme": "q_programme_fit.recommended_programme"
+      },
+      "expected": {
+        "approval_required": "register_interest",
+        "must": ["asks for tool approval before registering"]
+      }
+    },
     "lab3_memory_set": {
       "seat": "citizen",
       "lab": "lab-03",
@@ -317,6 +340,16 @@
         "must_not": ["any resident_id"]
       }
     },
+    "lab4_activity_only": {
+      "seat": "citizen",
+      "lab": "lab-04",
+      "used_in": ["lab-04"],
+      "text": "Suggest one indoor morning activity near Woodlands for me this week.",
+      "expected": {
+        "must": ["sequential visits every agent", "hand-off can route directly from Coach to Activity"],
+        "notes": "Compare orchestration routes, not identical output formats."
+      }
+    },
     "lab4_week_plan_handoff": {
       "seat": "citizen",
       "lab": "lab-04",
@@ -324,7 +357,8 @@
       "text": "Plan my week: what to eat for my glucose, and one indoor morning activity near Woodlands.",
       "expected": {
         "tools": ["livewell-nutrition", "livewell-activity"],
-        "must": ["sequential hand-off Nutrition -> Activity", "valid JSON", "at least one citation"]
+        "must": ["Nutrition and Activity both answer", "sequential and hosted: merged evidence JSON with a citation", "hand-off: Coach -> Nutrition -> Activity, ending with Activity's answer"],
+        "notes": "The hand-off team does not return the sequential team's merged JSON contract."
       }
     }
   },

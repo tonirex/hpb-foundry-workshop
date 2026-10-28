@@ -429,7 +429,7 @@ def foundry_features_slide(prs: Presentation, titles: list[str]):
             "Function tool and OpenAPI tool",
             "MCP tool with approval-before-write",
             "Fabric IQ tool (preview)",
-            "Memory (preview) and connected agents / Agent Framework",
+            "Memory (preview); A2A specialists / Agent Framework",
             "Hosted agents: azd ai agent, Foundry Toolkit, rai_config",
             "Optional Bing grounding / Code Interpreter; Toolbox + Skills mentioned (preview)",
         ]),
@@ -484,7 +484,7 @@ MODULES = [
         "capability": "Tools, MCP & Memory — hyper-personalisation",
         "level": "Extend · Navigator + Builder",
         "story": "Rahim asks for indoor hazy-day activities near Woodlands, approves the sign-up, and expects the coach to remember his preferences.",
-        "features": "livewell_profile OpenAPI tool (get_citizen_profile function in Builder); activities MCP; approval-before-write; memory; connected specialists.",
+        "features": "livewell_profile OpenAPI tool (get_citizen_profile function in Builder); activities MCP; approval-before-write; memory; optional A2A specialists.",
         "checkpoint": "A compound question calls the profile tool and activities MCP, tailors to Rahim, and waits for approval before register_interest.",
     },
     {
@@ -503,7 +503,7 @@ MODULES = [
         "id": "lab-04",
         "label": "Lab 4",
         "capability": "Multi-agent & Hosted deploy",
-        "level": "Engineer appendix · facilitator demo",
+        "level": "Browser hands-on · facilitator deploy",
         "story": "LiveWell Coach goes live behind the simulated Healthy 365 channel.",
         "features": "Agent Framework sequential and hand-off orchestration in DevUI; Programme-Insights specialist; azd deploy (code deploy); rai_config; hosted tracing.",
         "checkpoint": "Sequential and hand-off runs are visible in DevUI; the hosted endpoint returns JSON and blocks a blocklisted prompt; hosted and playground traces compared.",
@@ -715,7 +715,7 @@ def cost_slide(prs: Presentation, titles: list[str]):
     add_box(slide, 8.25, 5.0, 4.25, 0.85, "Fabric F2 line\napprox. US$0.36/h; approx. US$259/month if left on; F4 doubles it", fill=PALE_TEAL, line=TEAL, size=13, color=NAVY, bold=True)
 
 
-def resources_slide(prs: Presentation, titles: list[str]):
+def resources_slide(prs: Presentation, cfg: dict, titles: list[str]):
     slide = content_slide(
         prs,
         "Getting started / resources",
@@ -726,7 +726,7 @@ def resources_slide(prs: Presentation, titles: list[str]):
         titles,
     )
     add_box(slide, 0.65, 1.0, 5.85, 0.72, "Workshop repo", fill=NAVY, line=NAVY, size=15, color=WHITE, bold=True)
-    add_text(slide, 0.85, 1.95, 5.35, 0.5, "tonirex/livewell-foundry-workshop\nprivate until the dry run passes", size=14, color=BODY)
+    add_text(slide, 0.85, 1.95, 5.35, 0.65, cfg["workshop"]["repo_url"] + "\nOne lab page: Navigator + Builder", size=13, color=BODY)
     repos = [
         "microsoft/azure-skills (Foundry Skill)",
         "MicrosoftLearning/mslearn-ai-agents",
@@ -829,7 +829,7 @@ def build_deck(root: Path, out_path: Path) -> list[str]:
     fabric_paths_slide(prs, titles)
     guardrail_slide(prs, cfg, titles)
     cost_slide(prs, titles)
-    resources_slide(prs, titles)
+    resources_slide(prs, cfg, titles)
     close_slide(prs, titles)
 
     out_path.parent.mkdir(parents=True, exist_ok=True)

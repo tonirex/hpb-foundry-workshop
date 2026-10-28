@@ -110,7 +110,9 @@ hazy-day-friendly activities it just found for Rahim — without ever naming him
 
 **[ch4.1 · seat: citizen · source: kb · prompt: lab4_week_plan_handoff]** The facilitator deploys the coach
 as a hosted agent behind the (simulated) Healthy 365 channel, governed by the same guardrail policy. Rahim's
-"plan my week" request flows Nutrition → Activity in sequence and returns JSON with a citation.
+"plan my week" request flows Nutrition → Activity → Coach in the sequential team and returns merged JSON
+with a citation. The hand-off comparison instead shows the model choosing the route, ending with Activity's
+answer rather than the sequential team's merged JSON.
 
 **[ch4.2 · seat: officer · source: fabric · prompt: lab4_q_programmes_disengaged]** Mei asks the
 Programme-Insights specialist which programmes have the most disengaged residents enrolled. It answers from
