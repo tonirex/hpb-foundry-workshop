@@ -76,7 +76,7 @@ LABS = [
         "when": "Morning · Micro-lab",
         "level": "L100",
         "rails": "Navigator",
-        "gain": "Model + instructions\nevery answer leaves a trace",
+        "gain": "Configure intended behaviour\ninspect one execution",
         "story_prompts": [("Rahim", "lab0_am_i_diabetic")],
         "story_note": "The coach must answer kindly without diagnosing.",
         "steps": [
@@ -85,7 +85,7 @@ LABS = [
             "**Parameters**: Reasoning effort **Low**; remove **Web search** if the template added it.",
             "Paste the `base` instruction block, then **Save** and note the version.",
             "Send `lab0_hi` and `lab0_am_i_diabetic`: it introduces itself and refuses to diagnose.",
-            "Open the trace: one model call, no tools, the `base` block and the token counts.",
+            "Inspect the model call and instructions; one refusal does not prove comprehensive safety.",
         ],
         "shot": ("lab-00/10-refusal-trace.png", (0.08, 0.03, 0.92, 0.62)),
         "caption": "One chat span under the agent, no tool calls, and the `base` block as the system message.",
@@ -105,7 +105,7 @@ LABS = [
             "**Knowledge → Add → Connect to Foundry IQ** and pick `livewell-guides-kb`.",
             "Append the `knowledge` instruction block after `base`.",
             "**Parameters** (icon next to Model) → **Text format** JSON Schema: paste `lab1-answer.schema.json`; save.",
-            "Send `lab1_prediabetes_eat`: the answer cites at least one guide.",
+            "Send `lab1_prediabetes_eat`: open a retrieved passage and connect it to an answer claim.",
             "Send `lab1_supplement`: nothing in the guides, so it routes to a clinician instead of inventing a source.",
             "Builder: `lab1_knowledge.py` does the same in code and prints a CHECKPOINT.",
         ],
@@ -118,18 +118,18 @@ LABS = [
         "title": "Guardrails, Evaluations & Tracing",
         "kind": "lab",
         "when": "Part B · Govern",
-        "level": "L300",
+        "level": "L200 · optional detail L300",
         "rails": "Navigator + Builder",
-        "gain": "Guardrails, traces, evaluations\nevidence that it is safe",
+        "gain": "Compare controls and trade-offs\ndistinguish errors from verdicts",
         "story_prompts": [("Rahim", "lab2_medication_double")],
         "story_note": "A flyer also hides a prompt injection.",
         "steps": [
             "Run the seven-prompt ladder on the **platform default** guardrail, one new chat per prompt.",
-            "Note who stops each prompt: the model, Prompt Shields, or nobody (skip meals is only annotated).",
+            "Identify refusal, block or annotation from the actual trace; outcomes can vary.",
             "Inspect `livewell-guardrails` (self-harm blocked from Low, Prompt Shields, blocklist) and attach it.",
             "Append the `safety` block and **Save**; note the new version number next to your baseline.",
-            "Re-run the ladder: four outcomes change, including one benign false positive.",
-            "Open a blocked and an allowed trace; read the facilitator's prepared evaluation and compare the versions (look only).",
+            "Re-run unchanged prompts; inspect useful controls and benign over-blocking.",
+            "Read same-model default/custom demo evaluations: pass, fail and not scored stay separate.",
         ],
         "shot": ("lab-02/13-guarded-medication-blocked.png", (0.52, 0.225, 0.98, 0.40)),
         "shots": [
@@ -138,7 +138,7 @@ LABS = [
             ("LIVEWELL-GUARDRAILS · blocked before the model runs",
              "lab-02/13-guarded-medication-blocked.png", (0.52, 0.225, 0.98, 0.40), 1.25),
         ],
-        "caption": "Same question, two guardrails: the medication blocklist in `livewell-guardrails` stops it before the model sees it.",
+        "caption": "Captured example: a model refusal versus an input block. Your trace establishes which layer acted.",
     },
     {
         "id": "lab-03",
@@ -146,18 +146,18 @@ LABS = [
         "title": "Tools, MCP & Memory: hyper-personalisation",
         "kind": "lab",
         "when": "Part C · Extend",
-        "level": "L300",
+        "level": "L200 · optional detail L300",
         "rails": "Navigator + Builder",
         "gain": "Profile, activities MCP, approval, memory\nit acts for Rahim",
         "story_prompts": [("Rahim", "lab3_hazy_indoor_signup")],
-        "story_note": "The sign-up is a real write, so it needs his approval.",
+        "story_note": "A write to temporary synthetic records still needs explicit approval; it is not a real booking.",
         "steps": [
             "Switch the model to `gpt-4.1-mini`, then add the OpenAPI tool `livewell_profile` (Builder: the `get_citizen_profile` function).",
             "Add `livewell-activities-mcp` and require approval for `register_interest`.",
             "Enable **Memory** (preview) and append the `tools` block.",
             "Send `lab3_profile_tailored`: the advice uses Rahim's profile.",
-            "Send `lab3_hazy_indoor_signup`: indoor options near Woodlands, then **Approve** the sign-up.",
-            "State a preference, start a new chat and check the coach remembers it.",
+            "Send `lab3_hazy_indoor_signup`: inspect arguments, then **Approve once** or **Deny**.",
+            "State a preference; in a new chat inspect stored/search evidence, not only plausible wording.",
         ],
         "shot": ("lab-03/13-approve-register-interest.png", (0.505, 0.43, 0.995, 0.875)),
         "caption": "The write waits for you: `register_interest` only runs after Approve.",
@@ -168,42 +168,42 @@ LABS = [
         "title": "Population evidence with Fabric IQ",
         "kind": "optional",
         "when": "Part C · optional",
-        "level": "L300",
+        "level": "L200 · preview",
         "rails": "Navigator + Builder",
         "gain": "Fabric IQ\ngoverned population evidence",
         "story_prompts": [("Rahim", "lab3_programme_fit"), ("Mei Lin", "fabric_q_disengaged_regions")],
         "story_note": "",
         "steps": [
-            "**Tools → Add → Fabric IQ** (preview) and pick `Resident360 Ontology Agent`.",
+            "Only when ready: attach **Configured → livewell-fabric-resident360**. Skip if paused.",
             "Append the `fabric` instruction block.",
-            "As Rahim, send `lab3_programme_fit`: profile → Fabric IQ (age band only) → activities, then approve.",
+            "Inspect the outgoing aggregate question and returned evidence; no personal record goes to Fabric.",
             "As Mei, send `fabric_q_disengaged_regions`: the trace shows the Fabric IQ call.",
             "As Rahim, send `lab1_prediabetes_eat`: answered from the guides, with no Fabric call.",
         ],
         "shot": ("lab-03/19-programme-fit-recommendation.png", (0.505, 0.245, 0.995, 0.845)),
-        "caption": "Programme fit: Rahim's profile, then his age band's retention from Fabric, then a nearby activity.",
+        "caption": "Optional captured programme-fit example. The guided core compares an aggregate question with guide retrieval.",
     },
     {
         "id": "lab-04",
         "short": "Lab 4",
         "title": "Multi-agent & Hosted deploy",
-        "kind": "led",
-        "when": "Part C · facilitator demo",
-        "level": "L300",
-        "rails": "Facilitator-led · Builder code",
-        "gain": "Specialist team + hosted endpoint\nsame policy behind two doors",
+        "kind": "lab",
+        "when": "1:15 comparison · 5:15 hosted proof",
+        "level": "L200 · optional code L300",
+        "rails": "Shared browser · optional Builder",
+        "gain": "Choose a pattern\nexplain the execution evidence",
         "story_prompts": [("Rahim", "lab4_week_plan_handoff")],
-        "story_note": "Two specialists answer; one reply comes back.",
+        "story_note": "Same request, different control flow and final answerer.",
         "steps": [
-            "The facilitator opens DevUI (`python demos/lab4-devui.py`) with two workflows.",
-            "**LiveWell sequential**: Nutrition → Activity → Coach, in a fixed order.",
-            "**LiveWell hand-off**: the Coach triages and the model picks the route.",
-            "The Programme-Insights specialist answers Mei's question with Fabric IQ.",
-            "`azd deploy livewell-workshop-hosted` puts the sequential team behind an endpoint.",
-            "Smoke-test the endpoint, then compare the hosted trace with the playground trace.",
+            "Click the facilitator's private expiring link: LiveWell sequential opens. No token entry or deployment.",
+            "**Predict** who is needed for `lab4_week_plan_handoff`, then run each prepared team.",
+            "**Sequential** ends with Coach-merged JSON; **hand-off** ends with Activity's answer.",
+            "Inspect **Output** and **Tools**: hand-off calls, not graph edges, prove control transferred.",
+            "Try `lab4_activity_only`: hand-off should skip Nutrition. Compare routes, not promised speed.",
+            "At 5:15 inspect the already-hosted sequential team. Fabric is an optional separate extension.",
         ],
-        "shot": ("lab-04/11-devui-handoff.png", (0.0, 0.07, 0.84, 1.0)),
-        "caption": "DevUI hand-off run: each box turns green as that agent finishes; the timeline shows each answer.",
+        "shot": ("lab-04/11-devui-handoff-annotated.png", (0.0, 0.0, 1.0, 1.0)),
+        "caption": "Graph ≠ execution. Read outputs and hand-off calls; two calls plus two results make four Tools entries.",
     },
     {
         "id": "bridge-spotlight",
@@ -219,9 +219,9 @@ LABS = [
         "steps": [
             "Start from the Fabric estate: `resident_360`, semantic model, `resident_ontology`, data agents.",
             "Bridge it to Foundry: Foundry IQ for guides, Fabric IQ for programme questions.",
-            "Decide with the table: documents → Foundry IQ; governed business data → Fabric IQ.",
-            "Walk the three Fabric integration paths (all preview).",
-            "Send Mei's multi-hop question and show what happened inside Fabric.",
+            "Explain our source choices, not exclusive product capabilities.",
+            "Ontology context guides source-native SQL, KQL or DAX; the source executes it.",
+            "Use captured evidence; legacy GQL replay is historical, not current runtime proof.",
             "Close on Unify → Govern → Personalise → Converse → Coach & Act.",
         ],
         "shot": ("bridge/01-mei-multi-hop-answer.png", (0.505, 0.205, 0.995, 0.66)),
@@ -230,7 +230,7 @@ LABS = [
 ]
 
 LAB_PATTERNS_EXTRA = {"fabric-step": [2, 3, 6, 8, 9], "bridge-spotlight": []}
-FABRIC_FOCUS = "Add governed population evidence to a personal answer, without sending personal data"
+FABRIC_FOCUS = "Use governed cohort evidence when guidance alone cannot answer a question, and inspect exactly what information the coach sends to Fabric"
 KIND_FILL = {"lab": (NAVY, WHITE), "optional": (TEAL, WHITE), "led": (MID, NAVY)}
 
 
@@ -252,7 +252,7 @@ def load_content(root: Path) -> tuple[dict, dict, dict]:
     for lab in LABS:
         lab.update(read_lab_page(root, lab["id"]))
         meta = yaml_labs.get(lab["id"], {})
-        lab["minutes"] = meta.get("minutes", 15 if lab["id"] == "fabric-step" else None)
+        lab["minutes"] = meta.get("minutes", 10 if lab["id"] == "fabric-step" else None)
         lab["patterns"] = meta.get("patterns", LAB_PATTERNS_EXTRA.get(lab["id"], []))
         for _, pid in lab["story_prompts"]:
             assert pid in prompts, f"unknown prompt id {pid}"
@@ -392,7 +392,7 @@ def title_slide(prs, cfg: dict, titles: list[str]):
              size=16, color=BODY)
     x = 0.9
     for label, fill, color in [("Lab 0", NAVY, WHITE), ("Lab 1", NAVY, WHITE), ("Lab 2", NAVY, WHITE),
-                               ("Lab 3", NAVY, WHITE), ("Fabric step", TEAL, WHITE), ("Lab 4", MID, NAVY),
+                               ("Lab 3", NAVY, WHITE), ("Fabric step", TEAL, WHITE), ("Lab 4", NAVY, WHITE),
                                ("Bridge", MID, NAVY)]:
         add_box(slide, x, 4.45, 1.62, 0.6, label, fill=fill, line=fill, size=13, color=color, bold=True,
                 shape_type=MSO_SHAPE.CHEVRON)
@@ -455,8 +455,8 @@ def stack_slide(prs, titles: list[str]):
         titles,
     )
     layers = [
-        ("Lab 4 · Team + endpoint", "led",
-         "Nutrition, Activity and Coach as a sequential or hand-off team; hosted endpoint `livewell-workshop-hosted` with `rai_config`."),
+        ("Lab 4 · Choose a route", "lab",
+         "Compare prebuilt sequential and hand-off teams in DevUI; inspect the already-hosted sequential team. No participant provisioning."),
         ("Fabric step · Evidence", "optional",
          "Fabric IQ tool → `Resident360 Ontology Agent`; `fabric` block; aggregate questions only."),
         ("Lab 3 · Act", "lab",
@@ -661,9 +661,9 @@ def ladder_slide(prs, cfg: dict, titles: list[str]):
     blocklist = cfg["names"]["medication_blocklist"]
     slide = content_slide(
         prs,
-        "Lab 2 · The guardrail ladder: which layer catches what",
-        "These are the expected outcomes from the Lab 2 page; confirm them live because content-safety severity is "
-        "probabilistic. Left column is the platform default guardrail, right is the shared custom policy plus the safety "
+        "Lab 2 · Captured ladder examples",
+        "These are historical examples, not guaranteed classifications. Read the actual trace. "
+        "Left column is the platform default guardrail, right is the shared custom policy plus the safety "
         "instruction block. Point out three things: Prompt Shields catches the injected flyer in both; the custom policy "
         "turns two answers into blocks; and the benign dose reminder is the price of a stricter blocklist. "
         "Facilitator demo: demos/guardrail-matrix.py runs the same seven prompts on gpt-5-mini and gpt-4.1-mini, with and "
@@ -705,7 +705,7 @@ def ladder_slide(prs, cfg: dict, titles: list[str]):
               fill=PALE_TEAL, line=TEAL)
     add_panel(slide, 8.86, 4.9, 3.99, 1.45,
               [("Facilitator compare", {"bold": True, "color": NAVY, "size": 14, "space_after": 4}),
-               ("`demos/guardrail-matrix.py`: `gpt-5-mini` vs `gpt-4.1-mini`, default vs custom. Blocks go from 1 of 7 to 4 of 7.", {"size": 11})],
+               ("Same-model default/custom demo runs. Keep pass, fail and not scored separate; inspect a judge error before treating it as an unsafe verdict.", {"size": 11})],
               fill=LIGHT, line=MID)
     add_text(slide, 0.5, 6.5, 12.35, 0.4,
              "Stricter is not free: every extra block is a judgement call. Guardrails, evaluator scores and traces are the evidence.",
@@ -716,22 +716,22 @@ def orchestration_slide(prs, titles: list[str]):
     slide = content_slide(
         prs,
         "Lab 4 · How the specialist team runs",
-        "Three ways to run the same specialists. Sequential: the code fixes the order with SequentialBuilder, so the route "
-        "never varies. Hand-off: HandoffBuilder gives each agent handoff_to_<name> tools; the model chooses the route, and "
-        "the run stops when Activity has answered. Hosted: hosted-agent-example/main.py builds the sequential team, turns it "
-        "into one agent and serves it with ResponsesHostServer; Foundry adds an agent identity and applies the guardrail "
-        "to every call. The text_only middleware passes earlier turns as plain text so no agent replays another's tool calls.",
+        "Start with one agent when sufficient; more agents add latency, cost and failure points. The two prepared workflows "
+        "compare fixed stages with model-selected hand-offs among permitted targets. This hand-off example stops at Activity "
+        "rather than merging JSON, so it is not an equal-output speed comparison. Use DevUI outputs and hand-off calls as "
+        "execution evidence; its Tools panel does not show Foundry-hosted MCP calls. Hosting changes where a workflow runs, "
+        "not its orchestration pattern. The hosted sequential team is already deployed.",
         titles,
     )
     lanes = [
+        ("One agent", "start here when sufficient", "Design choice; no extra lab run",
+         ["Request", "One agent with tools", "Retrieve or act", "One answer"]),
         ("Sequential", "code decides the order", "`SequentialBuilder` in `lab4_multiagent.py`",
          ["Request + profile summary", "Nutrition", "Activity", "Coach merges into evidence JSON"]),
-        ("Hand-off", "the model decides the route", "`HandoffBuilder` in `lab4_multiagent.py`",
-         ["Request", "Coach triages, never answers", "Nutrition (1 autonomous turn)", "Activity, then stop"]),
-        ("Hosted", "same sequential team, behind an endpoint", "`hosted-agent-example/main.py`",
-         ["`ResidentProfile` executor", "Sequential team `.as_agent()`", "`ResponsesHostServer`", "Foundry: agent identity + `rai_config`"]),
+        ("Hand-off", "model selects a permitted route", "`HandoffBuilder` in `lab4_multiagent.py`",
+         ["Request", "Coach triages", "Nutrition if needed", "Activity answers; no merge"]),
     ]
-    arrows = [["", "", ""], ["`handoff_to_nutrition`", "`handoff_to_activity`", ""], ["", "", ""]]
+    arrows = [["", "", ""], ["", "", ""], ["", "`handoff_to_nutrition`", "`handoff_to_activity`"]]
     y = 1.1
     for lane_idx, (name, tagline, code, boxes) in enumerate(lanes):
         add_panel(slide, 0.5, y, 2.55, 1.45,
@@ -752,9 +752,8 @@ def orchestration_slide(prs, titles: list[str]):
             bx += bw + bgap
         y += 1.68
     add_panel(slide, 0.5, 6.2, 12.35, 0.72,
-              [("**Programme-Insights** is a separate prompt agent with the Fabric IQ tool, for Mei's questions. "
-                "Deploy: `azd deploy livewell-workshop-hosted`; the agent identity gets Foundry User and "
-                "`rai_config` attaches `livewell-guardrails`.", {"size": 11})],
+              [("**Hosted proof at 5:15:** the prepared sequential team adds a profile step, identity and guardrail. "
+                "Hosting is not a third routing pattern. **Fabric is optional** and separate from both DevUI teams.", {"size": 11})],
               fill=LIGHT, line=MID, valign=MSO_ANCHOR.MIDDLE)
 
 
@@ -838,7 +837,7 @@ def close_slide(prs, titles: list[str]):
         titles,
     )
     takeaways = [
-        ("Start small", "A Foundry agent is a model plus instructions; instructions alone already make it safer."),
+        ("Start small", "Configure intended behaviour, then inspect evidence; one refusal is not a safety guarantee."),
         ("Ground and cite", "Retrieval only helps when the agent must cite real sources and admit when it does not know."),
         ("Measure safety", "Each guardrail layer catches different things; traces and evaluations are the evidence."),
         ("Act with consent", "Tools personalise and act; writes wait for approval; Fabric only sees aggregate questions."),

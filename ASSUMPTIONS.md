@@ -1101,3 +1101,58 @@ says so. The linear procedure is [HPB-DELIVERY-RUNBOOK.md](content/admin/HPB-DEL
   API or silently substituting a lakehouse. The public SDK 0.1.33a0 was inspected, not installed. No tenant setting,
   trial capacity or evaluation was enabled. Legacy GQL-specific screenshots and query expectations need review for
   the new source-native context runtime before participant delivery.
+- **11.18** **User-approved Lab 4 teaching revision (2026-10-25).** Lab 4 is a guided shared-browser comparison,
+  not a participant provisioning exercise: 25 minutes within the existing 1:15 Agent Framework block, plus five
+  minutes of already-deployed hosted proof at 5:15. The remaining afternoon slots stay fixed. Main instructions
+  use predict/run/observe/explain; screenshots, FAQ, optional Fabric and implementation detail are collapsed.
+  Sequential ends with the Coach's merged JSON; this hand-off sample ends with Activity's answer. Timings are
+  observations, not a benchmark or acceptance threshold. DevUI's local hand-off evidence does not expose every
+  Foundry-hosted MCP call; token counts are not tool-call proof. The source captures are unchanged; callouts are
+  rendered offline by `demos/annotate-lab4-screenshots.py`. The Builder's documented Fabric opt-in now requires
+  both `--fabric` and `FABRIC_BRIDGE=true`, preventing inherited environment settings from creating an agent
+  during the default run. No deployed app, token/auth flow, identity, resource or Fabric capacity was changed.
+- **11.19** **Remaining lab revisions (2026-10-26, user-approved).** Labs 0–3, their portal guides, Fabric and
+  bridge follow the same concise core/expandable-detail format as Lab 4. Lab 1 optional intake uses a separate
+  agent and generated schema; Lab 2 compares prepared same-model demo runs, not participant versions. Shared
+  pure result classification preserves pass/fail/not-scored in live reads and schema-2 captures; legacy captures
+  are rejected because their counts cannot distinguish grader errors. Missing evidence leaves the checkpoint
+  incomplete. `ask_human` denies non-interactive requests with an explanation; only explicit rehearsal setting
+  `LIVEWELL_AUTO_APPROVE=1` auto-approves and prints that distinction. Default `ask` uses that callback. Memory
+  checks require stored/search evidence. No paid evaluation, live model call or deployed resource change occurred.
+- **11.20** **Current Fabric teaching boundary (2026-10-26).** Follow current Learn ontology-context guidance:
+  context supplies business semantics; underlying sources execute SQL/KQL/DAX using user permissions. The old
+  GQL diagnostic and screenshots are labelled historical, and unrecognised query records are not treated as proof
+  that retrieval did not happen. Lab timings match the agenda (35/30/30 minutes, Fabric 10-minute guided
+  comparison, bridge eight-minute no-build recap). Programme-fit work remains an optional extension. These are
+  delivery allocations, not a claim that a full 30-person timed rehearsal has passed.
+- **11.21** **Approved Lab 2 pre-run (2026-10-26).** The user explicitly approved four isolated demo agents,
+  seven existing prompts per agent and paid judge/evaluator processing. Read-only checks found no prior matrix
+  and no guardrail/blocklist drift in the MCAPS target. The existing documented SDK agent-target evaluation path
+  was used (no Foundry MCP tools are available in this session); no synthetic dataset, console duplicate, red team,
+  tenant policy or Fabric action was added. All four runs completed. Full items and run ids persist under ignored
+  `demos/runs/lab2-evaluations/`; the names/counts-only schema-2 capture is participant-readable.
+  Default/custom handled_safely is respectively 6/0/1 and 5/1/1 (pass/fail/not-scored) for both models. The custom
+  failure is the benign reminder over-block; the unscored flyer is a judge-side content-filter error, not an unsafe
+  target verdict. The service briefly listed no runs immediately after creation, so the collector now resumes
+  saved ids using GET only and refuses incomplete publication. No new paid run was submitted to recover.
+  The operator read path and offline fallback are verified; participant-account portal access is still pending.
+- **11.22** **Private Lab 4 launch links (2026-10-28).** The user selected a private, time-limited link rather
+  than Entra app registration. Ten hours covers the workshop day when generated shortly before use; maximum
+  lifetime is twelve hours. HMAC-signed audience-bound launch tickets travel in the URL fragment, are removed
+  before exchange, and establish separate-purpose Secure/HttpOnly/SameSite cookies with the original expiry.
+  Backend bearer authentication stays enabled. The adapter handles the pinned DevUI frontend's metadata gate
+  only after session verification, preserves streaming and blocks participant deployment/reload/model-proxy
+  endpoints. It never writes the backend secret into HTML, JavaScript, localStorage or the values sheet.
+  One link defaults to the prepared sequential demo; hand-off remains selectable. Reissuing a link is not
+  revocation; rotating the backend secret and restarting the app revokes all links/sessions. Session lists stay
+  shared, so this is not multi-user production authorisation. No Fabric/tenant changes are needed.
+- **11.23** **DevUI rollout verification (2026-10-28).** The user separately approved the existing MCAPS
+  DevUI-only rollout and one sequential plus one hand-off check. The app is healthy on the new revision;
+  fresh Edge access, default sequential selection, removal of the access fragment, HttpOnly/Secure cookie,
+  anonymous/expired denial and cross-origin write rejection were verified live. The first rollout exposed a
+  same-document fragment-navigation edge case, fixed and rechecked before model calls. The hand-off run emitted
+  response completion with both hand-off calls and was captured. The sequential run was submitted once and
+  returned the UI to Run Again, but the browser's stream-body retrieval failed; history recovery hit the pinned
+  DevUI's `WorkflowMessage` JSON-serialization limitation. Its final output was not independently recovered,
+  and it was not rerun. No claim of a full load rehearsal or retained-history support is made. No resource
+  provisioning, tenant identity/role changes, Fabric action or evaluation was included.

@@ -95,7 +95,7 @@ About 1.5 h end to end.
 | 4 Knowledge base | `python scripts/build-kb.py` | 5 min | `livewell-guides-kb` answers with a citation (`--check` re-tests it) |
 | 5 MCP server | `azd deploy mcp-activities` | 5 min | `MCP_URL` responds |
 | 6 Tool connections | `python scripts/connect-tools.py`, then `python scripts/sync-openapi-block.py mcaps` (commit and push the two Lab 3 pages if it changed them) | 2 min | Activities MCP, Fabric IQ and the two specialist A2A connections (`livewell-nutrition-a2a`, `livewell-activity-a2a`); `/profile/me` 200, another resident 403; `FABRIC_IQ_CONNECTION_ID` in `.azure/mcaps/.env`; "Lab 3 spec block in sync" |
-| 7 Hosted agent and DevUI (Lab 4) | Repo `.venv` active: `azd deploy livewell-workshop-hosted`, then `python scripts/hosted-postdeploy.py --verify`, then `azd deploy lab4-devui` | ≈ 10 min | Agent active; a week plan comes back as evidence JSON; the blocklisted prompt is blocked ([README](../assets/hosted-agent-example/README.md)). The values sheet shows **Lab 4 DevUI** and its token; signing in with the token lists both workflows |
+| 7 Hosted agent and DevUI (Lab 4) | Repo `.venv` active: `azd deploy livewell-workshop-hosted`, then `python scripts/hosted-postdeploy.py --verify`, then `azd deploy lab4-devui` | ≈ 10 min | Hosted proof as in its README; a fresh browser opens the private DevUI launch link directly on LiveWell sequential with no token entry |
 | 8 Demo agents | `python demos/create-demo-agents.py` | 3 min | Seven `livewell-demo-*` agents listed (five lab agents plus the Nutrition and Activity specialists, each with "a2a on") and the `livewell-eval` dataset registered (for the facilitator's own evaluations; participants do not create evaluations); `--check` re-tests |
 | 9 Attendees | `bash scripts/seed-attendees.sh mcaps --lab-accounts` | 2 min | Every row shows `added` or `exists` |
 | 10 Proof | `python scripts/smoke-test.py`, `make -C content/assets validate`, then `make -C content/assets validate-live ENV=mcaps` (graph check + 9 data-agent calls, ≈ 8 min) | 15 min | Smoke test 11/11 PASS (report in `content/assets/.runs/`); narrative report in `demos/NARRATIVE-VALIDATION-<date>.md` |
@@ -112,23 +112,35 @@ About 1.5 h end to end.
 `demos/lab4-devui.py` in a container app (`ca-lab4-devui-<env>`) on the workshop's Container Apps environment.
 - **Identity.** It has its own managed identity with Foundry User on the project and AcrPull. It has no other Azure
   access.
-- **Sign-in.** One bearer token per environment (`LIVEWELL_DEVUI_TOKEN`). `select-params.py` generates it, Bicep
-  stores it as the container-app secret `devui-auth-token`, and it appears on the values sheet.
-- **Who can read the token.** The values sheet also prints the command that reads it
-  (`az containerapp secret show … --secret-name devui-auth-token`). Running it needs
-  `Microsoft.App/containerApps/listSecrets/action`, which in the built-in roles means **Owner** or **Contributor** on
-  the app, its resource group or the subscription. Foundry User, the role `seed-attendees.sh` grants, cannot run
-  it. In the sponsor delivery the six participants were subscription Owners and could read it themselves. **In the HPB
-  delivery attendees hold resource-scoped roles only and must not be given Owner or Contributor for this:** they use the
-  token on the values sheet (Lab 4 step 1), and only facilitators run the command.
+- **Private launch link.** `python scripts/render-values.py <env>` signs a time-limited link using the existing
+  server-only `LIVEWELL_DEVUI_TOKEN`. The gitignored values sheet contains the link and its expiry, not the backend
+  secret. Generate shortly before use; `workshop.devui_access.link_lifetime_hours` defaults to 10 (maximum 12).
+  Send the complete link privately to participants. Do not publish it in the repo, public slides/QR codes or shorteners.
+- **Browser access.** The link's fragment is removed from the address bar and exchanged on the same origin for a
+  Secure, HttpOnly, SameSite session cookie. Both link and session expire at the original deadline. The adapter
+  forwards the bearer server-side and tells the authenticated DevUI frontend not to ask for a token. Native backend
+  auth stays enabled; deployment/reload/model-proxy actions are blocked for participant sessions.
+- **Prepared demo.** A new link opens `LiveWell sequential`; `LiveWell hand-off` remains selectable for comparison.
+  These are shared container-hosted Agent Framework objects, not participant-created agents or a generic viewer
+  targeting one remote Foundry agent. The separate hosted proof still uses the Foundry portal's Entra sign-in.
 - **Capacity.** It runs one replica. Every run builds a fresh copy of its workflow, so runs never share chat history.
   `DEVUI_SEATS` (default 8) caps how many runs of each workflow can be in flight at once; a ninth gets "All 8 seats
   … are busy".
 - **Validation.** Validated 2026-10-03 on MCAPS: 6 sequential runs at once took 55–73 s each, and 6 hand-off runs at
   once took 38–52 s each.
 - **Opting out.** `azd env set LAB4_DEVUI false` skips it. Then deploy services by name and leave out `lab4-devui`.
-- **Caveats.** DevUI is a sample (beta), not a production app. Everyone with the token shares one session list, and
-  the data is fictional. Rotate the token with `azd env set LIVEWELL_DEVUI_TOKEN ""`, then provision again.
+- **Caveats.** DevUI is a development sample, not a production multi-user app. Anyone with the full link can use it
+  until expiry, and session listings remain shared. Generate a fresh link for a later session; old links retain
+  their own expiry. To revoke all links/sessions early, rotate the backend secret through a separately approved
+  secret/configuration update and restart the app. A new link alone does not revoke previous links. Never disable
+  backend authentication or give participants Owner/Contributor to retrieve secrets.
+- **Expiry or old token screen.** Reopen a newly generated private link. Check that the deployed image contains
+  `common/devui_access.py` if the old token prompt remains. No Fabric capacity, tenant policy or app registration
+  is needed for this link-based access flow.
+- **Known history limitation (2026-10-28).** The pinned DevUI's saved workflow-item endpoint can return
+  `WorkflowMessage is not JSON serializable`. This is separate from authentication: fresh-run streaming works.
+  Use **+** and inspect live events; do not promise retained-run replay. Use captured screenshots or Foundry
+  tracing for retained evidence. No extra model run was submitted to recover the sequential verification capture.
 
 Re-run step 9 after step 3 so that attendees also get **Viewer** on the Fabric workspace, which gives read access to
 the data agent. The postprovision hook (`scripts/apply-guardrail.py`) keeps every model deployment on the platform
@@ -201,9 +213,9 @@ python scripts/gen-citizens.py --from-onelake --check    # citizens.json agrees 
      scope, and those memories later get ordinary portal chats blocked by the content filter (ASSUMPTIONS 5.22).
      The script clears your scope in `livewell-demo-memory` when it finishes (skip with `--keep-memory`). If a run
      was interrupted, run `python scripts/reset-demo-memory.py` (lists and flags residue) and `--reset`.
-- Lab 4 DevUI: open **Lab 4 DevUI** from the values sheet in a private window, connect with the token, and run each
-  workflow once (≈ 1 min, cents) so the first live run is not a cold start. The steps are in Lab 4 Navigator steps
-  1–3. To run it locally: `python demos/lab4-devui.py` opens `http://127.0.0.1:8090` without a token (install
+- Lab 4 DevUI: open the **private launch link** from a freshly rendered values sheet in a private window; it should
+  show the prepared sequential graph without token entry. Only with live-call approval, run each workflow once
+  to check execution. To run it locally: `python demos/lab4-devui.py` opens `http://127.0.0.1:8090` without a token (install
   `requirements-demos.txt` first). `--capture` reruns both workflows headless and refreshes `screenshots/lab-04/10-`
   and `11-`.
 - Red team on this laptop instead (content-harm categories only), in its own venv (PyRIT pins its own dependencies):

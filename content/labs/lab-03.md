@@ -1,6 +1,6 @@
 # Lab 3 · Tools, MCP & Memory — hyper-personalisation
 
-**40 min** · **Part C** · **Audience:** everyone · **Level:** L300 · **Rails:** 🟢 Navigator + 🔵 Builder · **Patterns:** #2 Evidence-Based Decision Support · #3 Workflow Orchestration · #6 Human-in-the-Loop Review · #8 Institutional Memory · #9 Collaboration Between Specialists
+**30 min · 4:35–5:05** · **Level:** L200; optional detail L300 · **Rails:** 🟢 Navigator + 🔵 Builder · **Patterns:** #2 Evidence-Based Decision Support · #3 Workflow Orchestration · #6 Human-in-the-Loop Review · #8 Institutional Memory · #9 Collaboration Between Specialists
 
 **You are here:** [Lab 0](lab-00.md) → [Lab 1](lab-01.md) → [Lab 2](lab-02.md) → **Lab 3** ([Fabric step](fabric-step.md)) → [Lab 4](lab-04.md) → [Bridge spotlight](bridge-spotlight.md) · [README](../../README.md)
 
@@ -12,24 +12,44 @@ Patterns: #2 Evidence-Based Decision Support; #3 Workflow Orchestration; #6 Huma
 
 ## Foundry features covered
 
-- Model and tool compatibility: the coach moves from `gpt-5-mini` to **`gpt-4.1-mini`**, because not every model supports every tool type.
-- OpenAPI tool **`livewell_profile`** for the resident profile extract.
-- Function tool path for Builder: `get_citizen_profile` with a strict schema and local execution.
-- MCP tool from project connection **`livewell-activities-mcp`**, with `register_interest` requiring approval and `find_activities` allowed without approval.
-- Memory ⚠️ preview for stated preferences across conversations.
-- Agents as tools: Coach → Nutrition + Activity specialists. 🟢 Navigator attaches two pre-built specialists with the **A2A** (Agent2Agent) tool (optional step 11); 🔵 Builder calls its own specialists through function tools ([how they differ](#a2a-specialists)). Lab 4 adds Agent Framework orchestration.
-- Optional Fabric IQ bridge ⚠️ preview, covered in [Fabric step](fabric-step.md).
+Profile lookup via OpenAPI (Navigator) or a function (Builder) · activities MCP with approval-before-write · evidence JSON · memory (**preview**) · optional specialist agents (#9) and [Fabric IQ](fabric-step.md) (**preview**).
 
 ## Story chapter
 
-[Chapter 3](../narrative/rahim.md#chapter-3--its-hazy-today--what-can-i-do-indoors-lab-3--tools-mcp--memory) is where the coach becomes personal and active. Rahim asks for advice based on his own profile, asks for indoor activities near Woodlands, approves an activity registration, and later expects the coach to remember preferences in a new conversation. The optional officer beat routes Mei's programme question to Fabric, but Rahim's citizen questions stay with the knowledge base and profile tool.
+[Chapter 3](../narrative/rahim.md#chapter-3--its-hazy-today--what-can-i-do-indoors-lab-3--tools-mcp--memory) moves from answering to acting: read Rahim's profile, find an activity, ask before registering interest, then recall a preference. Fabric's separate optional extension adds cohort evidence; it is not needed for this core.
 
 ## 🟢 Navigator
+
+**Already prepared:** the profile API, activities service and shared MCP connection. You configure your agent to use them; you do not provision services or create project connections.
+
+**Workshop boundary:** `me` always means **synthetic Rahim**, not the person signed in. Registration writes to temporary workshop memory, **not a real booking system**. Use no real personal information.
+
+| Need | Source | What to inspect |
+|---|---|---|
+| Approved guidance | Knowledge base | Retrieved passage and citation |
+| Current profile | Profile API | `get_citizen_profile` output |
+| Available activities / registration | Activities MCP | Read call, then a separately approved write |
+| A stated preference in another chat | Memory (preview) | Stored preference and recorded memory search |
+
+### Read → approve → remember
+
+**Configure:** expand the setup below. Use `gpt-4.1-mini`, attach the profile and prepared activities connection, require approval for `register_interest`, and save the tools instructions plus evidence schema. If Lab 2 used a comparator, ask the facilitator before doing writes without the required policy.
+
+**Read:** send `lab3_profile_tailored`. Predict which profile facts matter, then inspect the lookup and one personalisation flag. An answer that sounds personal is not proof of a lookup.
+
+**Approve:** send `lab3_hazy_indoor_signup` in a new chat. Inspect the proposed activity id and arguments. A chat message saying “yes” is not the tool approval: choose **Approve → Approve once** on the card, or **Deny**. Confirm the result matches that decision. Either deliberate choice demonstrates the boundary.
+
+**Remember:** send `lab3_memory_set`, allow processing time, then send `lab3_memory_recall` in a **new chat**. Inspect memory-search evidence and the stored preference where available. A plausible morning suggestion alone does not prove memory worked. Skip memory if the preview is unavailable.
+
+**Explain:** which call read data, which could write, and which reused a preference? Specialist agents and Fabric are optional extensions—not extra requirements for this checkpoint.
+
+<details>
+<summary><strong>Required setup and copy-ready prompts (expand to configure)</strong></summary>
 
 1. Open your guarded **`livewell-<initials>`** agent, switch **Model** to **`gpt-4.1-mini`** and select **Save**. Do this before you add any tool.
    - **Why.** Not every model supports every tool type. `gpt-5-mini` works with the knowledge base and MCP tools you used so far, but not with the OpenAPI tool in step 2 or the A2A tools in step 11. If you switch a coach that already has those tools back to `gpt-5-mini`, the portal warns that it will remove them.
    - `gpt-4.1-mini` is not a reasoning model, so **Reasoning effort** disappears from **Parameters**. That is expected. The guardrail, knowledge base and JSON schema stay as they are.
-2. Add the profile tool. It lets the coach look up the signed-in resident's profile from a web API. To add it, you copy a description of the API (a block of text called an OpenAPI spec) from this page and paste it into a form.
+2. Add the profile tool. It looks up the workshop's fixed synthetic resident from a web API. Copy the OpenAPI description into the form; its “signed-in resident” label is the intended application contract, not implemented resident authentication in this demo.
    1. In your agent, select **Tools** → **Add** → **Add tools** → **Custom** → **OpenAPI tool** → **Create**. Leave the **Create an OpenAPI tool** form open.
    2. Copy the spec below: point at the block and select the **Copy** button in its top-right corner. If there is no button, select all of the text in the block and press **Ctrl+C** (**Cmd+C** on a Mac).
 
@@ -146,7 +166,7 @@ The tools call real services, but some parts are fixed so that everyone can fini
 | **Specialist agents (A2A, optional step 11)** | Two shared specialists built by the facilitator. One connection each, signed in as the project's managed identity, so every participant's coach calls them the same way. | The same pattern works across teams: each team owns and versions its specialist, and other agents reach it through a connection. Grant **Foundry Agent Consumer** only to the identities that should call it. The specialist can also run outside Foundry, because A2A is an open protocol. |
 | **Fabric IQ tool** (only with the [Fabric step](fabric-step.md)) | Adds a third tool; the profile tool does not change and still reads `citizens.json`. Fabric is called as you, the participant (identity passthrough), and returns aggregates only. | Fabric data agents accept only a person's own sign-in, not a service identity. That suits officers like Mei, who have work accounts with Fabric access. Residents of a public app usually have no account in your tenant, so a citizen coach would get cohort figures another way, for example a pre-computed table behind an API. |
 
-**The identity gap.** Anonymous, a key and managed identity are all one shared identity. The API learns that the LiveWell agent is calling, not which resident is chatting, so it cannot choose the right profile by itself. Two real options:
+**The identity gap.** Anonymous supplies no authenticated identity. A shared key or application managed identity identifies the application, not the resident. None determines whose profile the API should return. Two real options:
 
 - **Your app answers the tool call.** The resident signs in to your app, and your app looks up their profile when the agent asks. This is the Builder pattern: a function tool answered by your code (in the workshop, the script also uses the fixed resident).
 - **The resident signs in to the tool.** An MCP tool with **OAuth identity passthrough** asks each resident to sign in, so the server sees their own identity. Foundry offers this for MCP tools only, not OpenAPI tools, so a per-resident profile is one case where MCP would be the better choice.
@@ -168,7 +188,7 @@ The tools call real services, but some parts are fixed so that everyone can fini
    It's hazy today. What can I do indoors near Woodlands, and can you sign me up?
    ```
 
-   Expect profile + activity lookup in the trace. The coach registers interest only after a clear yes, so if it lists options and asks first, reply `Yes, please sign me up for the first indoor option you found.` in the same chat. Approve the card only when the agent asks to register interest, and pick **Approve → Approve once** (the *Always approve* options skip later approvals).
+   Expect profile + activity lookup in the trace. If the coach asks which option you want, reply `Yes, please sign me up for the first indoor option you found.` in the same chat. Then inspect the approval card and choose **Approve → Approve once** or **Deny**. Do not use *Always approve*: it skips later decisions.
 9. Set memory. Send (`lab3_memory_set`):
 
    ```text
@@ -181,7 +201,7 @@ The tools call real services, but some parts are fixed so that everyone can fini
     Any activities you would suggest for me next week?
     ```
 
-    Expect suggestions that respect mornings and avoid swimming or aqua activities.
+    Allow up to two minutes for processing. Inspect a recorded memory search and the saved preference, then check whether suggestions respect mornings and avoid swimming. A new chat alone does not establish the source.
 11. Optional: hand the plan to specialist agents. The facilitator has already built two specialist agents, **`livewell-demo-nutrition`** and **`livewell-demo-activity`**, and connected them to the project. You only attach them to your coach.
     1. Select **Tools** → **Add** → **Add tools** → **Configured** → **`livewell-nutrition-a2a`** → **Add tool**. Repeat for **`livewell-activity-a2a`**, then select **Save**. There is nothing to paste: the `tools` block already tells the coach to ask the Nutrition specialist for meals and the Activity specialist for exercise.
     2. In a new chat, send (`lab3_specialists`):
@@ -205,17 +225,24 @@ The tools call real services, but some parts are fixed so that everyone can fini
     - **Why it is optional.** Each specialist call adds 10–20 seconds and the reply arrives as plain text, with no streaming. The coach writes both plans well enough from the knowledge base alone.
     - **Workflows** is a different feature: the portal's visual multi-agent designer. It retires on 1 December 2026 and is not used here.
     - **How Builder connects them.** Builder creates its own specialists, `livewell-<INITIALS>-nutrition` and `livewell-<INITIALS>-activity`, and makes each one a function tool on the coach. When the coach calls `livewell-nutrition`, your script runs the Nutrition agent and returns its answer as the tool result. You see each hand-off in your own code. See [How the code works](#how-the-code-works).
-    - **Lab 4** runs the same specialists with Microsoft Agent Framework, where your code (sequential) or the model (hand-off) picks the route.
+    - **Lab 4** uses prebuilt equivalents of these specialist roles, not your saved agents. Agent Framework runs them in a fixed or model-selected route.
 
     </details>
 
-> **Optional Fabric step (15 min, only when `FABRIC_BRIDGE=true`):** follow [Fabric step](fabric-step.md). When `FABRIC_BRIDGE=false`, the profile tool still works from [citizens.json](../data/citizens.json) and you skip Fabric.
+> **Optional Fabric comparison (10 min guided):** follow [Fabric step](fabric-step.md) only when the facilitator confirms readiness. Programme fit needs additional time. When Fabric is skipped, the profile still works from synthetic data.
+
+</details>
 
 ## 🔵 Builder
 
 ```bash
 python content/assets/lab3_tools.py
 ```
+
+Run in an **interactive terminal** for the approval exercise. Non-interactive cells deny approvals rather than silently approving; read-only cells still work. Automated rehearsal mode is not participant consent.
+
+<details>
+<summary><strong>Optional: Python implementation, specialist agents and execution locations</strong></summary>
 
 Same in bash and PowerShell; your initials and endpoint come from `content/assets/.env` ([Builder setup](../../README.md#-builder-setup)).
 
@@ -250,29 +277,31 @@ All of them go into one [`create_agent`](../assets/lab3_tools.py#L129-L137) call
 [`lw.ask`](../assets/common/livewell_common.py#L890-L970) is a small loop that handles what comes back from each response:
 
 - **`function_call`.** Foundry cannot run a function tool, so it hands the call back. `ask` looks the name up in `FUNCTIONS`, runs it, and sends the result as a `function_call_output` ([lines 942–953](../assets/common/livewell_common.py#L942-L953)). This is how a profile lookup stays on your side: the function refuses any resident except the signed-in one.
-- **`mcp_approval_request`.** Foundry stops before `register_interest` and waits. `ask` calls `approve` (`lw.ask_human` asks you `[y/N]` at the keyboard) and sends an `mcp_approval_response` ([lines 954–959](../assets/common/livewell_common.py#L954-L959)). Nothing is written until you say yes.
+- **`mcp_approval_request`.** Foundry waits before the write. `lw.ask_human` asks `[y/N]` in a terminal and otherwise denies with an explanation. An explicit callback can collect a UI decision. `LIVEWELL_AUTO_APPROVE=1` is labelled automated rehearsal only; participants leave it unset.
 - **A message.** This is the final answer; the loop stops.
 
 The specialists are agents used as tools. When the coach calls `livewell-nutrition`, the handler calls `lw.ask(nutrition, ...)`, and the specialist's answer becomes the function result. The Activity specialist gets `find_activities` only, so only the coach can ask you to approve a registration.
 
-For memory, the script waits for the preference to be stored, then asks `lab3_memory_recall` in `lw.new_conversation()`. A new conversation has no chat history, so a correct answer can only come from memory.
+For memory, the script waits for a stored preference, starts a new conversation and checks for a memory-search call as well as the answer. Correct-looking wording alone cannot establish its source.
 
 The Navigator uses an OpenAPI tool for the profile, which Foundry calls on the server. Builder uses a function tool so that you can see the call arrive in your own code. See [OpenAPI tool vs MCP tool](#openapi-vs-mcp) for why the profile and the activities use different tool types.
 
+</details>
+
 ## Checkpoint
 
-✅ **Built** a coach that can personalise, search activities, wait for approval and delegate to specialists (A2A in the portal, function tools in Builder).
+✅ **Built** a coach that can read a profile, find activities and request approval before a write.
 
-✅ **Did** at least one compound tool run and one evidence JSON reply.
+✅ **Did** a compound tool run, inspected its inputs, and deliberately approved or denied the proposed write.
 
 ✅ **Learned** which work belongs in instructions, which belongs in tools, and where human approval belongs.
 
-There is nothing to submit. Try the steps first, then open **Expected output** to compare.
+Nothing to submit. Explain where the profile, guidance and preferences came from. Memory and specialists are optional; report missing evidence rather than guessing.
 
 <details>
 <summary><b>Expected output</b> (open after you have tried it)</summary>
 
-**What this demonstrates.** Hyper-personalisation comes from tools, not from a longer prompt. The coach reads the signed-in resident's profile, searches the guides and community activities, and remembers stated preferences across conversations. Writes are different from reads: registering interest changes something for the resident, so Foundry pauses for a human yes. The evidence schema keeps every answer explainable, with advice, confidence, the guides behind it, a rationale and the profile signals used.
+**What this demonstrates.** Tools supply external context and actions. The profile is synthetic Rahim's fixed record, not authenticated personal data. A write needs its own approval decision. Evidence JSON exposes claims to inspect; it does not guarantee their correctness.
 
 `lab3_profile_tailored`: the trace shows the profile tool (with `resident_id` `me`) and then the knowledge base. The tool output is Rahim's profile. The reply uses it, but never repeats the resident identifier.
 
@@ -292,7 +321,7 @@ There is nothing to submit. Try the steps first, then open **Expected output** t
 
 - `another resident -> {'error': 'forbidden', ...}`: the profile function only serves the signed-in resident;
 - `get_citizen_profile` and `knowledge_base_retrieve` in the `tools:` list of the first answer, with `personalisation_flags` such as `high_screening_risk`, `low_steps` and `region_hazy`;
-- `APPROVAL requested: livewell_activities.register_interest(...) -> APPROVED` before the registration, and the PASS line "approval requested before register_interest";
+- `APPROVAL requested: ...register_interest(...) -> APPROVED` only after your explicit terminal decision, or `DENIED` with no approved write;
 - `memories: ['User prefers mornings.', ... 'User dislikes swimming.' ...]`, then a recall answer with morning, indoor options and no swimming;
 - `livewell-nutrition` and `livewell-activity` in the `tools:` list of the specialists answer: one merged plan built from both specialists.
 
@@ -301,6 +330,9 @@ There is nothing to submit. Try the steps first, then open **Expected output** t
 </details>
 
 ## Troubleshooting
+
+<details>
+<summary><strong>Missing tools, approvals or memory</strong></summary>
 
 | Symptom | Fix |
 |---|---|
@@ -311,12 +343,16 @@ There is nothing to submit. Try the steps first, then open **Expected output** t
 | Approval card is not shown | Check MCP approval settings. `register_interest` must require approval; `find_activities` can be auto-approved. |
 | Agent registers without approval | Stop using that version. Reconfigure MCP approval and re-copy the [`tools`](../prompts/coach-instructions.md#tools-lab-3) block. |
 | Memory ⚠️ preview is not available | Skip the memory checkpoint and continue with profile + MCP. |
-| Memory recall ignores preferences | Use a new conversation after `lab3_memory_set`, and allow time for memory processing (up to a minute). |
+| Memory recall ignores preferences | Allow up to two minutes, inspect the stored preference and memory-search trace, and use a new conversation. |
+| Builder reports approval denied without asking | Non-interactive input is unavailable. Use an interactive terminal for the human decision; do not enable automated rehearsal approval for participants. |
+| Shared activities connection missing | Tell the facilitator. Do not use Custom to create another project connection. |
 | 400 "must contain the word 'json'" | **Text format** is set to **JSON Object**. In **Parameters** (sliders icon next to **Model**), switch it to **JSON Schema** and paste [`lab3-evidence.schema.json`](../config/schemas/lab3-evidence.schema.json). |
 | Tool call returns another resident or prints the resident identifier | Use the Builder function tool path or re-check the OpenAPI backend; the lab allows only the session resident. |
 | 5xx or MCP timeout | Retry once; the Builder script handles transient 5xx and the MCP server may take a moment to wake. |
 | `livewell-nutrition-a2a` or `livewell-activity-a2a` is not in the **Configured** list | The facilitator has not run the specialist setup. Skip step 11; the coach still writes both plans from the knowledge base. |
 | A2A call fails with 401 or 403 | The project's Foundry Agent Consumer role can take up to 10 minutes to apply after setup. Tell the facilitator, then retry, or remove the two A2A tools and save. |
+
+</details>
 
 ## Where next
 

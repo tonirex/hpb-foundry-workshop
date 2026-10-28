@@ -4,6 +4,51 @@ All notable changes to this workshop. One entry per phase PR.
 
 ## [Unreleased]
 
+### Lab 4 private launch access (2026-10-28)
+
+- Added expiring private launch links that open the prepared sequential demo without token entry or participant
+  deployment. Hand-off remains available for comparison; local loopback development is unchanged.
+- Browser sessions use Secure/HttpOnly cookies; backend bearer auth stays on and participant deploy/reload/proxy
+  actions are blocked. The values sheet issues a private link and expiry instead of exposing the permanent token.
+- Updated Lab 4, operator runbooks, values generation, staging and slides. Deployment is separately approved;
+  no new tenant identity, Fabric dependency or additional Azure resource is required.
+- Deployed to the existing MCAPS DevUI with separate approval. Fresh-browser link access and a hand-off run
+  worked; expiry and unauthorized access were rejected. Documented the pinned DevUI's separate saved-history
+  serialization limitation; no extra model run was used to recover the sequential capture.
+
+### Lab 2 prepared evaluation evidence (2026-10-26)
+
+- With explicit approval, completed the seven-prompt matrix on four model/policy demo-agent configurations.
+  Saved `content/data/lab2-prepared-eval.json` and linked it from both Lab 2 guides, with interpretation in the
+  collapsed expected-output section.
+- Kept the benign-reminder over-block and judge-filtered flyer visible as fail and not scored, respectively.
+  Detailed item evidence and recoverable run ids remain ignored.
+- Added GET-only `--read-eval` recovery and complete-matrix checks, avoiding duplicate paid work after an
+  eventually consistent listing. No console duplicate, red-team run, tenant change or Fabric action.
+
+### Remaining labs: concise instructions and trustworthy evidence (2026-10-26)
+
+- Applied concept-first core paths and expandable setup, screenshots, FAQ and extensions to Labs 0–3 and
+  the Fabric/bridge material. Aligned scheduled timing, objectives, portal paths, reference keys and decks.
+- Isolated optional intake in its own agent/schema; clarified citation validation, synthetic identity,
+  registration and memory evidence. Missing shared connections go to the facilitator, not participant provisioning.
+- Separated evaluation pass/fail/not-scored in the reader and facilitator exporter; schema-2 captures reject
+  ambiguous legacy counts. A missing prepared evaluation leaves its checkpoint incomplete.
+- Default approval now requires a human callback or terminal decision; non-interactive runs deny with an
+  explanation. Automated rehearsal approval remains explicit and labelled.
+- Current Fabric teaching uses ontology context and source-native queries; GQL diagnostic/replay material
+  is marked historical. No cloud, authentication, capacity or paid-evaluation changes.
+
+### Lab 4: concise, concept-first orchestration (2026-10-25)
+
+- Reframed the shared-browser lab around when one agent is sufficient and how to compare sequential and hand-off
+  execution. Technical detail, annotated screenshots, FAQ and optional Fabric are expandable.
+- Corrected final-answer expectations and tool visibility; removed speed promises. Added the activity-only prompt
+  to the prompt bank and a discussion-based checkpoint. Participants provision nothing for the core lab.
+- Aligned the specification, agenda, portal track and decks: comparison in the 1:15 Agent Framework block,
+  already-deployed hosted proof at 5:15. Default Builder execution no longer creates Programme-Insights from an
+  inherited Fabric flag; the facilitator must explicitly opt in. No cloud or authentication changes.
+
 ### Approved Search regional exception (2026-10-24)
 
 - The rehearsal stack is deployed: Search Basic in France Central, all other customer-managed resources in Sweden

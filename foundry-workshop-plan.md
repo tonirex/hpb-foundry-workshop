@@ -12,7 +12,7 @@ All figures come from `python scripts/r360.py` (and, from Phase 3b, `scripts/val
 
 - Two seats, one coach. **Rahim** (RESIDENT_00061, 61, Woodlands, North) asks citizen questions →
   Foundry IQ + profile + memory. **Mei Lin** (programme officer) asks population questions → the Fabric IQ tool.
-  Mei is the only reason the coach ever calls Fabric.
+  The optional Rahim programme-fit extension sends only his age band to Fabric for cohort statistics, never his identity.
 - Arc: Fabric **Unify → Govern → Personalise → Converse**; today Foundry adds **Coach & Act**. See
   [content/narrative/rahim.md](content/narrative/rahim.md).
 - Vocabulary is fixed by [content/config/glossary.yaml](content/config/glossary.yaml): MVPA, Healthpoints/eVouchers,
@@ -25,6 +25,8 @@ All figures come from `python scripts/r360.py` (and, from Phase 3b, `scripts/val
 |---|---|---|
 | Fabric capacity resumed | `bash scripts/capacity.sh resume <env>` (see [ADMIN-SETUP](content/admin/ADMIN-SETUP.md)) | Capacity **Active** in Fabric admin portal |
 | Values sheet on screen | `python scripts/render-values.py` → `content/config/values.md` (gitignored) | Project endpoint + agent names visible |
+| Lab 2 evidence ready | Verify prepared same-model default/custom runs or a schema-2 captured summary before participants arrive | Pass/fail/not-scored are distinguishable; absent evidence means an incomplete checkpoint, not permission to start an evaluation |
+| Lab 4 shared access ready | Render the values sheet shortly before use; privately distribute its expiring launch link and expiry | A fresh browser opens LiveWell sequential without token entry; hand-off remains selectable; no participant provisioning |
 | Reference agents alive | Open the `livewell-demo-*` agents (`agent_naming.demo_agents` in `content/config/workshop.yaml`), send `lab0_hi` to `livewell-demo-lab0` | Introduces itself, says it is not a doctor |
 | Fabric tool alive | Send `fabric_q_disengaged_regions` to `livewell-demo-fabric` | Trace shows the Fabric IQ call; North ranks first |
 | Knowledge base alive | Send `lab1_prediabetes_eat` to `livewell-demo-kb` | ≥ 1 citation to `lg-05-eating-for-pre-diabetes` |
@@ -58,25 +60,42 @@ they can build and run agents but cannot deploy models, create connections or pu
 
 | Time | Block | Lab mapping | Demo prompt(s) | Checkpoint to move on |
 |---|---|---|---|---|
-| 1:15 | Agent Framework & multi-agent (40) | SDK agents, versioning, orchestration patterns. [Lab 1](content/labs/lab-01.md) walkthrough (Builder: KB MCP connection in code, JSON contract), with a preview of Lab 3 code. | `lab1_prediabetes_eat`, `lab1_intake` | Builder sees valid `lab1_contract` JSON with `cited_sources` |
+| 1:15 | Agent Framework & multi-agent (40) | [Lab 4](content/labs/lab-04.md): 25 min guided shared-browser comparison, then 15 min optional Builder code map and discussion. Start with when one agent is enough; predict, run, observe and explain both routes. No participant provisioning. | `lab4_week_plan_handoff`, `lab4_activity_only` | Explain code-fixed versus model-selected routing; identify a real hand-off call and each team's final answerer |
 | 1:55 | Tools, MCP & integration (40) | MCP, approval workflows, OpenAPI, gateway; the three Fabric integration paths (Fabric IQ tool, OneLake as Foundry IQ source, ML `/score` endpoint). [Lab 3](content/labs/lab-03.md) walkthrough; activities MCP with approval. | `lab3_hazy_indoor_signup` | Approval card shown before `register_interest` |
 | 2:35 | Break (15) | Helpers fix `.env` and sign-in issues for Builder. | — | — |
 | 2:50 | Evaluation, Guardrails & Security (40) | Built-in + custom evaluators, continuous evaluation, runtime controls, Entra Agent ID, auditability. [Lab 2](content/labs/lab-02.md) walkthrough; compare two agent versions through the facilitator's **pre-run** evaluation (look-only: participants run no evaluation or red-team scan). | `lab2_extreme_fasting`, `lab2_other_resident` | Room sees v1 vs v2 evaluator deltas |
 | 3:30 | **Part A Build** (35) | [Lab 1](content/labs/lab-01.md): attach the shared KB, add the JSON contract. | `lab1_prediabetes_eat`, `lab1_supplement`, `lab1_intake` | Paste a reply that cites ≥ 1 KB document and invents no source ([answer key](content/answer-keys/lab-01.json)) |
-| 4:05 | **Part B Govern** (30) | [Lab 2](content/labs/lab-02.md): the seven-prompt guardrail ladder (default, then `livewell-guardrails`; start in waves of ten), trace, then **explore the facilitator's pre-run evaluation** (look-only). | `lab2_extreme_fasting`, `lab2_medication_double`, `lab2_injected_flyer`, `lab2_other_resident`, `lab2_skip_meals`, `lab2_benign_control`, `lab2_benign_dose_reminder` | Flyer injection blocked or ignored **and** the v1 vs v2 `handled_safely` result read from the prepared evaluation ([answer key](content/answer-keys/lab-02.json)) |
+| 4:05 | **Part B Govern** (30) | [Lab 2](content/labs/lab-02.md): seven-prompt default/custom comparison in staggered waves, inspect the layer, then read the prepared evaluation (look-only). | `lab2_extreme_fasting`, `lab2_medication_double`, `lab2_injected_flyer`, `lab2_other_resident`, `lab2_skip_meals`, `lab2_benign_control`, `lab2_benign_dose_reminder` | Flyer blocked or ignored; explain same-model demo-run `handled_safely` results, coverage and errors—not a claim about participant versions |
 | 4:35 | **Part C Extend** (55) | See the Part C breakdown below. | | |
 
 ### Part C breakdown (4:35–5:30)
 
 | Time | Beat | Who | Prompt(s) | Checkpoint |
 |---|---|---|---|---|
-| 4:35 | [Lab 3](content/labs/lab-03.md) core: profile tool, activities MCP with approval, memory, specialists | Everyone | `lab3_profile_tailored`, `lab3_hazy_indoor_signup`, `lab3_memory_set`, `lab3_memory_recall`, `lab3_specialists` | Compound question fires ≥ 2 tools/agents in the trace; reply fits Rahim's glucose; registration waits for approval ([answer key](content/answer-keys/lab-03.json)) |
+| 4:35 | [Lab 3](content/labs/lab-03.md) core: profile read, activity approval, memory evidence; specialists optional | Everyone | `lab3_profile_tailored`, `lab3_hazy_indoor_signup`, `lab3_memory_set`, `lab3_memory_recall` | Identify lookup and proposed write; explicitly approve or deny; memory claims have stored/search evidence |
 | 5:05 | [Fabric step](content/labs/fabric-step.md) (only if `fabric_bridge: true` and the room is on time) | Everyone, or facilitator on screen | `fabric_q_disengaged_regions`, then `lab1_prediabetes_eat` | Trace shows the Fabric IQ call for Mei's question and the KB for Rahim's; region order matches `scripts/r360.py`; no `resident_id` |
-| 5:15 | [Lab 4](content/labs/lab-04.md) demo: hosted agent with guardrails, called from curl | Facilitator | `lab4_week_plan_handoff`, `lab4_q_programmes_disengaged` | Endpoint returns valid JSON with a citation ([answer key](content/answer-keys/lab-04.json)) |
+| 5:15 | [Lab 4 hosted proof](content/labs/lab-04-portal.md): 5 min to inspect the already-deployed sequential team, then 2 min transition; do not redeploy during the lab | Facilitator, participants may inspect | `lab1_prediabetes_eat`; facilitator endpoint/guardrail evidence | Recognise the same sequential team plus the profile step; endpoint returns cited JSON and the blocklisted prompt is blocked ([answer key](content/answer-keys/lab-04.json)) |
 | 5:22 | [Bridge spotlight](content/labs/bridge-spotlight.md) + close on the ten patterns and the extended arc | Facilitator | `bridge_q_dropped_attended_heldin` (only if time) | — |
 
-Timing rule: if the room is more than 10 minutes behind at 5:05, run the Fabric step on screen and play the
-Lab 4 recording. The bridge spotlight is slides-only when the Fabric step ran live, and a full demo when it did not.
+Timing rule: if behind at 5:05, show captured Fabric evidence and Lab 4 hosted proof. The orchestration comparison
+already ran at 1:15. The bridge is an eight-minute no-build recap even when Fabric was skipped; no mandatory live
+query or capacity resume. Label legacy GQL replay as historical, not current source-native execution.
+
+Core reading follows why → prepared resources → action → inspect → explain. Expand screenshot/setup blocks
+when needed; leave optional intake, A2A, programme fit and runtime internals for spare time. Builder write approval
+uses an interactive terminal; non-interactive denial is expected, never hidden approval.
+
+### Lab 4 facilitation
+
+- Demonstrate the first run, then let small groups try the prepared prompts. Do not start 30 runs together.
+- Use groups of at most eight per workflow. Share the private link only with the workshop; do not put it in the
+  repository or public slides. Regenerate it when expired; opening the plain app address is not first-time access.
+- Keep the visible guide on the core path; screenshots, FAQ and implementation details expand only when needed.
+- A graph is not execution evidence. Ask who answered, who handed off, and which call proves it. In DevUI,
+  two hand-off calls plus their results make four Tools entries; hosted MCP operations need server-side tracing.
+- Do not sell hand-off as inherently faster: this example also omits the final Coach merge. Compare routing and outputs.
+- Programme-Insights is a separate, optional facilitator extension, not a fourth DevUI participant. Skip it when
+  Fabric is paused or time is short. Core Lab 4 and the hosted sequential proof need no Fabric capacity.
 
 ## Demo prompts by lab
 
@@ -87,7 +106,7 @@ Lab 4 recording. The bridge spotlight is slides-only when the Fabric step ran li
 | 2 | `lab2_extreme_fasting`, `lab2_medication_double`, `lab2_injected_flyer`, `lab2_other_resident`, `lab2_skip_meals`, `lab2_benign_control`, `lab2_benign_dose_reminder` |
 | 3 | `lab3_profile_tailored`, `lab3_hazy_indoor_signup`, `lab3_memory_set`, `lab3_memory_recall`, `lab3_specialists` |
 | Fabric step | `fabric_q_disengaged_regions` |
-| 4 | `lab4_week_plan_handoff`, `lab4_q_programmes_disengaged` |
+| 4 | `lab4_week_plan_handoff`, `lab4_activity_only`; hosted proof: `lab1_prediabetes_eat`; optional facilitator Fabric: `lab4_q_programmes_disengaged` |
 | Bridge | `bridge_q_dropped_attended_heldin` |
 
 Scripted runs prepend the `consent_line` from the prompt bank so the Lab 0 consent rule does not stall them.
@@ -109,7 +128,8 @@ Scripted runs prepend the `consent_line` from the prompt bank so the Lab 0 conse
 
 - **Foundry User** (participants): create and run agents, use shared deployments, the shared KB and shared connections.
   Cannot deploy models, create connections, or publish hosted agents.
-- **Foundry Project Manager** (facilitator): everything above, plus connections and hosted deploy. Lab 4 is facilitator-only for this reason.
+- **Foundry Project Manager** (facilitator): everything above, plus connections and hosted deploy. Only Lab 4's
+  deployment preparation and optional Fabric specialist creation need this role; the shared-browser comparison does not.
 - The Fabric IQ tool uses identity passthrough: participants need **Viewer** (or read on the data agent) in the
   `HPB Resident 360` workspace, or the call fails with 403.
 - Never delete agents with the `livewell-demo-` or `livewell-workshop-` prefix.

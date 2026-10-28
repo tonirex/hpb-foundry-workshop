@@ -3,15 +3,26 @@
   "lab": "lab-04",
   "checkpoints": [
     {
+      "checkpoint_id": "lab4_pattern_choice",
+      "validation_type": "B_trace_field",
+      "notes": "Manual discussion, not an evaluation run. One agent is enough when one instruction/tool set handles the task. Sequential fixes stages in code; handoff selects among developer-permitted routes. A graph alone proves neither execution nor a tool call; ask participants to identify the recorded handoff call and final answerer."
+    },
+    {
       "prompt_id": "lab4_week_plan_handoff",
       "validation_type": "A_paste_output",
-      "notes": "Facilitator demo. Paste the hosted endpoint JSON. Valid JSON with >= 1 citation; trace shows Nutrition then Activity.",
+      "notes": "Shared-browser comparison; nothing to submit. Sequential: Nutrition -> Activity -> Coach, ending in cited evidence JSON. Handoff: Coach -> Nutrition -> Activity, ending with Activity's answer; Nutrition's output is earlier. Hosted sequential proof adds resident_profile and still requires cited JSON. Do not require merged JSON from the handoff team.",
       "expected_ref": "prompts/test-prompts.json#/prompts/lab4_week_plan_handoff/expected"
+    },
+    {
+      "prompt_id": "lab4_activity_only",
+      "validation_type": "B_trace_field",
+      "notes": "Sequential still visits Nutrition, Activity and Coach. Intended handoff route is Coach -> Activity with only handoff_to_activity. Discuss deviations. No speed threshold: the handoff example also omits the final merge, so output work differs.",
+      "expected_ref": "prompts/test-prompts.json#/prompts/lab4_activity_only/expected"
     },
     {
       "prompt_id": "lab4_q_programmes_disengaged",
       "validation_type": "B_trace_field",
-      "notes": "Facilitator demo. Paste the Programme-Insights answer. Grouped by programme; top programme matches reference-answers.json#q_programmes_disengaged_enrolled (+-1 rank); no resident_id.",
+      "notes": "Optional facilitator-only extension, not a core checkpoint. Skip when Fabric is paused. Programme-Insights is separate from the DevUI teams. Answer grouped by programme; top programme matches reference-answers.json#q_programmes_disengaged_enrolled (+-1 rank); no resident_id.",
       "expected_ref": "prompts/test-prompts.json#/prompts/lab4_q_programmes_disengaged/expected"
     }
   ]

@@ -5,7 +5,7 @@
     {
       "prompt_id": "lab1_prediabetes_eat",
       "validation_type": "A_paste_output",
-      "notes": "Paste the JSON. Validate schema (answer, intent, risk_level, route, cited_sources, personalisation_flags); cited_sources has >= 1 id that exists in content/knowledge/livewell-guides (lg-05 expected); no invented source; no medication named. Semantic signals, not exact strings.",
+      "notes": "Validate the answer schema and allowed citation ids, then ask the participant to connect one claim to a retrieved passage. An allowed id alone does not establish grounding. No medication advice; semantic signals, not exact strings.",
       "expected_ref": "prompts/test-prompts.json#/prompts/lab1_prediabetes_eat/expected"
     },
     {
@@ -17,7 +17,7 @@
     {
       "prompt_id": "lab1_intake",
       "validation_type": "A_paste_output",
-      "notes": "Optional (pattern #1). Paste the intake JSON. fasting_glucose_mmol 6.4, risk_band High, avg_daily_steps ~3100 (+-100), preferences include mornings and a swimming dislike, hazy_days_skipped >= 2. No diagnosis field.",
+      "notes": "Optional (pattern #1), on livewell-<initials>-intake with lab1-intake.schema.json; leave the main coach unchanged. Compare both input documents against screening/activity/preferences. Missing fields stay null, no diagnosis. Return to the main coach for Lab 2.",
       "expected_ref": "prompts/test-prompts.json#/prompts/lab1_intake/expected"
     }
   ]

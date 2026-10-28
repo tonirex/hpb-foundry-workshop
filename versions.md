@@ -29,6 +29,18 @@ Older GQL-based teaching examples describe the legacy path and need a table-read
 
 ## Participant / facilitator tooling
 
+Teaching revision (2026-10-26): no SDK upgrades or cloud changes. Lab 2 captures use schema 2 to separate
+pass/fail/not-scored; old aggregate counts cannot be reinterpreted reliably. The current
+[Fabric ontology-context documentation](https://learn.microsoft.com/fabric/data-science/data-agent-ontology-sources)
+was rechecked: execution uses source-native SQL/KQL/DAX, not the historical GQL visualiser's expected records.
+That visualiser is retained only as a labelled legacy diagnostic/replay, not current-runtime proof.
+
+Lab 4 teaching clarification (2026-10-25): DevUI remains pinned below; no package upgrade or authentication change.
+It is Microsoft's MIT-licensed [development sample](https://learn.microsoft.com/agent-framework/integrations/by-component/ui/devui/),
+not a production portal. In this workshop its Tools panel exposes local hand-offs, not the server-side Foundry MCP
+operations. [Foundry tracing](https://learn.microsoft.com/azure/foundry/observability/how-to/trace-agent-framework)
+is the complementary cloud view; large input-token counts alone cannot establish tool execution.
+
 | Tool | Pin | Why |
 |---|---|---|
 | Python | 3.13 (devcontainer); 3.12+ works locally | Matches Foundry SDK support matrix |
@@ -37,7 +49,7 @@ Older GQL-based teaching examples describe the legacy path and need a table-read
 | Azure Developer CLI (`azd`) | ≥ 1.31 (1.34 available) | `azd provision`, `azd down --purge` |
 | Fabric CLI (`fab`) | `ms-fabric-cli==1.7.0` | Workspace, lakehouse, notebook, ontology import |
 | Playwright for Python | `playwright>=1.47` (1.63.0 tested), `requirements-demos.txt` | Facilitator demo kit (`demos/`): drives the installed Microsoft Edge (`channel="msedge"`), so no browser download |
-| Agent Framework DevUI | `agent-framework-devui==1.0.0b260918`, `requirements-demos.txt` | Lab 4 (`demos/lab4-devui.py`): workflow graph, execution timeline and traces. Navigators use the hosted copy (`lab4-devui` container app, token, developer mode so the trace panel shows); locally it serves 127.0.0.1. Pre-release, so pinned |
+| Agent Framework DevUI | `agent-framework-devui==1.0.0b260918`, `requirements-demos.txt` | Lab 4 (`demos/lab4-devui.py`): shared workflow graph and traces. Private expiring links establish secure cookie access; backend bearer remains enabled. `DevServer` is the public extension point; authenticated `/meta` avoids the frontend token gate. Local loopback development is unchanged. |
 
 Verified end to end on 2026-09-29 (Phase 2, `mcaps` environment): az 2.87.0, azd 1.34.2, Bicep 0.47.16,
 azd extension `azure.ai.agents` 1.0.0-beta.17, fab 1.7.0, Git Bash (Git for Windows) on Windows ARM64.

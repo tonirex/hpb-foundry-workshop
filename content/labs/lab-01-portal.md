@@ -2,7 +2,16 @@
 
 Main page: [Lab 1](lab-01.md) · [Portal track](PORTAL-TRACK.md)
 
-You will attach the shared Foundry IQ knowledge base, add the `knowledge` instruction block, force JSON output, and test citation discipline.
+**35 min.** Retrieval supplies evidence; JSON gives applications predictable fields. Neither alone proves correctness.
+
+1. **Connect:** attach `livewell-guides-kb`, append `knowledge`, and save the supplied JSON Schema.
+2. **Run:** send the food prompt, then the supplement prompt in a new chat.
+3. **Inspect:** open one retrieved passage and connect it to a claim; explain why the unsupported supplement answer should have no citation.
+
+The [main guide](lab-01.md) has the core instructions and a separate, optional intake-agent setup. Do not change your coach to the intake schema.
+
+<details>
+<summary><strong>Click-by-click screenshots and prompts</strong></summary>
 
 1. Open the agent you created in Lab 0.
 
@@ -86,14 +95,20 @@ You will attach the shared Foundry IQ knowledge base, add the `knowledge` instru
 
     ![route clinician and empty cited_sources for the supplement prompt](screenshots/lab-01/11-json-route-clinician.png)
 
+</details>
+
 ## What you should see
 
 The food answer returns JSON with `route: "self_care"`, at least one LiveWell guide in `cited_sources`, and practical pre-diabetes advice. The supplement answer returns JSON with `route: "clinician"` and no invented source because the guides do not cover supplement dosing.
 
 ## If something looks different
 
+<details>
+<summary><strong>Connection and schema troubleshooting</strong></summary>
+
 - ⚠️ If **Knowledge → Add → Connect to Foundry IQ** has moved, search the Add menu for `Foundry IQ`.
 - ⚠️ If the KB settings page does not expose retrieval reasoning effort or output mode, capture the available settings and continue.
 - If answers include prose outside JSON, recheck **Parameters (icon next to Model) → Text format → JSON Schema** (with `lab1-answer.schema.json` pasted) and the `knowledge` block.
 - If the food answer cites no source, confirm `livewell-guides-kb` is attached and Active.
 
+</details>

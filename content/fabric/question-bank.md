@@ -45,11 +45,15 @@ and then every drop-out count falls under the "fewer than 5" rule (ASSUMPTIONS.m
 
 ## Canonical GQL (the graph check)
 
+**Historical / graph-specific reference, not the current data-agent query contract.** Ontology context now
+guides source-native SQL, KQL or DAX. These GQL examples remain for the separate graph check and old replay;
+do not present them as what a current data agent must generate. See [current ontology context](https://learn.microsoft.com/fabric/data-science/data-agent-ontology-sources).
+
 `scripts/validate-narrative.py --layers live` runs these queries directly on the ontology's graph model
 (`GraphModels/{id}/executeQuery`, preview) and requires the reference answers exactly, before it asks the
 data agent. If the graph check passes and the data agent does not, the data is right and the variance is
-in the agent's question-to-GQL step. Facilitators can show these in the bridge spotlight as "what the
-agent should write".
+in that legacy agent's question-to-GQL step. A successful graph check does not validate the current source-native
+data-agent runtime; inspect its selected source, query and output separately.
 
 ```gql name=q_disengaged_regions
 MATCH (r:Resident)-[:livesIn]->(g:Region)

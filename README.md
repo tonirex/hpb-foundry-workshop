@@ -12,23 +12,23 @@ workshop**. Fabric built the Resident 360 that sees Rahim; today Foundry builds 
 
 ## 👉 Start here
 
-**Everyone starts at Lab 0 and goes in order.** Pick a rail inside each lab; you can switch between labs.
+**Everyone starts at Lab 0.** Pick a rail inside each lab; you can switch between labs. The facilitator previews Lab 4's shared workflows in the 1:15 Agent Framework block, then shows the hosted proof at 5:15; no participant provisioning is needed for Lab 4.
 
 | Lab | Title | What you build | Time |
 |-----|-------|----------------|------|
-| **▶ [Lab 0](content/labs/lab-00.md)** | Setup & first agent | `livewell-<initials>`: model + instructions on gpt-5-mini, a safe refusal and its trace | 15 min |
-| [Lab 1](content/labs/lab-01.md) | Agents & Knowledge: Foundry IQ | Foundry IQ knowledge base, citations, JSON contract | 40 min |
-| [Lab 2](content/labs/lab-02.md) | Guardrails, Evaluations & Tracing | RAI policy, red-flag prompts, traces, the facilitator's pre-run evaluation (look-only), v1 vs v2 | 40 min |
-| [Lab 3](content/labs/lab-03.md) | Tools, MCP & Memory: hyper-personalisation | Profile tool, activities MCP with approval, memory, specialists | 40 min |
-| [Fabric step](content/labs/fabric-step.md) | Add the Fabric IQ tool (optional, in Lab 3) | Mei's region question answered by the Resident360 Ontology Agent | 15 min |
-| [Lab 4](content/labs/lab-04.md) | Multi-agent & Hosted deploy *(browser hands-on + facilitator deploy)* | Agent Framework orchestration, hosted agent with guardrails | 30 min |
-| [Bridge spotlight](content/labs/bridge-spotlight.md) | Two IQs, one agent *(facilitator)* | How the Fabric medallion and Foundry fit together | 10 min |
+| **▶ [Lab 0](content/labs/lab-00.md)** | Setup & first agent | Agent configuration, intended behaviour and a response trace | 15 min |
+| [Lab 1](content/labs/lab-01.md) | Agents & Knowledge: Foundry IQ | Shared retrieval, supported claims and JSON contract | 35 min |
+| [Lab 2](content/labs/lab-02.md) | Guardrails, Evaluations & Tracing | Compare controls; read prepared evaluation verdicts and errors (look-only) | 30 min |
+| [Lab 3](content/labs/lab-03.md) | Tools, MCP & Memory: hyper-personalisation | Read a profile, approve or deny an action, inspect memory evidence | 30 min |
+| [Fabric step](content/labs/fabric-step.md) | Add the Fabric IQ tool (optional) | Aggregate versus guide question; programme fit is a further extension | 10 min guided |
+| [Lab 4](content/labs/lab-04.md) | Multi-agent & Hosted deploy *(private browser link, no token entry)* | Compare prepared workflows, explain execution, inspect the pre-deployed hosted team | 25 + 5 min |
+| [Bridge spotlight](content/labs/bridge-spotlight.md) | Two IQs, one agent *(facilitator, no build)* | Choose evidence sources and explain tool boundaries | 8 min |
 
 **Pick your rail** (every lab has 🟢 Navigator and 🔵 Builder sections):
 
 | Rail | For | You work in | Setup needed |
 |------|-----|-------------|--------------|
-| 🟢 **Navigator** | Programme officers, IT leaders, anyone who prefers the browser | The **Foundry portal** | A browser and your workshop sign-in |
+| 🟢 **Navigator** | Programme officers, IT leaders, anyone who prefers the browser | The **Foundry portal**, plus shared DevUI in Lab 4 | A browser and workshop access details |
 | 🔵 **Builder** | Developers, data engineers, technical PMs | Python scripts in `content/assets/` (cell form, open as notebooks) | Codespaces *(recommended)* or local Python |
 
 > 🟢 **Navigator: you're done reading. [Start Lab 0](content/labs/lab-00.md).** Prefer screenshots? Use the [Portal Track](content/labs/PORTAL-TRACK.md).
@@ -47,7 +47,7 @@ workshop**. Fabric built the Resident 360 that sees Rahim; today Foundry builds 
 | 6 | Human-in-the-Loop Review | 3 | Approval card before `register_interest` |
 | 7 | Handling Uncertainty | 2 | Route to a clinician or HealthHub; never dose medication; "insufficient information" |
 | 8 | Institutional Memory | 3 | Memory of stated preferences ("I prefer mornings") |
-| 9 | Collaboration Between Specialists | 3 / 4 | Nutrition + Activity + Programme-Insights specialists, one merged reply |
+| 9 | Collaboration Between Specialists | 3 / 4 | Specialists with distinct roles and tools; explicit routing and contributions |
 | 10 | Governance & Safety | 2 + throughout | Guardrails, evaluators (a facilitator pre-run you explore), red-team demo (facilitator), RBAC, Entra Agent ID |
 
 ---

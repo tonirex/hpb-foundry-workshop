@@ -247,12 +247,12 @@ def agenda_slide(prs: Presentation, titles: list[str]):
         ["11:15", "Control Plane - CIO lab (40)", "Guardrails, tracing, monitoring, evaluation, red teaming, identity, cost", "Trip guardrail; trace; eval scorecard; policy checkpoint"],
         ["11:55", "Platform architecture (20)", "Runtime / tools + knowledge / app layer; identity + observability", "Two IQs, one agent diagram"],
         ["12:15", "Lunch", "Break", "Break"],
-        ["1:15", "Agent Framework & multi-agent (40)", "SDK agents, versioning, orchestration patterns", "Lab 1 walkthrough; preview Lab 3 Builder code"],
+        ["1:15", "Agent Framework & multi-agent (40)", "Choose a pattern; inspect execution evidence", "Lab 4 shared DevUI comparison (25); code and discussion (15)"],
         ["1:55", "Tools, MCP & integration (40)", "MCP, approvals, OpenAPI, gateway; Fabric integration paths", "Lab 3 walkthrough; activities MCP approval"],
         ["2:50", "Evaluation, Guardrails & Security (40)", "Built-in + custom evaluators, continuous eval, runtime controls", "Lab 2 walkthrough; compare versions"],
         ["3:30", "Part A Build (35)", "Hands-on build", "Lab 1"],
         ["4:05", "Part B Govern (30)", "Hands-on governance", "Lab 2"],
-        ["4:35", "Part C Extend (55)", "Hands-on extension", "Lab 3 incl. Fabric step; Lab 4 demo; bridge; close"],
+        ["4:35", "Part C Extend (55)", "Hands-on extension", "Lab 3; optional Fabric; Lab 4 pre-deployed hosted proof at 5:15; close"],
     ]
     slide = content_slide(
         prs,
@@ -449,12 +449,12 @@ def foundry_features_slide(prs: Presentation, titles: list[str]):
 
 
 OBJECTIVES = {
-    "lab-00": "A Foundry agent is a model plus instructions, and instructions alone can make it safe; every answer leaves a trace you can inspect",
+    "lab-00": "Configure an agent's intended behaviour with a model and instructions, then inspect a response and its trace; one refusal is not proof of safety",
     "lab-01": "Ground every answer in curated knowledge with verifiable citations, never invent a source, and return machine-routable JSON",
-    "lab-02": "Safety is measured, not assumed: apply guardrails, prove behaviour with evaluators, and make every decision auditable in a trace",
+    "lab-02": "Compare safety layers using traces and prepared evaluation results; distinguish a refusal, a block, an over-block and an unavailable verdict",
     "lab-03": "An agent that acts: personalise on governed data, take real actions with a human in the loop, delegate to specialists, and route each kind of question to the right tool",
-    "fabric-step": "Continues Lab 3: add governed population evidence to a personal answer, without sending personal data",
-    "lab-04": "From playground to production: the same agent behind two doors (portal for people, endpoint for systems), governed by the same policy",
+    "fabric-step": "Use governed cohort evidence when guidance alone cannot answer a question, and inspect exactly what information the coach sends to Fabric",
+    "lab-04": "Choose between one agent, sequential and hand-off workflows; use execution evidence to explain the route, then inspect the pre-deployed hosted team",
 }
 
 MODULES = [
@@ -465,7 +465,7 @@ MODULES = [
         "level": "Intro · portal · all rails",
         "story": "Rahim opens the coach for the first time.",
         "features": "Foundry portal; resource/project; RBAC; model deployments; reasoning effort; prompt agent; playground; versions; traces.",
-        "checkpoint": "Agent introduces itself, says it is not a doctor and refuses to diagnose; the trace shows one gpt-5-mini call and its tokens.",
+        "checkpoint": "Inspect the introduction, refusal and model-call trace. Explain why this example is not a safety guarantee.",
     },
     {
         "id": "lab-01",
@@ -474,16 +474,16 @@ MODULES = [
         "level": "Core build · Navigator + Builder",
         "story": "Rahim asks what to eat after a high-glucose screening result.",
         "features": "Foundry IQ KB; Azure AI Search; agentic retrieval; citations; MCP connection; structured JSON output.",
-        "checkpoint": "Pre-diabetes food question cites at least one KB document; the supplement question routes to a clinician with no invented source.",
+        "checkpoint": "Connect a food-advice claim to a retrieved passage; explain the no-source clinician route. Optional intake uses its own agent/schema.",
     },
     {
         "id": "lab-02",
         "label": "Lab 2",
         "capability": "Guardrails, Evaluations & Tracing",
-        "level": "Govern · Navigator + Builder",
+        "level": "Guided comparison · Navigator + Builder",
         "story": "A flyer hides an injection; Rahim asks about doubling medication and skipping meals.",
         "features": "Default vs custom guardrail ladder; block vs annotate; Prompt Shields; self-harm threshold; blocklist; traces; the facilitator's pre-run evaluation (look-only); version compare; red team (facilitator demo).",
-        "checkpoint": "The ladder shows which layer catches each prompt (blocklist, self-harm at Low, Prompt Shields, instructions), a blocked run appears as Failed in Traces, and you can read the v1 vs v2 handled_safely result from the prepared evaluation.",
+        "checkpoint": "Identify the responsible layer; compare prepared same-model demo runs, distinguishing pass/fail from error/not scored. These are not participant-agent evaluations.",
     },
     {
         "id": "lab-03",
@@ -492,17 +492,17 @@ MODULES = [
         "level": "Extend · Navigator + Builder",
         "story": "Rahim asks for indoor hazy-day activities near Woodlands, approves the sign-up, and expects the coach to remember his preferences.",
         "features": "livewell_profile OpenAPI tool (get_citizen_profile function in Builder); activities MCP; approval-before-write; memory; connected specialists.",
-        "checkpoint": "A compound question calls the profile tool and activities MCP, tailors to Rahim, and waits for approval before register_interest.",
+        "checkpoint": "Inspect profile and activity calls; approve or deny the proposed write explicitly. Memory has stored/search evidence. Fixed synthetic Rahim, no real booking.",
     },
     {
         "id": "fabric-step",
         "label": "Fabric step",
         "capability": "Fabric IQ tool — Resident360 Ontology Agent",
-        "level": "Optional · gated on FABRIC_BRIDGE=true",
+        "level": "Optional · only when capacity and access are ready",
         "story": "Rahim asks which programme people his age stick with; Mei Lin asks which regions have the highest share of disengaged residents.",
         "features": "Fabric IQ tool; OneLake Catalog; published Fabric data agent; identity passthrough; profile → Fabric IQ → activities chaining; aggregate-only routing.",
-        "checkpoint": "Programme fit chains profile → Fabric IQ (age band only) → activities with approval; Mei's trace shows Fabric IQ; Rahim's food question makes no Fabric call.",
-        "minutes": 15,
+        "checkpoint": "Compare an aggregate question with guide retrieval and inspect userQuestion. Programme fit is a further optional extension; paused capacity can stay paused.",
+        "minutes": 10,
         "rails": "Navigator / Builder",
         "patterns": "#2, #3, #6, #8, #9",
     },
@@ -510,10 +510,10 @@ MODULES = [
         "id": "lab-04",
         "label": "Lab 4",
         "capability": "Multi-agent & Hosted deploy",
-        "level": "Engineer appendix · facilitator demo",
-        "story": "LiveWell Coach goes live behind the simulated Healthy 365 channel.",
-        "features": "Agent Framework sequential and hand-off orchestration in DevUI; Programme-Insights specialist; azd deploy (code deploy); rai_config; hosted tracing.",
-        "checkpoint": "Sequential and hand-off runs are visible in DevUI; the hosted endpoint returns JSON and blocks a blocklisted prompt; hosted and playground traces compared.",
+        "level": "Guided browser comparison · optional Builder appendix",
+        "story": "Rahim's week plan and activity-only request reveal different routing choices.",
+        "features": "Prebuilt Agent Framework teams; DevUI graph, outputs and hand-off calls; existing hosted trace and guardrail proof. Fabric specialist optional.",
+        "checkpoint": "Explain when one agent is enough, identify a hand-off call and the final answerer, and recognise the hosted sequential team. No participant provisioning.",
     },
 ]
 
@@ -590,7 +590,7 @@ def iq_comparison_slide(prs: Presentation, titles: list[str]):
         prs,
         "Foundry IQ vs Fabric IQ — when to use",
         "Do not present these as competing products. "
-        "Foundry IQ is the document and knowledge grounding path for the coach; Fabric IQ is the governed business data path for the officer. "
+        "These are the workshop's design choices, not exclusive product capabilities. Fabric ontology supplies context; the underlying source executes SQL, KQL or DAX. "
         "Use the examples row to show that Rahim's guidance stays in Foundry IQ; Fabric only answers aggregate questions, from Mei Lin or from Rahim's one age-band cohort question. "
         "Gate: move on when participants can choose the correct IQ for a new prompt.",
         titles,
@@ -653,9 +653,9 @@ def guardrail_slide(prs: Presentation, cfg: dict, titles: list[str]):
     ]
     slide = content_slide(
         prs,
-        "Guardrail & evaluation scorecard",
-        "Run the default and custom ladder live if the environment is healthy; otherwise use the pre-captured traces. "
-        "The result columns are the expected outcomes from Lab 2: the custom policy moves guardrail blocks from 1 of 7 to 4 of 7. "
+        "Guardrail scorecard — captured examples",
+        "The table illustrates historical outcomes, not guaranteed classifications. "
+        "Keep prompts unchanged, inspect the actual filter and stage, and report differences rather than retrying for a desired result. "
         "Explain block versus annotate: at or above the threshold the request is blocked (HTTP 400, red banner, Failed trace); "
         "below it the answer goes through and the severity is recorded. The dose-reminder row is the cost of a stricter control. "
         "Gate: move on when every table has at least one production policy they would require.",
@@ -674,7 +674,7 @@ def guardrail_slide(prs: Presentation, cfg: dict, titles: list[str]):
         header_size=10.8,
     )
     add_box(slide, 0.75, 4.8, 3.85, 1.55, "Block vs annotate\nAt the threshold: blocked, HTTP 400, Failed trace.\nBelow it: answered, severity recorded.", fill=WHITE, line=NAVY, size=11.5, color=NAVY, bold=True)
-    add_box(slide, 4.85, 4.8, 4.1, 1.55, "Evaluators (facilitator pre-run, look-only)\nThe prepared run scores guardrail_blocked, handled_safely (LLM judge) and self_harm. Built-in families to know: groundedness · relevance · task adherence · tool-call accuracy · intent resolution", fill=PALE_TEAL, line=TEAL, size=10.5, color=NAVY, bold=True)
+    add_box(slide, 4.85, 4.8, 4.1, 1.55, "Prepared evaluation: look only\nCompare default/custom for the same model. Pass, fail and not scored are different. A judge error is not an unsafe-answer verdict. These are demo runs, not your agent versions.", fill=PALE_TEAL, line=TEAL, size=10.5, color=NAVY, bold=True)
     add_box(slide, 9.2, 4.8, 3.4, 1.55, "Red team\nFacilitator only, shown on screen\nPaid (approx. US$42 per scan): needs approval; participants run none", fill=LIGHT, line=ORANGE, size=11.5, color=NAVY, bold=True)
 
 

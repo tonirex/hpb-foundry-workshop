@@ -2,6 +2,17 @@
 
 Main page: [Lab 0](lab-00.md) · [Portal track](PORTAL-TRACK.md)
 
+**15 min.** The project and model are already deployed. You configure an agent, not a model.
+
+1. **Configure:** sign in with your workshop account and TAP; open `livewell-workshop`, create `livewell-<initials>`, choose `gpt-5-mini` / Low, remove Web search, paste `base`, and save.
+2. **Chat:** send `lab0_hi` and `lab0_am_i_diabetic` from the main guide. Predict whether a diagnosis is appropriate before reading the answer.
+3. **Inspect:** open the response trace and find the model call, instructions and tokens.
+
+**Explain:** a refusal demonstrates this run's behaviour; it does not prove comprehensive safety.
+
+<details>
+<summary><strong>Click-by-click screenshots and copy-ready prompts</strong></summary>
+
 Use a personal laptop, an InPrivate browser window, and your own workshop account (the username on your sign-in card, not your work account). Your agent name is `livewell-<initials>`; never edit `livewell-demo-*` agents.
 
 1. Open the portal in a private browser window and sign in with your workshop account.
@@ -90,13 +101,20 @@ Use a personal laptop, an InPrivate browser window, and your own workshop accoun
 
     Look for one `chat gpt-5-mini` span, no tool calls, the `base` block as the system message, and the input and output token counts. Output tokens include the model's reasoning tokens.
 
+</details>
+
 ## What you should see
 
 Your `livewell-<initials>` agent runs on `gpt-5-mini` with Reasoning effort Low and no tools. It greets warmly, says it is not a doctor, refuses to diagnose diabetes, and routes the user to a doctor. The trace shows one model call per answer.
 
 ## If something looks different
 
+<details>
+<summary><strong>Sign-in, model and response differences</strong></summary>
+
 - ⚠️ If the project picker or Build rail has moved, use the portal search box for `livewell-workshop` and `Agents`.
 - If `gpt-5-mini` is not selectable or returns 429 errors, use `gpt-4.1-mini` and tell the facilitator before Lab 1. `gpt-4.1-mini` has no Reasoning effort setting.
 - If the answer cites web pages or the trace shows a `web_search` call, the **Build an agent** template attached **Web search**. Remove it under **Tools** and save.
 - If the response diagnoses you, re-paste the `base` block from [coach-instructions.md](../prompts/coach-instructions.md) and save.
+
+</details>

@@ -2,7 +2,18 @@
 
 Main page: [Lab 3](lab-03.md) · [Portal track](PORTAL-TRACK.md)
 
-You will switch the coach to `gpt-4.1-mini`, add a profile OpenAPI tool, an activities MCP tool with approval before registration, memory, and optionally the Fabric IQ tool for programme-level questions.
+**30 min.** Read a profile, approve or deny a write, then inspect memory evidence. The APIs and shared connections are already prepared.
+
+**Workshop boundary:** `me` is fixed synthetic Rahim, not your sign-in. Registration is temporary workshop data, not a real booking.
+
+1. **Read:** configure the supplied OpenAPI spec and existing activities MCP connection, then send the profile prompt. Inspect the lookup output.
+2. **Approve:** inspect the proposed registration arguments, then choose **Approve once** or **Deny**. A conversational “yes” is not the tool approval. Verify the result matches your decision.
+3. **Remember (preview):** store the preference, allow processing time and start a new chat. Inspect stored/search evidence as well as the answer; wording alone is insufficient.
+
+Use the [main guide](lab-03.md) for the core prompts. Specialist agents and Fabric are optional; skip Fabric when paused.
+
+<details>
+<summary><strong>Click-by-click setup, copy-ready spec and screenshots</strong></summary>
 
 > The screenshots were taken on the facilitator's demo agent `livewell-demo-tools`. Do every step on your own `livewell-<initials>` agent.
 
@@ -93,7 +104,7 @@ You will switch the coach to `gpt-4.1-mini`, add a profile OpenAPI tool, an acti
    | **OpenAPI 3.0+ schema** | Click inside the empty box and press **Ctrl+V** (**Cmd+V** on a Mac). The text may show on one line or on many; both are fine. |
 
    - The pasted text already contains the API's address, so no other field is needed. The screenshot below shows it formatted, with the address hidden.
-   - This is a real, read-only REST API that returns only the signed-in resident's profile. Steps 4–6 add the activities as an MCP tool instead, because MCP lets you require approval before a write. See [OpenAPI tool vs MCP tool](lab-03.md#openapi-vs-mcp) and [what is fixed for the workshop](lab-03.md#workshop-shortcuts).
+   - This read-only API returns fixed synthetic Rahim. Its “signed-in resident” description is a future application contract, not implemented resident authentication. See [OpenAPI vs MCP](lab-03.md#openapi-vs-mcp) and [workshop shortcuts](lab-03.md#workshop-shortcuts).
 
    ![OpenAPI form with livewell_profile named and the spec pasted](screenshots/lab-03/03-livewell-profile-spec.png)
 
@@ -171,7 +182,7 @@ You will switch the coach to `gpt-4.1-mini`, add a profile OpenAPI tool, an acti
     Yes, please sign me up for the first indoor option you found.
     ```
 
-13. Approve the registration card once. **Approve** opens a menu: pick **Approve once**. *Always approve this tool* and *Always approve all tools* skip later approvals.
+13. Inspect the card's activity id and arguments. Choose **Approve → Approve once** or **Deny**, then inspect the result. *Always approve* skips later decisions and is not used here.
 
     **Approval card → Approve → Approve once**
 
@@ -190,6 +201,8 @@ You will switch the coach to `gpt-4.1-mini`, add a profile OpenAPI tool, an acti
     ```
 
 15. Start a new chat and test memory recall.
+
+    Allow up to two minutes for storage; inspect the recorded memory search and saved preference. A plausible answer is not by itself evidence of memory use.
 
     **Chat → New chat → Message box → Send**
 
@@ -221,7 +234,7 @@ You will switch the coach to `gpt-4.1-mini`, add a profile OpenAPI tool, an acti
 
   **Response metrics → Traces** → one call to `livewell-nutrition-a2a` and one to `livewell-activity-a2a`
 
-16. Optional Fabric step: add the published Fabric IQ data agent from the OneLake Catalog. The catalog takes a few seconds to load; filter by keyword `Resident360`.
+16. Optional Fabric step: only after the facilitator confirms active capacity and access. Prefer the existing connection in step 17; the facilitator handles missing connections. Catalog screenshots below are reference only.
 
     **Tools → Add → Add tools → Configured → Fabric IQ (OneLake Catalog) → Add tool → Resident360 Ontology Agent → Add**
 
@@ -295,16 +308,22 @@ You will switch the coach to `gpt-4.1-mini`, add a profile OpenAPI tool, an acti
     My screening says my glucose is high. What should I eat to manage pre-diabetes?
     ```
 
+</details>
+
 ## What you should see
 
-Profile advice is tailored to the signed-in synthetic resident and cites guides. Activity registration pauses on an approval card before `register_interest` runs. Memory affects a new chat. With the optional specialists attached, the combined-plan prompt calls both A2A connections and merges their answers into one reply. In the optional Fabric step, Rahim's programme question chains profile → Fabric IQ (age band only) → activities → approval, Mei's aggregate question calls Fabric IQ, and the citizen food question stays on Foundry IQ and profile tools.
+Profile advice uses Rahim's synthetic record and cited guides. Registration requires your explicit decision. Memory has supporting search evidence, not just plausible wording. No participant creates a shared project connection.
 
 ## If something looks different
 
+<details>
+<summary><strong>Missing connection, memory or approval</strong></summary>
+
 - ⚠️ The OpenAPI form takes a pasted schema, not a URL. Copy the whole spec block from step 3, and keep the tool name `livewell_profile` (dashes are rejected). If **Create tool** reports an invalid schema, you pasted only part of it: copy the block again with its **Copy** button and replace everything in the box.
-- ⚠️ **Custom → Model Context Protocol (MCP)** creates a *new* connection. Use it only if `livewell-activities-mcp` is missing from **Configured**: paste the **Activities MCP server** URL from the values sheet as the endpoint and set **Authentication** to **Unauthenticated**.
+- ⚠️ If `livewell-activities-mcp` is missing from **Configured**, tell the facilitator. Do not use Custom to create another project connection.
 - ⚠️ Memory is preview and may appear under a different panel; if it is unavailable, complete the tool steps and watch the facilitator memory demo.
 - If `livewell-nutrition-a2a` or `livewell-activity-a2a` is missing from **Configured**, the facilitator has not run the specialist setup. Skip the optional specialists; the coach still writes both plans from the knowledge base. An A2A call that fails with 401 or 403 usually means the project's Foundry Agent Consumer role has not applied yet (up to 10 minutes).
 - ⚠️ Fabric IQ is preview; if OneLake Catalog browsing is unavailable, use `livewell-fabric-resident360` or the facilitator's prepared agent.
 - If registration runs without approval, stop using that chat and reconfigure approval for `register_interest`.
 
+</details>

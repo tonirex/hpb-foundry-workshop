@@ -1,12 +1,15 @@
 # HPB delivery runbook: MCAPS, 30 participants, one resource group
 
-> **Status (2026-10-24): rehearsal stack deployed; limited facilitator readiness checks passed.** Search is in France
+> **Status (2026-10-26): rehearsal stack deployed; Lab 2 prepared evidence available.** Search is in France
 > Central (SPEC.md A.8); the other customer-managed resources are in Sweden Central in the same resource group.
 > The user approved the workshop storage tag exception described below. No participant identities/TAPs, tenant-policy
-> edits, quota requests, evaluations, red-team scans or load tests have been run. Limited facilitator readiness calls
+> edits, quota requests, red-team scans or load tests have been run. The user separately approved one bounded
+> paid Lab 2 evaluation: seven prompts on four isolated, tool-free demo agents, with LLM-judge and self-harm scoring.
+> Limited facilitator readiness calls
 > confirmed cited retrieval, profile-tool routing, a blocked medication prompt, the hosted structured plan and
 > a Fabric-routed regional answer. This is not a full lab or 30-participant load rehearsal; items marked
-> **UNVERIFIED** still need it. Lab 2's paid prepared evaluation has not been created.
+> **UNVERIFIED** still need it. `LiveWell guardrail matrix 2026-10-26 20:51` completed all four runs;
+> [the offline capture](../data/lab2-prepared-eval.json) is saved. Participant-account portal access remains unverified.
 >
 > This is the primary procedure for the `mcaps` environment. [ADMIN-SETUP.md](ADMIN-SETUP.md) and
 > [TENANT-BOOTSTRAP.md](TENANT-BOOTSTRAP.md) are earlier reference material from the 6-person sponsor delivery; where they
@@ -153,9 +156,23 @@ Attendees cannot read the DevUI container-app secret (it needs Owner or Contribu
    the older GQL query screenshots are not a guaranteed description of its execution.
 6. **Knowledge, tools, guardrails:** the steps 4 to 8 of the T-3 table in [ADMIN-SETUP.md](ADMIN-SETUP.md#t-3-build-the-environment)
    (`build-kb.py`, `azd deploy mcp-activities`, `connect-tools.py`, hosted agent and DevUI, demo agents) are unchanged.
-7. **Facilitator pre-run evaluation** (paid, approval): `python demos/guardrail-matrix.py --cloud --save`. Check that a lab
+7. **Facilitator pre-run evaluation:** the 26 October capture is ready; do not recreate it merely to read it.
+   For a separately approved fresh run, use `python demos/guardrail-matrix.py --cloud --no-console --save`
+   to avoid another 28 console-only target calls. Check that a lab
    account can open the run in the portal; if not, the captured file (`content/data/lab2-prepared-eval.json`) or a screen share is the
    fallback. **UNVERIFIED** until a participant account tries it.
+
+   Captures now use **schema 2**, with separate pass/fail/not-scored counts. Earlier summaries cannot recover
+   grader errors from their failure totals and are not accepted as current evidence. Inspect existing run details
+   or prepare a new capture only within the separately approved evaluation work. Without evidence the Lab 2
+   evaluation checkpoint stays incomplete; do not fabricate counts or launch a run during the participant session.
+
+   Run identifiers and full item outputs/judge reasons are kept under ignored
+   `demos/runs/lab2-evaluations/<env>/<eval-id>/`. If interrupted, use
+   `python demos/guardrail-matrix.py --read-eval <eval-id> --save`: GET-only recovery, no new agents or paid runs.
+   The collector uses saved run ids when the service's list endpoint has not caught up. It refuses to publish
+   incomplete, duplicate or entirely unscored matrices. The 26 October comparison has one judge-filtered flyer
+   row in each run and one benign-reminder over-block in each custom run; these are teaching evidence, not hidden failures.
 8. **Attendees:** `bash scripts/seed-attendees.sh mcaps --lab-accounts`, again after the Fabric deploy.
 9. **Rehearsal** (section 8), then **workshop day** (section 9), then **teardown** (section 10).
 
@@ -236,7 +253,7 @@ as a collaborator (Read) or give the release ZIP; an Entra account does not gran
 | Container Apps quota, storage network setting | Provisioning, `verify-scope.py deployed` | Environment and apps created; storage reachable by Search |
 | Live compatibility | `smoke-test.py`, `validate-builder-rail.py` with `INITIALS=test` | Every lab passes on the chosen models, including tools, structured output, memory, guardrails |
 | Load test | Staged waves of 10, 20, 30 simulated participants on both chat pools | No sustained 429s; latency acceptable; replaces section 3.3 |
-| Participant permissions | Two real lab accounts, Navigator and Builder | Agent creation, Lab 2 prepared evaluation visible (also try without the account-scope OpenAI User role, which is only a leftover of the old Lab 2 judges), Fabric step works, DevUI via the values-sheet token |
+| Participant permissions | Two real lab accounts, Navigator and Builder | Agent creation, prepared evaluation visibility, Fabric when enabled; DevUI uses the private launch link with no token entry |
 | GitHub and Codespaces for 30 | Invites sent; one Codespace per rail | Everyone can open the repo |
 | Fabric | Tenant settings; N simultaneous data-agent queries on F2 | Settings enabled; behaviour at concurrency recorded |
 | Budget mail, prices | Alert recipient receives mail; pricing calculator | Mailbox confirmed; gpt-5-mini and gpt-4.1-mini meters confirmed |
@@ -244,11 +261,21 @@ as a collaborator (Read) or give the release ZIP; an Entra account does not gran
 
 ## 9. Workshop day
 
+- Shortly before Lab 4, run `python scripts/render-values.py mcaps` and privately send the **Lab 4 private launch
+  link** and expiry from the gitignored values sheet. It defaults to ten hours, selects the prepared sequential
+  demo, and requires no token entry or participant deployment. The backend secret is never distributed.
+  Forwarding the link grants the same shared access until expiry; session lists are not per-user isolated.
 - Resume the Fabric capacity (`scripts/capacity.sh resume mcaps`) and set `MCP_MIN_REPLICAS=1`, `DEVUI_MIN_REPLICAS=1` (one DevUI
   replica, 8 seats). Run `preflight.sh` and `cost-guardrails.sh mcaps --max-usd 150` the evening before.
 - Start Lab 2 and the Fabric step in waves of ten. Do not raise a cap or request quota on the day; on sustained 429s switch the
   affected agents to the other deployment, per the run of show.
 - Facilitators run the pre-run evaluation, the red-team scan and demos; participants only explore results.
+
+Participant guides now fit the scheduled 35/30/30-minute build/govern/extend slots. Keep optional intake,
+specialists and programme fit outside the core timing. Lab 3 approval requires a real terminal decision or
+explicit UI callback; non-interactive input denies. `LIVEWELL_AUTO_APPROVE=1` is labelled automated rehearsal
+and must not be treated as evidence that a participant approved. The bridge is a no-build recap, with legacy
+GQL replay clearly labelled historical; it does not require resuming Fabric.
 
 ## 10. Teardown (one runbook for Azure, Fabric and the temporary identities)
 

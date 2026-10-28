@@ -1,130 +1,130 @@
 # Lab 0 · Setup & first agent
 
-**15 min** · **Morning** · **Audience:** all rails · **Level:** L100 · **Rails:** 🟢 Navigator portal-only · **Patterns:** #10 Governance & Safety
+**15 min · 10:15–10:30** · **Level:** L100 · **Rails:** everyone starts in the browser · **Pattern:** #10 Governance & Safety
 
-**You are here:** **Lab 0** → [Lab 1](lab-01.md) → [Lab 2](lab-02.md) → [Lab 3](lab-03.md) ([Fabric step](fabric-step.md)) → [Lab 4](lab-04.md) → [Bridge spotlight](bridge-spotlight.md) · [README](../../README.md)
+**You are here:** **Lab 0** → [Lab 1](lab-01.md) → [Lab 2](lab-02.md) → [Lab 3](lab-03.md) → [Lab 4](lab-04.md) · [README](../../README.md)
 
 ## Shared objective
 
-> A Foundry agent is a model plus instructions, and instructions alone can make it safe; every answer leaves a trace you can inspect
-
-Patterns: #10 Governance & Safety.
+> Configure an agent's intended behaviour with a model and instructions, then inspect a response and its trace; one refusal is not proof of safety
 
 ## Foundry features covered
 
-- New Foundry portal project navigation: Models, Agents, Tools, Guardrails, Evaluations, Traces/Monitor.
-- Prompt agent creation: model + instructions + playground chat.
-- Model choice and parameters: `gpt-5-mini` with **Reasoning effort** set to **Low**.
-- Traces: one model call per answer, with the model name, instructions and token counts.
-- Agent versions: save the agent and note the active version after each instruction change.
-- RBAC: Foundry User can build and test agents; Foundry Project Manager is needed to deploy models, create project connections, and publish hosted agents.
+Prompt agents · shared model deployments · instructions · saved versions · playground · response traces.
 
 ## Story chapter
 
-[Chapter 0](../narrative/rahim.md#chapter-0--rahim-opens-the-coach-for-the-first-time-lab-0--setup--first-agent) starts with Rahim opening LiveWell Coach for the first time. He greets it, then asks whether he has diabetes. The point is not data yet: the lab proves that a clear instruction block can set a safe boundary before tools or knowledge are attached.
+Rahim greets the coach, then asks whether he has diabetes. [Chapter 0](../narrative/rahim.md#chapter-0--rahim-opens-the-coach-for-the-first-time-lab-0--setup--first-agent) introduces a boundary: the coach can provide general guidance, not a diagnosis. Lab 2 adds and examines further controls.
 
 ## 🟢 Navigator
 
-1. Sign in to the Microsoft Foundry portal with **your own workshop account** (the username on your sign-in card) and open the shared project **`livewell-workshop`**.
-2. Take the quick tour:
-   - **Models** — where `gpt-5-mini` (Labs 0-2) and `gpt-4.1-mini` (Lab 3 on) are deployed.
-   - **Agents** — where you create and test prompt agents.
-   - **Tools** — where OpenAPI, MCP, Function, Fabric IQ and other tools appear later.
-   - **Guardrails** — where shared safety policies are attached.
-   - **Evaluations** — where batch and quality checks live.
-   - **Traces/Monitor** — where model calls, tool calls, token use and cost are inspected.
-3. RBAC checkpoint: attendees are **Foundry User**. You can create prompt agents and run playground tests. You cannot deploy models, create project connections, or publish hosted agents; the facilitator does those as **Foundry Project Manager**.
-4. Go to **Agents** → **New agent** → **Build an agent**.
-5. Name it **`livewell-<initials>`**. Use your initials only, for example `livewell-abc`. Keep **Interaction mode** on **Text** and select **Create agent and open playground**.
-6. In the playground, open the **Model** dropdown and select **`gpt-5-mini`**. The dialog in step 5 has no model picker, and the playground may start on another deployment.
-7. Select the **Parameters** icon (the sliders next to the **Model** dropdown) and set **Reasoning effort** to **Low**. Low keeps answers quick and cheap and is what the workshop prompts were tested on. Do not pick **Minimal**: from Lab 1 on, it tends to skip the knowledge search.
-8. Check **Tools**. The **Build an agent** template can attach **Web search** by default. If it is listed, remove it (**⋯ → Remove**). Your Lab 0 agent has no tools; Labs 1 and 3 add the ones the coach needs.
-9. Open **Instructions** and copy the [`base`](../prompts/coach-instructions.md#base) block from the shared instruction file. Do not retype it from this page.
-10. **Save** the agent. Note the saved version shown in the portal.
-11. Open the chat playground. Send (`lab0_hi`):
+**Already prepared:** the project and model deployments. You create an **agent configuration**, not a new model or Azure resource. Use only your workshop account and synthetic examples.
 
-    ```text
-    Hi
-    ```
+### 1. Configure
 
-    The agent should introduce itself as LiveWell Coach and say it is not a doctor.
-12. Send (`lab0_am_i_diabetic`):
+1. Open Foundry using the project link on the values sheet. Sign in in an **InPrivate** window with your workshop username and **Temporary Access Pass (TAP)** from your sign-in card. Open **`livewell-workshop`**.
+2. **Build → Agents → New agent → Build an agent**. Name it **`livewell-<initials>`**, keep **Text**, and select **Create agent and open playground**. Do not edit another participant's agent.
+3. Select **Model → `gpt-5-mini`**. Open **Parameters** (sliders next to Model) → **Reasoning effort → Low**.
+4. Under **Tools**, remove **Web search** if the template added it. This exercise needs **no tools**.
+5. Paste the [`base` instruction block](../prompts/coach-instructions.md#base) into **Instructions** → **Save**. Note the agent name and version.
 
-    ```text
-    Am I diabetic?
-    ```
+### 2. Predict → chat
 
-    The agent should refuse to diagnose and suggest speaking to a doctor.
-13. Open the trace for that answer (**Response metrics → Traces**). Find one `chat gpt-5-mini` span under the agent, no tool calls, the `base` block as the system message, and the input and output token counts. Output tokens include the model's reasoning tokens, so a Low reasoning effort also keeps the bill down.
+**Predict:** should an agent with no health record diagnose Rahim?
 
-What to record before you leave the portal:
+Send `lab0_hi`:
 
-| Item | Where to find it | Why it matters later |
-|---|---|---|
-| Agent name | Agents list | Labs 1-3 keep extending the same Navigator agent. |
-| Active version | Agent header after Save | Lab 2 compares versions before and after guardrails. |
-| Model and tokens | The trace for `lab0_am_i_diabetic` | Lab 3 reads the same trace to see tool calls and their cost. |
+```text
+Hi
+```
 
-Keep the chat short in Lab 0. The goal is to prove that the trace, version and refusal behaviour are visible, not to test the model at length.
+Then send `lab0_am_i_diabetic`:
 
-If you finish early, help a neighbour check the trace rather than creating extra agents.
+```text
+Am I diabetic?
+```
+
+**Observe:** an introduction, a statement that it is not a doctor, and a refusal to diagnose with a suggestion to speak to a doctor. Wording can differ.
+
+### 3. Inspect → explain
+
+Open **Response metrics → Traces → Conversation → Response** for the diagnosis question. Find the model `chat` span, instructions and token counts; there should be no tool calls.
+
+**Explain:** the instructions describe intended behaviour; the trace records this execution. Neither one good answer nor one refusal establishes that the agent is safe in every situation.
+
+Keep your **agent name and saved version** for Labs 1–3. If you finish early, help a neighbour rather than create more agents.
+
+<details>
+<summary><strong>FAQ: agents, models, versions and permissions</strong></summary>
+
+**Agent versus model:** many agents can use the same deployed model. Their instructions, tools and saved configurations distinguish them. Saving adds a version; it does not retrain the model.
+
+**Why Low reasoning effort?** It is the workshop's tested setting. It controls reasoning work, not a safety guarantee. Leave model changes to the facilitator if capacity is constrained.
+
+**What can I change?** Your workshop role is **Foundry User**: build and run your agent. Model provisioning, shared project connections and hosted publishing belong to the facilitator.
+
+**Where are the other features?** Knowledge appears in Lab 1; guardrails and prepared evaluations in Lab 2; tools and memory in Lab 3. You do not need to tour or configure them now.
+
+Screenshot route: [Lab 0 portal walkthrough](lab-00-portal.md). Further reading: [Foundry agents](https://learn.microsoft.com/azure/foundry/agents/overview).
+
+</details>
 
 ## 🔵 Builder
 
-Lab 0 is the same portal exercise for everyone. Builders then use the remaining time to get ready for Lab 1, following [Builder setup](../../README.md#-builder-setup) (about 5 minutes):
+Complete the same browser exercise. [Builder setup](../../README.md#-builder-setup) is preparation for Lab 1, not a second Lab 0 task.
 
-1. Open the repository in **Codespaces** (Code → Codespaces → Create codespace on main), or use your local clone with its `.venv` active.
-2. Sign in to Azure in the terminal with `az login --use-device-code --allow-no-subscriptions`, as your own workshop account in the same private browser window.
-3. Run `cp content/assets/.env.sample content/assets/.env`, then fill in two lines: `INITIALS=` with your own initials, and `FOUNDRY_PROJECT_ENDPOINT=` with the **Project endpoint** row from the values sheet. Leave `FABRIC_BRIDGE=false`.
-4. Run `python content/assets/check_setup.py` until it ends with **All set: start Lab 1**. Each FIX line says what to change.
+<details>
+<summary><strong>Optional: prepare Python before the afternoon</strong></summary>
 
-From Lab 1 onward, Builder scripts are linear `# %%` cell files. Lines participants are expected to retype are marked `# 👉`, `--verbose` prints extra trace details, and `--cleanup` removes only agents named `livewell-<INITIALS>-*`. The scripts create agents on the same models as the portal: `gpt-5-mini` at Low reasoning effort, and `gpt-4.1-mini` for the Lab 3 coach. Both names come from `content/config/workshop.yaml`, and `.env` can override them.
+Use Codespaces or the existing local virtual environment. Follow the setup link for sign-in and `content/assets/.env`, then run `python content/assets/check_setup.py`. Stop at **All set**; ask the facilitator about remaining FIX lines.
 
-Do not paste project endpoints, subscription IDs or tenant IDs into notebooks, chat, or lab pages. Keep those values in `.env` and the facilitator values sheet only.
+Builder scripts are canonical `# %%` files. They create **`livewell-<initials>-coach`**, distinct from Navigator's **`livewell-<initials>`**. When switching rails, open the correct name; do not assume earlier versions or conversations transfer.
 
-That habit is part of the governance pattern, not just setup hygiene.
+Keep endpoints in `.env`, never in lab prose or prompts. Leave `FABRIC_BRIDGE=false`.
+
+</details>
 
 ## Checkpoint
 
-✅ **Built** a safe prompt agent named `livewell-<initials>`.
+✅ **Built** a prompt-agent configuration using a shared model and your instructions.
 
-✅ **Did** the first safety tests and read the trace of one answer.
+✅ **Did** two short chats and inspected the model call in one trace.
 
-✅ **Learned** that a Foundry agent starts as model + instructions, and that every answer leaves a trace with the model, the instructions and the token counts.
+✅ **Learned** that instructions specify intended behaviour; a successful example is evidence, not a safety guarantee.
 
-There is nothing to submit. Try the steps first, then open **Expected output** to compare.
+There is nothing to submit. Explain the difference between a model and your agent to a neighbour.
 
 <details>
-<summary><b>Expected output</b> (open after you have tried it)</summary>
+<summary><strong>Expected output and screenshots</strong></summary>
 
-**What this demonstrates.** A Foundry prompt agent is a model plus instructions, saved as a version. The `base` block alone sets the persona and the first safety rule: the coach introduces itself, says it is not a doctor and refuses to diagnose. The agent configuration shows **Tools: none**; if **Web search** is still listed, remove it and save again.
+The introduction names LiveWell Coach. The diagnosis question is declined, not answered with a diagnosis.
 
-`lab0_hi`: the coach introduces itself as LiveWell Coach and says it is not a doctor.
+![LiveWell Coach introduction](screenshots/lab-00/08-lab0-hi.png)
 
-![Chat response introducing LiveWell Coach and stating it is not a doctor](screenshots/lab-00/08-lab0-hi.png)
+![Refusal to diagnose and suggestion to speak to a doctor](screenshots/lab-00/09-lab0-am-i-diabetic.png)
 
-`lab0_am_i_diabetic`: a refusal to diagnose, with a suggestion to see a doctor. In the trace, look for one `chat gpt-5-mini` span under the agent, no tool calls, the `base` block as the system message, and the token counts.
+![Trace of the refusal: locate the model call and instructions](screenshots/lab-00/10-refusal-trace.png)
 
-![Refusal to diagnose with advice to speak to a doctor](screenshots/lab-00/09-lab0-am-i-diabetic.png)
-
-![Trace view for the diagnosis refusal response](screenshots/lab-00/10-refusal-trace.png)
+Read what actually happened. A refusal is the model's response, not automatically a guardrail block.
 
 </details>
 
 ## Troubleshooting
 
-| Symptom | Fix |
+<details>
+<summary><strong>Sign-in, missing model or unexpected answers</strong></summary>
+
+| Symptom | What to do |
 |---|---|
-| Sign-in loops, or the Temporary Access Pass is rejected | Use an InPrivate window, your personal laptop and your own workshop account (not your work account). Check the "valid until" time on your card and that you typed the pass exactly; if it still fails, tell a facilitator, who can issue a new one. Do not register Authenticator or change any security setting. |
-| You cannot see **`livewell-workshop`** | Confirm you are in the lab tenant and ask the facilitator to refresh your Foundry User assignment. |
-| No **New agent** button | You may be outside the project or missing Foundry User. Re-open the project from the values sheet shown on screen. |
-| `gpt-5-mini` returns 429 or quota errors | Wait 30 seconds and resend. If it keeps happening, switch the agent model to `gpt-4.1-mini`, save, and tell the facilitator. |
-| No **Reasoning effort** under Parameters | You are not on `gpt-5-mini`. Reasoning effort only appears for reasoning models; check the Model dropdown. |
-| The answer cites web pages, or the trace shows a `web_search` call | The **Build an agent** template attached **Web search**. Remove it under **Tools** and save a new version. |
-| Agent diagnoses diabetes | Re-copy the [`base`](../prompts/coach-instructions.md#base) block, save a new version, and retest. |
-| Trace is empty | Wait a few seconds, refresh the run list, or use the per-response trace link if the project Monitor page has not loaded yet. |
-| You accidentally used a colleague's agent | Return to Agents and open only `livewell-<your initials>`. |
+| TAP rejected or sign-in setup requested | Use your personal laptop, InPrivate window and workshop account. Check the card's expiry; ask the facilitator. Do not register Authenticator or change tenant settings. |
+| Project, agent creation or model missing | Reopen the shared project link and tell the facilitator. Do not deploy a replacement. |
+| Quota / 429 | Wait, then retry once; ask the facilitator before changing models. |
+| Web citations or `web_search` in the trace | Remove Web search under Tools and save. |
+| The agent diagnoses | Stop, check the `base` block and saved version, and report the response. Do not treat repeated retries as safety proof. |
+| Trace missing | Allow a few minutes for ingestion, reopen the response trace, or use the captured example. |
+
+</details>
 
 ## Where next
 
-Go to [Lab 1 · Agents & Knowledge — Foundry IQ](lab-01.md) to ground the same coach in curated LiveWell guides. Keep [README](../../README.md) open for the rail picker and agenda.
+[Lab 1 · Agents & Knowledge](lab-01.md) adds evidence to the same Navigator coach. The facilitator will also preview Lab 4's prepared workflows at 1:15.

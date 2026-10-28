@@ -1,80 +1,64 @@
 # Lab 4 · Multi-agent & Hosted deploy — portal walkthrough
 
-Main page: [Lab 4](lab-04.md) · [Portal track](PORTAL-TRACK.md)
+**5 min · hosted proof at 5:15** · Main page: [Lab 4](lab-04.md) · [Portal track](PORTAL-TRACK.md)
 
-Foundry User participants open the hosted agent, chat with it in the playground, and inspect its versions, traces and RBAC boundaries. Deployment and production publishing require Foundry Project Manager, so the facilitator shows those. The multi-agent runs themselves happen in the browser-hosted DevUI ([Lab 4](lab-04.md) Navigator steps 1–3).
+Start with the [shared DevUI comparison](lab-04.md#-navigator) at 1:15: the facilitator's **private expiring link** opens the sequential demo without token entry or deployment. Here, at 5:15, use your workshop-account sign-in to inspect the **already-deployed hosted team** in Foundry. Watch the facilitator if your account cannot open its playground.
 
-How the three agents are wired (diagrams, code pointers and the DevUI view of each run): [Lab 4 · Under the hood](lab-04.md#under-the-hood).
-
-1. Find the hosted workshop agent in the agent list.
-
-   **Build → Agents → Search `livewell-workshop-hosted`**
-
-   ![Agents list filtered to livewell-workshop-hosted](screenshots/lab-04/01-find-hosted-agent.png)
-
-2. Open the hosted agent details.
-
-   **Agents → `livewell-workshop-hosted` → Overview / Playground**
-
-   ![Hosted agent page opened in the Foundry portal](screenshots/lab-04/02-open-hosted-agent.png)
-
-3. Open the version history.
-
-   **Version dropdown (top right) → Show all version history**
-
-   ![Version history for livewell-workshop-hosted](screenshots/lab-04/03-hosted-agent-versions.png)
-
-4. Inspect the active version without changing traffic.
-
-   **Details tab → Active version** (leave **Edit** alone)
-
-   ![Active hosted-agent version details](screenshots/lab-04/04-active-version-details.png)
-
-5. Chat with the hosted agent using a grounded food prompt. (The week-plan prompt from [Lab 4](lab-04.md) steps 2–3 runs in DevUI, not here.)
-
-   **Playground → New chat → Message box → Send**
-
-   ![Hosted agent responding with JSON and a citation](screenshots/lab-04/05-hosted-agent-food-prompt.png)
-
-   Prompt `lab1_prediabetes_eat`:
+1. **Open the prepared agent.** **Build → Agents → search `livewell-workshop-hosted` → Playground**. Use the active version; do not select **Edit**, **Deploy** or **Publish**.
+2. **Run a small hosted example.** Start **New chat** and send `lab1_prediabetes_eat`:
 
    ```text
    My screening says my glucose is high. What should I eat to manage pre-diabetes?
    ```
 
-6. Open the hosted-agent trace.
+   Expect evidence JSON with guide ids. This is a hosted smoke check, not the same-input timing comparison from DevUI.
+3. **Explain the execution.** Open **Response metrics → Traces → Conversation → Response**. Expand `workflow.run`: look for `resident_profile`, then `nutrition`, `activity` and `coach`. The extra profile step prepares the input; the orchestration is still sequential. Inspect model/tool spans where recorded—token totals alone do not prove a tool call.
 
-   **Response metrics → Traces → Conversation → Response**
+**Hosted proof:** the facilitator shows the existing endpoint returning cited JSON and blocking the workshop's blocklisted prompt, live or from captured evidence. The hosted playground and endpoint use **`livewell-guardrails`**. DevUI's direct model calls instead use the deployment's default guardrail.
 
-   ![Trace for the hosted-agent response](screenshots/lab-04/06-hosted-agent-trace.png)
+**Explain before moving on:** what stayed the same (the sequential team), and what changed (host, identity, endpoint and policy attachment)?
 
-7. Look at the disabled deployment or publishing controls from a Foundry User account.
+<details>
+<summary><strong>Screenshots: find the agent and read the hosted trace</strong></summary>
 
-   **Agent page → Deploy / Publish**
+![Agents list filtered to the pre-deployed livewell-workshop-hosted](screenshots/lab-04/01-find-hosted-agent.png)
 
-   > 📸 **Screenshot slot** · `screenshots/lab-04/07-disabled-deploy-publish.png` · Deploy or Publish controls disabled for Foundry User
+![Hosted agent page opened in the Foundry portal](screenshots/lab-04/02-open-hosted-agent.png)
 
-8. Confirm why the buttons are disabled.
+![Hosted agent returning evidence JSON and a citation](screenshots/lab-04/05-hosted-agent-food-prompt.png)
 
-   **Project settings → Access control → My role**
+![Hosted workflow trace showing the profile step and specialist executors](screenshots/lab-04/06-hosted-agent-trace.png)
 
-   > 📸 **Screenshot slot** · `screenshots/lab-04/08-foundry-user-role.png` · Current participant role showing Foundry User, not Foundry Project Manager
+Expand `workflow.run`, then the executor and model spans. The container log stream is useful for troubleshooting, but it is not the same view as the structured trace tree.
 
-9. Watch the facilitator show the Project Manager path.
+</details>
 
-   **Project Manager account → Agent page → Deploy / Publish**
+<details>
+<summary><strong>Optional: inspect versions and publishing permissions</strong></summary>
 
-   ![Facilitator view with deployment and publishing controls available](screenshots/lab-04/09-project-manager-publish-path.png)
+**Version dropdown → Show all version history**, then **Details → Active version**. Inspect only; do not change traffic.
 
-## What you should see
+![Hosted agent version history](screenshots/lab-04/03-hosted-agent-versions.png)
 
-`livewell-workshop-hosted` appears beside the prompt agents, has version history, answers you in the playground, and produces traces like the prompt agents. Foundry User participants can chat with it and inspect it, but cannot deploy or publish; those buttons require Foundry Project Manager.
+![Active hosted-agent version details](screenshots/lab-04/04-active-version-details.png)
 
-## If something looks different
+Participants use **Foundry User** to run agents; hosted publishing needs **Foundry Project Manager**. The facilitator can show **Project settings → Access control → My role** and the protected publishing controls.
 
-- ⚠️ If the hosted agent is not visible, the facilitator may still be deploying it or filtering by a different protected name.
-- ⚠️ If the playground will not chat for a Foundry User account, watch the facilitator's run instead. The endpoint itself accepts Foundry User callers (verified with a Foundry User-only identity), so this is a portal permission.
-- ⚠️ If Deploy and Publish labels have changed, capture the disabled production action and the role message shown by the portal.
-- If traces are unavailable, the facilitator should show a pre-captured trace from the demo kit.
-- If you have Project Manager unexpectedly, do not deploy or publish; only chat and inspect.
+> 📸 **Screenshot slot** · `screenshots/lab-04/07-disabled-deploy-publish.png` · Deploy or Publish controls disabled for Foundry User
 
+> 📸 **Screenshot slot** · `screenshots/lab-04/08-foundry-user-role.png` · Participant role showing Foundry User
+
+![Facilitator view with publishing controls available](screenshots/lab-04/09-project-manager-publish-path.png)
+
+The presence of a button is not permission to use it. No participant provisioning or publishing is part of Lab 4.
+
+</details>
+
+<details>
+<summary><strong>If the portal looks different or a trace is missing</strong></summary>
+
+- **Agent missing / playground refuses access:** check the shared project and agent name with the facilitator; watch their run instead. Do not create a replacement.
+- **Trace not ready:** allow a few minutes for ingestion, then reopen it. Use the captured trace above if it remains unavailable; missing telemetry is not proof that a tool was not called.
+- **Different labels or role controls:** ask the facilitator. Leave **Edit**, **Deploy** and **Publish** alone even if your account can see them.
+
+</details>
