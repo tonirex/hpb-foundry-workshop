@@ -12,8 +12,8 @@ Where an entry changes something SPEC.md states, it says so.
 | Guest Wi-Fi SSID and code | `workshop.guest_wifi` (rendered on the deck logistics slide) | TODO |
 | Sponsor subscription ID and tenant ID | `environments.sponsor` and `infra/env/sponsor.bicepparam` (Phase 2) | Done 2026-10-04: subscription "HPB-workshop_HPB_Customer" (Azure Sponsorship) in its own tenant `hpbsub2026outlook.onmicrosoft.com`, kept separate from MCAPS (no Change directory) |
 | Sponsor facilitator UPN(s) | `environments.sponsor.facilitator_upns` | Done 2026-10-04: `hpb.facilitator@hpbsub2026outlook.onmicrosoft.com`, a cloud-only work account (Global Administrator, subscription Owner) that runs the sponsor environment. The tenant's creator `hpb.sub2026@outlook.com` keeps its rights and receives the budget alerts (10.1) |
-| Fabric Administrator role for the MCAPS facilitator account | Entra ID → Roles → Fabric Administrator (or activate Global Administrator in PIM). Needed for the tenant settings in `content/admin/TENANT-BOOTSTRAP.md` | Done 2026-09-29: "Users can create Ontology (preview) items" enabled; Phase 3 deploy green |
-| Fabric tenant sign-up (MCAPS tenant has never used Fabric) | A tenant user signs in once at app.fabric.microsoft.com | Done 2026-09-29: F2 `fablivewellmcaps` created by `provision.sh mcaps` |
+| Fabric Administrator role for the MCAPS facilitator account | Entra ID → Roles → Fabric Administrator (or activate Global Administrator in PIM). Needed for the tenant settings in `content/admin/TENANT-BOOTSTRAP.md` | The 2026-09-29 bootstrap used the legacy MCAPS tenant. Current-tenant role assignments were not changed or re-audited in 11.15 |
+| Fabric tenant sign-up | A tenant user signs in once at app.fabric.microsoft.com | Current MCAPS: existing `fabhpblivewellmcaps` is Active F2 and hosts the Resident 360 workspace (11.15) |
 
 ## Phase 0: bootstrap
 
@@ -967,7 +967,8 @@ Where an entry changes something SPEC.md states, it says so.
   only the age band. The core learning objectives remain verbatim.
 - **11.3 (user-directed)** Participant entry links now use `tonirex/hpb-foundry-workshop`, including generated
   sign-in cards and the Day 1 deck. The older `tonirex/livewell-foundry-workshop` is a separate repository that had
-  the same starting revision, not a dead link. Azure resource names and deterministic ID namespaces are unchanged.
+  the same starting revision, not a dead link. This guide consolidation did not rename Azure resources or
+  deterministic ID namespaces; the later environment-binding correction is recorded in 11.15.
 - **11.4** `sync-lab-blocks.py` generates inline copy payloads from canonical sources and fails on missing markers,
   unknown sources or drift. Instructions explicitly say append or replace. Schemas include their full wrapper,
   intake includes both documents, and the flyer's hidden HTML survives exactly as in the tested portal message.
@@ -1006,14 +1007,38 @@ Where an entry changes something SPEC.md states, it says so.
   SDK reads verified all seven sponsor demo agents' models and all four structured response schemas against the
   canonical helpers. The knowledge/guarded demo schema label is `livewell_lab1_answer`; its schema is identical to
   the participant's `livewell_answer`, so the guide explains that cosmetic difference rather than changing the cloud agent.
-- **11.13 (authorization outstanding)** Both existing Fabric capacities were Paused. No capacity was resumed,
-  no new capture sign-in was saved, and no model was invoked. Approval for a dedicated capture-browser sign-in
-  could not be obtained because the user was unavailable. The remaining live retakes still require that sign-in
-  and authorization for temporarily running the chosen Fabric capacity; neither can be assumed from this readiness check.
+- **11.13 (initial wrong-target checks; superseded by 11.15)** The sponsor and legacy-MCAPS capacities inspected
+  initially were Paused. Those results did **not** describe the user's intended MCAPS subscription. No capacity
+  was resumed, no new capture sign-in was saved, and no model was invoked. An unavailable approval prompt was
+  not treated as authorization. Future retakes need an authorized capture session and a fresh check of the chosen
+  environment, not these historical capacity observations.
   `--outdated-only --dry-run` now proves the exact 50-image selection offline and never broadens an empty selection.
 - **11.14 (approved fallback applied)** The plan explicitly permits complete text-only guidance when an outdated
   screenshot cannot be refreshed. That fallback is now applied without leaving historical images in expandable
   participant sections. The image files remain unchanged, hidden markers keep the optional retake inventory usable,
   and validation fails if an archived capture is rendered in a canonical guide. This is not a claim that a live
-  retake occurred. The user-requested browser canvas is at the correct sponsor password prompt; password/MFA stays
-  with the user, and the guide does not depend on completing that sign-in.
+  retake occurred. The sponsor password prompt reached during that attempt was the wrong target; no password
+  was submitted. The later MCAPS canvas correction is recorded below, and guides do not depend on a new sign-in.
+- **11.15 (user-directed MCAPS correction)** The user supplied the authoritative subscription, now recorded in
+  `environments.mcaps`. Live ARM verification identifies it as `ME-MngEnvMCAP261533-antoniachen-1`, Enabled.
+  The stale config and CLI default described a different MCAPS subscription. The selected local azd environment,
+  tenant, generated parameters and endpoint metadata now match the user-selected target. Effective names are
+  `aif-hpb-livewell-mcaps` / `livewell-workshop`, `srch-hpb-livewell-mcaps` and `fabhpblivewellmcaps`; Python and
+  Bicep merge only those three MCAPS overrides, preserving sponsor defaults. All 15 resource IDs, the three
+  required model deployments, nine project connections, seven demo-agent models and four response schemas were
+  checked read-only. The profile endpoint and DevUI sign-in page respond; the Resident 360 workspace is assigned
+  to this exact **Active F2** capacity. Search remains in France Central under the existing capacity exception.
+  The browser canvas opens the correct project using the existing MCAPS session; no password was entered and
+  no account was created. The existing capacity administrator supplies the configuration's facilitator defaults.
+  The CLI's global default and all cloud resources, roles and capacity states were left unchanged.
+- **11.16 (binding safeguards)** CLI credentials and standalone REST helpers explicitly select the environment's
+  subscription instead of accidentally using another signed-in account. `az account get-access-token` accepts
+  subscription **or** tenant, not both; subscription wins when supplied. `azure-identity>=1.20` is required for
+  `AzureCliCredential(subscription=...)`. `--parameters-only` never creates access or resources. A restored
+  environment with an existing DevUI but no local token stops normal provisioning rather than rotating the token.
+  Account creation remains the user's separate task; no attendee seeding or RBAC operation was run.
+- **11.17 (remaining live readiness finding)** Read-only `apply-guardrail.py --check` on the corrected MCAPS
+  target found drift in `livewell-guardrails`: its mode, blocking filters and custom-blocklist attachment differ
+  from `guardrails.yaml`. The four blocklist items and deployment-level policies match. Lab 2 is **not** signed
+  off as ready until an authorized operator reapplies the policy and the check passes. No cloud policy was changed
+  during this validation, and no model-behaviour run or screenshot retake is claimed.

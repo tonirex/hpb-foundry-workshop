@@ -19,7 +19,15 @@ All notable changes to this workshop. One entry per phase PR.
   inventory; the five uncaptured steps also remain text-only.
 - Added `--outdated-only` and an offline capture `--dry-run`, with regression coverage preventing an empty filtered
   selection from becoming a blanket capture. Verified live sponsor demo models/schema shapes read-only; prepared an
-  isolated x64 capture runtime. Sign-in approval and the paused Fabric capacity remain explicit live-capture prerequisites.
+  isolated x64 capture runtime. These initial sponsor/legacy-MCAPS checks were not validation of the user's current target.
+- **Corrected MCAPS binding.** Replaced stale subscription/tenant settings with the user's explicitly selected
+  environment and its existing HPB-prefixed resources. Python/Bicep name overrides preserve sponsor. CLI/SDK/REST
+  authentication is subscription-scoped, portal links carry the tenant, and parameter-only inspection cannot
+  create resources or tokens. Azure Identity's minimum is now 1.20. Missing restored DevUI tokens require an
+  explicit private restore instead of silent rotation.
+- Regenerated Lab 3's OpenAPI copy block from the correct MCAPS endpoint. Read-only checks confirm the model
+  deployments, demo schemas, connections, endpoints and Resident 360 workspace on **Active F2**. The canvas
+  opens the correct project. **Lab 2 guardrail policy drift remains**, with no cloud policy or account changes made.
 
 ### Sponsor environment (2026-10-04)
 

@@ -2,6 +2,8 @@
 """Select the per-environment parameter file and make `azd provision` self-contained.
 
 Run by scripts/provision.sh BEFORE `azd provision`, and again as the azd preprovision hook (--hook).
+Use --parameters-only to select the local parameter file without creating a resource group, generating
+tokens or setting identity values. This is suitable for inspecting an existing environment.
 
 1. Copies infra/env/<AZURE_ENV_NAME>.bicepparam -> infra/main.bicepparam (gitignored), fixing the
    `using` path, because azd only reads infra/main.bicepparam.
@@ -19,6 +21,7 @@ Standard library only; ASCII output. Exit code != 0 stops `azd provision`.
 """
 from __future__ import annotations
 
+import argparse
 import json
 import os
 import re
@@ -51,7 +54,12 @@ def load_azd_env() -> None:
             os.environ.setdefault(key.strip(), value.strip().strip('"'))
 
 def main() -> int:
-    hook_mode = "--hook" in sys.argv[1:]
+    parser = argparse.ArgumentParser(description=__doc__)
+    mode = parser.add_mutually_exclusive_group()
+    mode.add_argument("--hook", action="store_true", help="refuse changes after azd has loaded parameters")
+    mode.add_argument("--parameters-only", action="store_true", help="write only the local parameter file; no Azure changes")
+    args = parser.parse_args()
+    hook_mode = args.hook
     env = os.environ.get("AZURE_ENV_NAME", "").strip()
     if not env:
         env = run(["azd", "env", "get-value", "AZURE_ENV_NAME"], check=False)
@@ -85,15 +93,23 @@ def main() -> int:
     else:
         print(f"[select-params] infra/main.bicepparam matches infra/env/{env}.bicepparam")
 
+    if args.parameters_only:
+        print("[select-params] Parameters only: no identity, token, budget or resource-group changes")
+        return 0
+
+    sub = os.environ.get("AZURE_SUBSCRIPTION_ID", "").strip()
+    if not sub:
+        print("[select-params] AZURE_SUBSCRIPTION_ID is required; refusing to use the CLI's unrelated default.")
+        return 1
     if os.environ.get("AZURE_PRINCIPAL_ID"):
         print("[select-params] AZURE_PRINCIPAL_ID already set")
     else:
-        account = json.loads(run(["az", "account", "show", "-o", "json"]))
+        account = json.loads(run(["az", "account", "show", "--subscription", sub, "-o", "json"]))
         if account.get("user", {}).get("type") == "servicePrincipal":
-            pid = run(["az", "ad", "sp", "show", "--id", account["user"]["name"], "--query", "id", "-o", "tsv"])
+            pid = run(["az", "ad", "sp", "show", "--id", account["user"]["name"], "--subscription", sub, "--query", "id", "-o", "tsv"])
             ptype = "ServicePrincipal"
         else:
-            pid = run(["az", "ad", "signed-in-user", "show", "--query", "id", "-o", "tsv"])
+            pid = run(["az", "ad", "signed-in-user", "show", "--subscription", sub, "--query", "id", "-o", "tsv"])
             ptype = "User"
         run(["azd", "env", "set", "AZURE_PRINCIPAL_ID", pid])
         run(["azd", "env", "set", "AZURE_PRINCIPAL_TYPE", ptype])
@@ -107,6 +123,10 @@ def main() -> int:
     # printed on the values sheet by render-values.py. Never a Bicep output.
     if (os.environ.get("LAB4_DEVUI", "true").strip().lower() in ("1", "true", "yes")
             and not os.environ.get("LIVEWELL_DEVUI_TOKEN")):
+        if os.environ.get("LAB4_DEVUI_APP_NAME"):
+            print("[select-params] Existing DevUI app found but LIVEWELL_DEVUI_TOKEN is missing. "
+                  "Restore its token privately before provisioning; refusing to generate a replacement.")
+            return 1
         token = secrets.token_urlsafe(18)
         run(["azd", "env", "set", "LIVEWELL_DEVUI_TOKEN", token])
         os.environ["LIVEWELL_DEVUI_TOKEN"] = token
@@ -126,7 +146,6 @@ def main() -> int:
 
     rg = os.environ.get("AZURE_RESOURCE_GROUP", "").strip()
     location = os.environ.get("AZURE_LOCATION", "swedencentral").strip()
-    sub = os.environ.get("AZURE_SUBSCRIPTION_ID", "").strip()
     if not rg:
         print("[select-params] AZURE_RESOURCE_GROUP is not set (expected rg-livewell-workshop-<env>).")
         return 1
@@ -144,11 +163,13 @@ def fabric_capacity_updatable(rg: str, sub: str, env: str) -> bool:
     deployment after every other resource has gone through. Stop before azd starts instead."""
     if os.environ.get("FABRIC_BRIDGE", "false").strip().lower() not in ("1", "true", "yes"):
         return True
-    sub = sub or run(["az", "account", "show", "--query", "id", "-o", "tsv"], check=False)
+    if not sub:
+        print("[select-params] AZURE_SUBSCRIPTION_ID is required to check Fabric capacity.")
+        return False
     url = (f"https://management.azure.com/subscriptions/{sub}/resourceGroups/{rg}"
            "/providers/Microsoft.Fabric/capacities?api-version=2023-11-01")
-    out = run(["az", "rest", "--method", "get", "--url", url, "--query",
-               "value[].[name, properties.state]", "-o", "tsv"], check=False)
+    out = run(["az", "rest", "--method", "get", "--url", url, "--subscription", sub, "--query",
+               "value[].[name, properties.state]", "-o", "tsv"])
     paused = [line.split("\t")[0] for line in out.splitlines()
               if line.split("\t")[-1] in ("Paused", "Suspended")]
     if paused:

@@ -1,6 +1,6 @@
-// mcaps — dry-run environment (Antonia's MCAPS subscription).
+// mcaps — the user-selected MCAPS workshop subscription.
 // Differs from sponsor.bicepparam ONLY in: subscription (set in the azd env), capacity admins, caps, tags.
-// Subscription 15715b5a-037a-4d59-bf60-2fa0986a3179 · tenant 108f6739-7d66-44bd-b535-c1812dab17b5
+// Subscription c4745a9c-2fb6-4336-a000-6e0f71afaeb5 · tenant f41bde0b-74cd-498a-9091-079dec7418a4
 using '../main.bicep'
 
 param environmentName = 'mcaps'
@@ -10,7 +10,7 @@ param principalType = readEnvironmentVariable('AZURE_PRINCIPAL_TYPE', 'User')
 
 // Fabric capacity admins = UPNs of member accounts in the MCAPS tenant.
 param fabricAdminMembers = [
-  'admin@mngenvmcap761802.onmicrosoft.com'
+  'kychan@MngEnvMCAP261533.onmicrosoft.com'
 ]
 param fabricBridge = bool(readEnvironmentVariable('FABRIC_BRIDGE', 'true'))
 param projectMode = readEnvironmentVariable('MODE', 'shared-project')
@@ -40,7 +40,7 @@ param budgetAlertThresholdsUsd = [
   300
 ]
 param budgetContactEmails = [
-  'admin@mngenvmcap761802.onmicrosoft.com'
+  'kychan@MngEnvMCAP261533.onmicrosoft.com'
 ]
 
 param extraTags = {

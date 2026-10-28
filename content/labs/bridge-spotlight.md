@@ -166,7 +166,7 @@ free text.
 
 [`demos/fabric-steps.py`](../../demos/fabric-steps.py) asks the data agent directly, reads its run steps, and draws
 them. The coach never uses this path: in Foundry it calls the data agent through the Fabric IQ tool
-([`fabric_tool`](../assets/common/livewell_common.py#L534-L538)) and the trace sees one call. This script is a lens on
+([`fabric_tool`](../assets/common/livewell_common.py#L540-L544)) and the trace sees one call. This script is a lens on
 what happens inside that call.
 
 | Step | Code | What it does |

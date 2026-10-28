@@ -561,15 +561,15 @@ python content/assets/lab1_knowledge.py --intake
 
 The lab file stays short because the Foundry calls live in one shared helper, [`livewell_common.py`](../assets/common/livewell_common.py). Three calls do the work:
 
-1. **The knowledge tool.** [`lw.kb_tool()`](../assets/common/livewell_common.py#L494-L498) returns an `MCPTool` that points at the knowledge base's MCP endpoint. It goes through the project connection `livewell-guides-kb-mcp`, so the project's managed identity signs in and the file holds no URL or key. `allowed_tools=["knowledge_base_retrieve"]` exposes only the search tool.
-2. **The agent.** [`lw.create_agent(...)`](../assets/common/livewell_common.py#L667-L689) calls `project().agents.create_version(...)` with a `PromptAgentDefinition`: the model, the instructions, the tools, a strict JSON-schema response format and the guardrail. Each run adds a version to the same agent, as **Save** does in the portal.
+1. **The knowledge tool.** [`lw.kb_tool()`](../assets/common/livewell_common.py#L500-L504) returns an `MCPTool` that points at the knowledge base's MCP endpoint. It goes through the project connection `livewell-guides-kb-mcp`, so the project's managed identity signs in and the file holds no URL or key. `allowed_tools=["knowledge_base_retrieve"]` exposes only the search tool.
+2. **The agent.** [`lw.create_agent(...)`](../assets/common/livewell_common.py#L673-L695) calls `project().agents.create_version(...)` with a `PromptAgentDefinition`: the model, the instructions, the tools, a strict JSON-schema response format and the guardrail. Each run adds a version to the same agent, as **Save** does in the portal.
 
    ```python
    coach = lw.create_agent("coach", instructions, tools=[knowledge],
                            schema=lw.lab1_schema(), rai_policy=lw.DEFAULT_RAI_POLICY)
    ```
 
-3. **The question.** [`lw.ask(coach, prompt_id=...)`](../assets/common/livewell_common.py#L913-L993) sends the prompt through the OpenAI Responses API with `extra_body={"agent_reference": {"name": ..., "version": ...}}`. Foundry runs the agent on the server: it calls the knowledge base, then the model, then returns the JSON reply. The helper records the tools called, the routed model and the citations, and [`lw.expect`](../assets/lab1_knowledge.py#L75-L79) prints the PASS lines.
+3. **The question.** [`lw.ask(coach, prompt_id=...)`](../assets/common/livewell_common.py#L919-L999) sends the prompt through the OpenAI Responses API with `extra_body={"agent_reference": {"name": ..., "version": ...}}`. Foundry runs the agent on the server: it calls the knowledge base, then the model, then returns the JSON reply. The helper records the tools called, the routed model and the citations, and [`lw.expect`](../assets/lab1_knowledge.py#L75-L79) prints the PASS lines.
 
 `create_agent` and `ask` are reused unchanged in Labs 2 to 4; only the instructions and tools change.
 

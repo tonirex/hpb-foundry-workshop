@@ -4,6 +4,6 @@
 #   .venv-redteam/bin/python -m pip install -r requirements-redteam.txt      # Windows: .venv-redteam\Scripts\python.exe
 azure-ai-evaluation[redteam]==1.18.7
 azure-ai-projects==2.6.1
-azure-identity>=1.19
+azure-identity>=1.20
 openai>=1.99
 pyyaml>=6.0

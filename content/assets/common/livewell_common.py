@@ -100,9 +100,9 @@ load_settings()
 
 @functools.lru_cache(maxsize=1)
 def config() -> dict:
-    import yaml
-
-    return yaml.safe_load(WORKSHOP_YAML.read_text(encoding="utf-8"))
+    sys.path.insert(0, str(ROOT / "scripts" / "lib"))
+    import wsconfig
+    return wsconfig.load(_azd_env_name() or None)
 
 
 NAMES: dict = config()["names"]
@@ -379,7 +379,13 @@ def credential():
     if client_id := managed_identity_client_id():
         return ManagedIdentityCredential(client_id=client_id)
     tenant = os.environ.get("AZURE_TENANT_ID") or None
-    return ChainedTokenCredential(AzureCliCredential(tenant_id=tenant), AzureDeveloperCliCredential(tenant_id=tenant))
+    subscription = os.environ.get("AZURE_SUBSCRIPTION_ID") or None
+    # The CLI accepts subscription OR tenant; subscription pins both the account and its tenant.
+    cli = AzureCliCredential(subscription=subscription) if subscription else AzureCliCredential(tenant_id=tenant)
+    return ChainedTokenCredential(
+        cli,
+        AzureDeveloperCliCredential(tenant_id=tenant),
+    )
 
 
 @functools.lru_cache(maxsize=1)

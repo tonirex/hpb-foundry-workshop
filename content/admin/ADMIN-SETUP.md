@@ -35,6 +35,22 @@ azd auth login --tenant-id <tenant-id>
 fab auth login                            # Phase 3 onwards
 ```
 
+**Checking an existing MCAPS setup is not provisioning it.** Compare the subscription explicitly with
+`environments.mcaps.subscription_id` in [workshop.yaml](../config/workshop.yaml), not just the friendly name
+`mcaps` or the CLI's global default. The current MCAPS deployment uses `aif-hpb-livewell-mcaps`,
+`srch-hpb-livewell-mcaps` and `fabhpblivewellmcaps`; per-environment name overrides leave sponsor unchanged.
+Its existing Search service is in France Central (the capacity exception in ASSUMPTIONS.md 2.5); Foundry
+and Fabric remain in Sweden Central. To regenerate only the local parameter file:
+
+```bash
+azd env select mcaps
+AZURE_ENV_NAME=mcaps python scripts/select-params.py --parameters-only
+```
+
+This does not create users, assign roles, generate a token, provision resources or resume capacity.
+Account creation remains a separate operator task. Restoring deployment outputs does not restore the
+private DevUI token; restore that value privately before a later provision, rather than generating a replacement.
+
 ## Timeline
 
 ### T-10: quota requests
@@ -117,7 +133,9 @@ About 1.5 h end to end.
   once took 38–52 s each.
 - **Opting out.** `azd env set LAB4_DEVUI false` skips it. Then deploy services by name and leave out `lab4-devui`.
 - **Caveats.** DevUI is a sample (beta), not a production app. Everyone with the token shares one session list, and
-  the data is fictional. Rotate the token with `azd env set LIVEWELL_DEVUI_TOKEN ""`, then provision again.
+  the data is fictional. To rotate deliberately, generate a new token privately, set it explicitly with
+  `azd env set LIVEWELL_DEVUI_TOKEN "<new-token>"`, then provision again. If an existing app's local token is
+  missing, `select-params.py` stops rather than silently replacing it.
 
 Re-run step 9 after step 3 so that attendees also get **Viewer** on the Fabric workspace, which gives read access to
 the data agent. The postprovision hook (`scripts/apply-guardrail.py`) keeps every model deployment on the platform

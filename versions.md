@@ -56,7 +56,7 @@ Cost Management query 2023-11-01, Fabric capacity suspend/resume 2023-11-01). Fa
 | Package | Pin | Notes |
 |---|---|---|
 | `azure-ai-projects` | `>=2.6.1` (2.6.1 tested) | New Agents API (`agents.create_version`, `create_version_from_code`, Responses, `get_openai_client(agent_name=...)` for hosted agents). 2.2.0 lacks `agents.download_code` (hosted-postdeploy) and `ProtocolConfiguration` (A2A) |
-| `azure-identity` | `>=1.19` (1.25.3 tested) | `DefaultAzureCredential` / device code |
+| `azure-identity` | `>=1.20` (1.25.3 and scoped CLI on 1.27.0 tested) | 1.20 introduced `AzureCliCredential(subscription=...)`; select subscription or tenant, never both |
 | `openai` | `>=1.99` (3.17.0 tested) | Responses client from `project.get_openai_client()` |
 | `azure-search-documents` | `==12.1.0b1` | Foundry IQ knowledge base API (per microsoft/iq-series); 12.1.0b2 exists but is not validated |
 | `azure-ai-evaluation` | `>=1.10` (1.18.7 tested) | Groundedness, relevance, safety evaluators |
@@ -110,7 +110,8 @@ PTU deployments and partner models are never used.
 ## Participant guide revision
 
 - Canonical Navigator pages now include the screenshot directions and generated copy blocks. The old portal
-  filenames are compatibility pages. No SDK/model versions changed in this revision.
+  filenames are compatibility pages. Model versions are unchanged; the later MCAPS binding fix raises the
+  Azure Identity minimum to 1.20 for explicit CLI subscription selection.
 - Optional intake uses the existing strict intake schema on a separate agent. A2A remains the Navigator specialist
   path; sequential and hand-off output contracts are documented separately.
 - All 83 screenshot files decode. **50 archived captures are not displayed in participant guides**; complete
@@ -124,6 +125,15 @@ PTU deployments and partner models are never used.
   separately with `sync-openapi-block.py <env> --check` when the selected environment is available.
 - Follow-up capture readiness: an isolated x64 Python 3.13 environment with `azure-ai-projects==2.6.1` resolves the
   ARM64 `cryptography` build failure. Read-only sponsor checks confirm the intended demo models and schema shapes.
-  Both Fabric capacities were Paused, and the requested browser canvas reached the sponsor password prompt.
-  Live capture still requires the user's sign-in and any necessary capacity authorization. No cloud configuration,
-  capacity state or screenshot changed. Use `--outdated-only --dry-run` to inspect the optional bounded retake job.
+  Those checks used sponsor and legacy MCAPS, not the user-selected subscription; their Paused status and the
+  sponsor password prompt are superseded by the MCAPS correction below. No cloud configuration, capacity state
+  or screenshot changed. Use `--outdated-only --dry-run` to inspect the optional bounded retake job.
+- **MCAPS correction:** the explicitly selected subscription's existing HPB-prefixed account, Search and Fabric
+  resources now match Python/Bicep configuration and local azd metadata. The browser canvas opens its project
+  with the existing MCAPS session. Fabric is **Active F2**, and its Resident 360 workspace assignment is verified.
+  The Lab 3 OpenAPI block was regenerated from this target. Models, demo schemas, connections and endpoints were
+  checked read-only; `livewell-guardrails` still has policy drift, so Lab 2 is not signed off as ready.
+- API compatibility: [AzureCliCredential](https://learn.microsoft.com/python/api/azure-identity/azure.identity.azureclicredential)
+  and the [Azure Identity 1.20 release notes](https://github.com/Azure/azure-sdk-for-python/blob/main/sdk/identity/azure-identity/CHANGELOG.md#1200-2025-02-11)
+  document the subscription parameter. The CLI's mutually exclusive subscription/tenant token flags were also
+  verified live. No SDK workaround, new sign-in, account creation, deployment or permission change was used.

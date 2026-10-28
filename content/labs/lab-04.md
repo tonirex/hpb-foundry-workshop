@@ -269,20 +269,20 @@ Use `--verbose` for each agent's full answer. Use `--cleanup` to delete only `li
 
 | Section | Code | What it does |
 |---|---|---|
-| 1 | [L56-L58](../assets/lab4_multiagent.py#L56-L58), [`profile_summary`](../assets/common/livewell_common.py#L570-L575) | Builds the request: one profile line plus the prompt. |
-| 2 | [`af_client`](../assets/common/livewell_common.py#L1120-L1136), [`af_kb_tool` and `af_activities_tool`](../assets/common/livewell_common.py#L1139-L1150) | A `FoundryChatClient` on the project's model deployment, and the two hosted MCP tools from `client.get_mcp_tool`. `allowed_tools` keeps Activity to `find_activities`. |
+| 1 | [L56-L58](../assets/lab4_multiagent.py#L56-L58), [`profile_summary`](../assets/common/livewell_common.py#L576-L581) | Builds the request: one profile line plus the prompt. |
+| 2 | [`af_client`](../assets/common/livewell_common.py#L1126-L1142), [`af_kb_tool` and `af_activities_tool`](../assets/common/livewell_common.py#L1145-L1156) | A `FoundryChatClient` on the project's model deployment, and the two hosted MCP tools from `client.get_mcp_tool`. `allowed_tools` keeps Activity to `find_activities`. |
 | 3 | [`text_only` and `team()`](../assets/lab4_multiagent.py#L80-L95) | Agent middleware that strips other agents' tool calls (but keeps the agent's own hand-off result, so a second turn still has input), and a factory for fresh Nutrition and Activity agents. An agent instance belongs to one workflow, so each workflow builds its own. |
-| 4 | [`sequential()`](../assets/lab4_multiagent.py#L124-L129), [run and checks](../assets/lab4_multiagent.py#L132-L152) | `SequentialBuilder` in a fixed order. The Coach's strict schema comes from [`af_json_format`](../assets/common/livewell_common.py#L1153-L1156), the same evidence contract as Lab 3. |
+| 4 | [`sequential()`](../assets/lab4_multiagent.py#L124-L129), [run and checks](../assets/lab4_multiagent.py#L132-L152) | `SequentialBuilder` in a fixed order. The Coach's strict schema comes from [`af_json_format`](../assets/common/livewell_common.py#L1159-L1162), the same evidence contract as Lab 3. |
 | 5 | [`answer_first()` and `handoff()`](../assets/lab4_multiagent.py#L165-L202) | A chat middleware that makes Nutrition answer before it can hand off, then `HandoffBuilder`: who may hand off to whom, the start agent, one autonomous turn for Nutrition and a stop condition. |
 | 6 | [L226-L232](../assets/lab4_multiagent.py#L226-L233) | Not Agent Framework: a Foundry prompt agent with the Fabric tool, created and asked exactly as in Lab 3. |
 | 7 | [L260-L283](../assets/lab4_multiagent.py#L261-L284) | Finds `livewell-workshop-hosted`, checks its guardrail, and sends it the week-plan prompt. |
 
 Two helpers do the plumbing:
 
-- [`af_run`](../assets/common/livewell_common.py#L1184-L1210) builds a **fresh** workflow, runs it with `await workflow.run(request)` and collects every output message. A 429 or a model error re-runs the whole workflow, because a half-finished hand-off cannot be resumed.
-- [`af_steps`](../assets/common/livewell_common.py#L1159-L1174) turns those messages into the printed trace: who spoke (`author_name`), in order, and which tools each speaker called.
+- [`af_run`](../assets/common/livewell_common.py#L1190-L1216) builds a **fresh** workflow, runs it with `await workflow.run(request)` and collects every output message. A 429 or a model error re-runs the whole workflow, because a half-finished hand-off cannot be resumed.
+- [`af_steps`](../assets/common/livewell_common.py#L1165-L1180) turns those messages into the printed trace: who spoke (`author_name`), in order, and which tools each speaker called.
 
-`lw.ask` knows that a hosted agent only answers on its own endpoint. For `livewell-workshop-hosted` it uses an OpenAI client for `{project}/agents/<name>/endpoint/protocols/openai` ([`_openai_agent`](../assets/common/livewell_common.py#L404-L406)). For a prompt agent it sends an `agent_reference` instead.
+`lw.ask` knows that a hosted agent only answers on its own endpoint. For `livewell-workshop-hosted` it uses an OpenAI client for `{project}/agents/<name>/endpoint/protocols/openai` ([`_openai_agent`](../assets/common/livewell_common.py#L410-L412)). For a prompt agent it sends an `agent_reference` instead.
 
 Engineer appendix notes:
 

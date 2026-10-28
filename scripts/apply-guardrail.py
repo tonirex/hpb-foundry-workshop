@@ -62,7 +62,7 @@ def main() -> int:
     account = (f"/subscriptions/{env['AZURE_SUBSCRIPTION_ID']}/resourceGroups/{env['AZURE_RESOURCE_GROUP']}"
                f"/providers/Microsoft.CognitiveServices/accounts/{env['AZURE_AI_ACCOUNT_NAME']}")
     base = f"{account}/raiBlocklists/{bl['name']}"
-    arm = Api("arm")
+    arm = Api("arm", subscription=env["AZURE_SUBSCRIPTION_ID"])
     if arm.get(f"{base}?api-version={API}", ok_404=True) is None:
         print(f"[guardrail] blocklist {bl['name']} not found; run azd provision first", file=sys.stderr)
         return 2

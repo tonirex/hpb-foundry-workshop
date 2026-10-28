@@ -155,11 +155,15 @@ modes:
 # ---------------------------------------------------------------------------
 environments:
   mcaps:
-    purpose: "dry run"
-    subscription_id: "15715b5a-037a-4d59-bf60-2fa0986a3179"
-    tenant_id: "108f6739-7d66-44bd-b535-c1812dab17b5"
+    purpose: "MCAPS workshop and validation"
+    subscription_id: "c4745a9c-2fb6-4336-a000-6e0f71afaeb5"
+    tenant_id: "f41bde0b-74cd-498a-9091-079dec7418a4"
+    names:
+      foundry_account: "aif-hpb-livewell-mcaps"
+      search_service: "srch-hpb-livewell-mcaps"
+      fabric_capacity: "fabhpblivewellmcaps"
     facilitator_upns:
-      - "admin@mngenvmcap761802.onmicrosoft.com"   # Fabric capacity admin + Foundry Project Manager
+      - "kychan@MngEnvMCAP261533.onmicrosoft.com"  # Existing capacity admin; workshop users are created separately.
     lab_accounts:
       prefix: "hpb.lab"
       count: 20
