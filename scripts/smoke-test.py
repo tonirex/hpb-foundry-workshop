@@ -11,7 +11,7 @@ a pass/fail table plus the total cost since provision (Cost Management, resource
                       lab2_medication_double is blocked by the blocklist (the default never blocks it); and
                       `apply-guardrail.py --check` finds no drift (tenant governance can reset the policy)
   * Tools             lab3_hazy_indoor_signup fires >= 2 tools (livewell_profile + find_activities);
-                      a register_interest approval, if requested, is denied so nothing is written
+                      discovery must stay read-only; an unexpected approval is denied and fails the check
   * Specialists       a temporary coach with the livewell-nutrition-a2a / livewell-activity-a2a tools asks
                       lab3_specialists and both A2A calls complete (Lab 3 Navigator step 11; also with --demo-agents)
   * Fabric bridge     fabric_q_disengaged_regions calls Fabric IQ and ranks the reference top region first
@@ -132,14 +132,15 @@ def check_guardrail_config() -> list:
 
 
 def check_tools(agent, attempts: int = 2) -> list:
-    # One retry: the model occasionally answers the sign-up question from the KB + profile alone.
+    # One retry: the model occasionally answers the discovery question from the KB + profile alone.
     for attempt in range(1, attempts + 1):
         run = lw.ask(agent, prompt_id="lab3_hazy_indoor_signup", approve=False)
         names = sorted({c.name for c in run.tool_calls if c.kind in ("openapi_call", "mcp_call", "function_call")})
         profile = any(n.endswith("get_citizen_profile") for n in names)
         wrote = any(c.name == "register_interest" and c.kind == "mcp_call" for c in run.tool_calls)
-        ok = profile and "find_activities" in names and len(names) >= 2 and not wrote and no_resident_id(run.text)
-        if ok or wrote:
+        ok = (profile and "find_activities" in names and run.called("knowledge_base_retrieve")
+              and len(names) >= 2 and not run.approvals and not wrote and no_resident_id(run.text))
+        if ok or wrote or run.approvals:
             break
     retry = f", attempt {attempt}/{attempts}" if attempt > 1 else ""
     return [("Tools: compound question fires >= 2 tools", ok,

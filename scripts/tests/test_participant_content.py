@@ -10,7 +10,8 @@ import sys
 import tempfile
 import unittest
 from pathlib import Path
-from unittest.mock import patch
+from types import SimpleNamespace
+from unittest.mock import Mock, patch
 
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / "demos"))
@@ -132,6 +133,74 @@ class CopyBlocksTests(unittest.TestCase):
         )
         self.assertEqual(blocks.lw.load_instructions("intake"), expected)
 
+    def test_activity_discovery_and_confirmation_are_separate(self):
+        import ast
+        discovery = blocks.lw.prompt("lab3_hazy_indoor_signup")
+        confirmation = blocks.lw.prompt("lab3_signup_confirm")
+        self.assertIn("Show me the options first.", discovery["text"])
+        self.assertNotIn("register_interest", discovery["expected"]["tools"])
+        self.assertEqual(confirmation["expected"]["approval_required"], "register_interest")
+        tree = ast.parse((ROOT / "content" / "assets" / "lab3_tools.py").read_text(encoding="utf-8"))
+        call = next(node for node in ast.walk(tree) if isinstance(node, ast.Call)
+                    and any(k.arg == "prompt_id" and isinstance(k.value, ast.Constant)
+                            and k.value.value == "lab3_hazy_indoor_signup" for k in node.keywords))
+        approval = next(k.value for k in call.keywords if k.arg == "approve")
+        self.assertIsInstance(approval, ast.Constant)
+        self.assertIs(approval.value, False)
+
+    def test_discovery_only_continues_after_readonly_retrieval(self):
+        import ast
+        path = ROOT / "content" / "assets" / "lab3_tools.py"
+        tree = ast.parse(path.read_text(encoding="utf-8"))
+
+        def assigns(node, name):
+            return (isinstance(node, ast.Assign)
+                    and any(isinstance(target, ast.Name) and target.id == name for target in node.targets))
+
+        start = next(i for i, node in enumerate(tree.body) if assigns(node, "conversation"))
+        end = next(i for i, node in enumerate(tree.body) if i > start and assigns(node, "calls"))
+        cell = compile(ast.Module(body=tree.body[start:end], type_ignores=[]), str(path), "exec")
+        for approval, registered, searched in (
+            (False, False, True), (True, False, True), (False, True, True), (False, False, False),
+        ):
+            with self.subTest(approval=approval, registered=registered, searched=searched):
+                tools = ({"register_interest"} if registered else set()) | (
+                    {"knowledge_base_retrieve"} if searched else set())
+                run = SimpleNamespace(approvals=[object()] if approval else [], tool_names=sorted(tools),
+                                      called=lambda name: name in tools)
+                lw = Mock()
+                lw.ask.side_effect = [run, run]
+                scope = {"lw": lw, "coach": object(), "FUNCTIONS": {}, "SPECIALIST_CALLS": [],
+                         "args": SimpleNamespace(verbose=False)}
+                exec(cell, scope)
+                continued = not approval and not registered and searched
+                self.assertEqual(lw.ask.call_count, 2 if continued else 1)
+                self.assertIs(lw.ask.call_args_list[0].kwargs["approve"], False)
+                if continued:
+                    self.assertEqual(lw.ask.call_args_list[1].kwargs["prompt_id"], "lab3_signup_confirm")
+                    self.assertIs(lw.ask.call_args_list[1].kwargs["approve"], lw.ask_human)
+                    self.assertIs(lw.ask.call_args_list[1].kwargs["conversation"], scope["conversation"])
+
+    def test_smoke_check_rejects_an_unsolicited_approval_without_retrying(self):
+        import ast
+        path = ROOT / "scripts" / "smoke-test.py"
+        tree = ast.parse(path.read_text(encoding="utf-8"))
+        function = next(node for node in tree.body
+                        if isinstance(node, ast.FunctionDef) and node.name == "check_tools")
+        tools = [SimpleNamespace(kind="mcp_call", name=name)
+                 for name in ("get_citizen_profile", "knowledge_base_retrieve", "find_activities")]
+        run = SimpleNamespace(tool_calls=tools, called=lambda name: True,
+                              approvals=[object()], text="{}", seconds=1)
+        lw = Mock()
+        lw.ask.return_value = run
+        scope = {"lw": lw, "no_resident_id": lambda text: True}
+        exec(compile(ast.Module(body=[function], type_ignores=[]), str(path), "exec"), scope)
+        result = scope["check_tools"](object())
+        self.assertFalse(result[0][1])
+        self.assertIn("1 approval request(s) denied", result[0][2])
+        lw.ask.assert_called_once()
+        self.assertIs(lw.ask.call_args.kwargs["approve"], False)
+
 
 class LinkAndJourneyTests(unittest.TestCase):
     def test_code_examples_do_not_create_links_or_headings(self):
@@ -190,6 +259,12 @@ class LinkAndJourneyTests(unittest.TestCase):
         for stem in ("lab-01", "lab-02", "lab-03"):
             self.assertIn("../../README.md#switching-rails",
                           (ROOT / "content" / "labs" / f"{stem}.md").read_text(encoding="utf-8"))
+
+    def test_navigator_reuses_the_prepared_knowledge_connection(self):
+        page = (ROOT / "content" / "labs" / "lab-01.md").read_text(encoding="utf-8")
+        self.assertIn("Available knowledge bases", page)
+        self.assertIn("livewell-guides-kb-mcp", page)
+        self.assertIn("not the default attendee route", page)
 
     def test_rail_picker_is_at_the_top_of_every_guide(self):
         for stem in blocks.REQUIRED:

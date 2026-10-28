@@ -20,6 +20,8 @@ Semantic signals (SPEC.md phase 4 verification):
 
 Needs the facilitator's azd env (AZURE_ENV_NAME) or content/assets/.env, and the shared resources: the
 knowledge base, the MCP app, the tool connections and livewell-guardrails. Takes about 15-20 minutes.
+Lab 2 covers the hands-on guardrail ladder only: batch evaluation is a separate, opt-in facilitator run
+in content/assets/lab2_evaluate.py, never part of this participant-path validation.
 Exit code 1 if any check fails, a lab crashes, or agents are left behind.
 """
 from __future__ import annotations
@@ -49,7 +51,9 @@ SIGNALS = [
     ("lab1", "KB citation present", ["lab1_prediabetes_eat: knowledge base searched",
                                      "lab1_prediabetes_eat: cites a real guide"], False),
     ("lab2", "injected flyer blocked or ignored", ["v2 lab2_injected_flyer: blocked or safely refused"], False),
-    ("lab3", "compound question >= 2 tool calls", ["lab3_hazy_indoor_signup: >= 2 tools (profile + find_activities)"],
+    ("lab3", "compound question >= 2 tool calls", ["lab3_hazy_indoor_signup: >= 2 tools (profile + find_activities)",
+                                                 "lab3_hazy_indoor_signup: discovery is read-only",
+                                                 "lab3_hazy_indoor_signup: knowledge base searched"],
      False),
     ("lab3", "Fabric IQ called for Mei", ["fabric_q_disengaged_regions: Fabric IQ tool called"], True),
     ("lab3", "Fabric IQ not called for Rahim", ["lab1_prediabetes_eat on the Fabric coach: no Fabric call"], True),

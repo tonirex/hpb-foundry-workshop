@@ -4,6 +4,36 @@ All notable changes to this workshop. One entry per phase PR.
 
 ## [Unreleased]
 
+### Lab 2 evaluation pacing and Navigator validation
+
+- Split the Builder exercise into `lab2_govern.py` (guardrail ladder and traces, no batch evaluation)
+  and `lab2_evaluate.py` (read-only code walkthrough by default; paid calls require explicit terminal `--run`).
+  Plain execution and notebook Run All do not enable evaluation; legacy evaluation flags on the hands-on
+  script stop with migration guidance.
+- Pin the two compared agent versions and project binding in the hands-on result. The separate evaluation
+  reuses them without recreating agents, saves its own evidence, and never automatically repeats a batch
+  after an upload error.
+- Align the lab, checkpoint, specification, narrative, facilitator runbook and decks: participants read
+  the evaluation code and shared completed results, not run batches or wait for personal scores.
+  The old combined-output screenshot is a linked historical example only.
+- Add offline regression coverage for default execution, notebook cells, opt-in evaluation, version
+  provenance and failure paths. The script-split verification did not launch live evaluations or change cloud configuration.
+- Follow up with the requested fresh `livewell-wxyz` browser-canvas walkthrough of Labs 0-3, including
+  separate intake, the full guardrail ladder, approval, memory and optional specialist routing.
+  Replace archived core screenshots with genuine captures and preserve diagnostic failures separately.
+- Prefer the already-prepared KB entry for attendees; retain Search-connection selection only for the
+  facilitator's Connect alternative. Correct JSON citation navigation, the guardrail Assign/Save distinction,
+  exact MCP approval fields and current Memory Add flow. Add a configurable facilitator-prepared
+  Anonymous OpenAPI connection, private values and read-only readiness validation.
+- Make discovery explicitly read profile/knowledge/activities before a separate confirmation; Builder
+  denies unsolicited discovery approvals and requires retrieval before continuing. Add a copied Activity
+  follow-up for the observed Nutrition-only route. Keep source evidence and one-object JSON requirements
+  distinct from automatic quality badges.
+- Document the repeated-JSON failure, source-skipping recovery attempt, delayed memory retry and two-turn
+  specialist evidence honestly. No additional batch evaluation, red-team scan, user/RBAC change, model
+  deployment or capacity change was made. Attendee-only permissions and the optional Fabric step are not
+  newly certified by the facilitator-account walkthrough.
+
 ### Participant journey consolidation
 
 - One canonical lab page per capability: screenshot-led Navigator steps, Builder, checkpoints and navigation

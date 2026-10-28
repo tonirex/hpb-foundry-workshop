@@ -88,7 +88,7 @@ LABS = [
             "Open the trace: one model call, no tools, the `base` block and the token counts.",
         ],
         "shot": ("lab-00/10-refusal-trace.png", (0.08, 0.03, 0.92, 0.62)),
-        "caption": "One chat span under the agent, no tool calls, and the `base` block as the system message.",
+        "caption": "One chat span per answer, no tool calls; the conversation includes the greeting and refusal.",
     },
     {
         "id": "lab-01",
@@ -102,7 +102,7 @@ LABS = [
         "story_prompts": [("Rahim", "lab1_prediabetes_eat")],
         "story_note": "The answer must come from HPB-style guides, with sources.",
         "steps": [
-            "**Knowledge → Add → Connect to Foundry IQ** and pick `livewell-guides-kb`.",
+            "**Knowledge → Add → Available knowledge bases**: pick `livewell-guides-kb` via `livewell-guides-kb-mcp`.",
             "Append the `knowledge` instruction block after `base`.",
             "**Parameters** (icon next to Model) → **Text format** JSON Schema: paste `lab1-answer.schema.json`; save.",
             "Send `lab1_prediabetes_eat`: the answer cites at least one guide.",
@@ -129,7 +129,7 @@ LABS = [
             "Inspect `livewell-guardrails` (self-harm blocked from Low, Prompt Shields, blocklist) and attach it.",
             "Append the `safety` block and **Save**; note the new version number next to your baseline.",
             "Re-run the ladder: three additional blocks, including one benign false positive.",
-            "Open a blocked and an allowed trace; run the `livewell-eval` batch and compare versions.",
+            "Open blocked/allowed traces; read evaluation code and compare shared results. Do not run a batch.",
         ],
         "shot": ("lab-02/13-guarded-medication-blocked.png", (0.52, 0.225, 0.98, 0.40)),
         "shots": [
@@ -150,17 +150,17 @@ LABS = [
         "rails": "Navigator + Builder",
         "gain": "Profile, activities MCP, approval, memory\nit acts for Rahim",
         "story_prompts": [("Rahim", "lab3_hazy_indoor_signup")],
-        "story_note": "The sign-up is a real write, so it needs his approval.",
+        "story_note": "The sign-up changes synthetic demo state, so it needs his approval.",
         "steps": [
-            "Switch the model to `gpt-4.1-mini`, then add the OpenAPI tool `livewell_profile` (Builder: the `get_citizen_profile` function).",
-            "Add `livewell-activities-mcp` and require approval for `register_interest`.",
-            "Enable **Memory** (preview) and append the `tools` block.",
-            "Send `lab3_profile_tailored`: the advice uses Rahim's profile.",
-            "Send `lab3_hazy_indoor_signup`: indoor options near Woodlands, then **Approve** the sign-up.",
-            "State a preference, start a new chat and check the coach remembers it.",
+            "Switch to `gpt-4.1-mini`; add `livewell_profile` using the prepared Anonymous connection and inline spec.",
+            "Add activities MCP; auto-approve only `find_activities`, never registration.",
+            "**Memory → Add → Auto-create memory store** (preview); append `tools`, set the evidence schema, save.",
+            "Run profile advice, then discovery: profile → knowledge retrieval → indoor activity options.",
+            "Send `lab3_signup_confirm`, inspect the proposed activity, then **Approve once**.",
+            "State preferences, wait for memory, then use a new chat. Optional A2A: verify both actual calls.",
         ],
         "shot": ("lab-03/13-approve-register-interest.png", (0.505, 0.43, 0.995, 0.875)),
-        "caption": "The write waits for you: `register_interest` only runs after Approve.",
+        "caption": "After separate confirmation, inspect the proposed write and choose Approve once.",
     },
     {
         "id": "fabric-step",
@@ -469,7 +469,7 @@ def stack_slide(prs, titles: list[str]):
         ("Lab 3 · Act", "lab",
          "Coach on `gpt-4.1-mini`; `livewell_profile` OpenAPI tool, `livewell-activities-mcp` with approval, memory; `tools` block."),
         ("Lab 2 · Govern", "lab",
-         "`livewell-guardrails` policy + `safety` block; traces; `livewell-eval` evaluations; baseline vs guarded version."),
+         "`livewell-guardrails` + `safety`; traces; evaluation code walkthrough and shared baseline/guarded results."),
         ("Lab 1 · Know", "lab",
          "Foundry IQ knowledge base `livewell-guides-kb`; `knowledge` block; JSON schema response."),
         ("Lab 0 · Start", "lab",
@@ -553,7 +553,8 @@ def lab_page_slide(prs, titles: list[str]):
         "Every lab page has the same sections in the same order, so participants always know where they are. "
         "Navigator is the portal path and Builder is the Python path; both reach the same checkpoint. "
         "The checkpoint is self-check only: participants compare their result with the collapsed Expected output block "
-        "on the page. Nothing is submitted or graded.",
+        "on the page. Nothing is submitted or graded. Lab 2 batch evaluation is a separate read-only code walkthrough; "
+        "participants review the facilitator's completed comparison rather than starting their own batches.",
         titles,
     )
     steps = ["Shared objective", "Features", "Story", "Navigator or Builder", "Checkpoint", "Expected output",
@@ -584,7 +585,7 @@ def lab_page_slide(prs, titles: list[str]):
             ("Builder · Python", {"bold": True, "color": NAVY, "size": 15, "space_after": 6}),
             ("One script per lab in `content/assets/`:", {"size": 12, "space_after": 4}),
             ("`lab1_knowledge.py`", {"size": 11.5, "space_after": 1}),
-            ("`lab2_govern.py`", {"size": 11.5, "space_after": 1}),
+            ("`lab2_govern.py` (no batch evaluation)", {"size": 11.5, "space_after": 1}),
             ("`lab3_tools.py` (`--fabric` for the Fabric step)", {"size": 11.5, "space_after": 1}),
             ("`lab4_multiagent.py`", {"size": 11.5, "space_after": 5}),
             ("Each prints a CHECKPOINT and saves the run under `content/assets/.runs/`.", {"size": 12}),

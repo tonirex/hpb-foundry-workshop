@@ -5,7 +5,7 @@
     {
       "prompt_id": "lab3_hazy_indoor_signup",
       "validation_type": "B_trace_field",
-      "notes": "Paste the trace tool-call list. PASS if >= 2 tools fired (get_citizen_profile + find_activities, optionally KB; in the Builder rail find_activities may run inside the Activity specialist, shown as livewell-activity) AND register_interest waited for approval (approval request visible before the call).",
+      "notes": "Inspect the discovery turn and its separate lab3_signup_confirm follow-up. PASS if discovery uses get_citizen_profile, knowledge_base_retrieve and find_activities (in Builder activity lookup can also run inside the Activity specialist), cites retrieved guides, does not register, AND the later register_interest waits for approval (request visible before the call). Each final reply must be one complete evidence JSON object, not several concatenated objects.",
       "expected_ref": "prompts/test-prompts.json#/prompts/lab3_hazy_indoor_signup/expected"
     },
     {

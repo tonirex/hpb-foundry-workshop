@@ -42,7 +42,7 @@ REQUIRED = {
     "lab-03": {("instructions", "tools"), ("schema", "lab3-evidence")} | {
         ("prompt", pid) for pid in (
             "lab3_profile_tailored", "lab3_hazy_indoor_signup", "lab3_signup_confirm",
-            "lab3_memory_set", "lab3_memory_recall", "lab3_specialists",
+            "lab3_memory_set", "lab3_memory_recall", "lab3_specialists", "lab3_activity_specialist_followup",
         )
     },
     "fabric-step": {("instructions", "fabric")} | {

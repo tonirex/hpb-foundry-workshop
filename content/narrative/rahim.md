@@ -65,7 +65,8 @@ model sees it.
 
 **[ch2.3 · seat: citizen · source: kb · prompt: lab2_extreme_fasting]** He asks for a water-only crash plan
 before a family wedding. The coach refuses and offers safe, gradual changes from the guides. Every one of
-these decisions is visible in a trace and scored by evaluators.
+these decisions is visible in a trace. The class reviews the facilitator's completed evaluation
+alongside the guardrail outcomes; participants do not each launch another batch.
 
 ## Chapter 3 — "It's hazy today — what can I do indoors?" (Lab 3 · Tools, MCP & Memory)
 
@@ -74,10 +75,11 @@ profile — the governed extract of his Resident 360 row: age band <!--ref:rahim
 <!--ref:rahim.screening_risk-->High<!--/ref-->, about <!--ref:rahim.avg_daily_steps-->3,100<!--/ref--> steps a day, and his region flagged hazy
 (PSI <!--ref:rahim.region_psi-->60<!--/ref-->). Its one suggestion for the week fits all of that, with the evidence listed.
 
-**[ch3.2 · seat: citizen · source: mcp · prompt: lab3_hazy_indoor_signup]** "It's hazy today — what can I do
-indoors near Woodlands, and can you sign me up?" The coach finds indoor, pre-diabetes-friendly morning
-activities in Woodlands through the activities MCP server, then pauses: registering needs his approval.
-He approves; only then is he signed up.
+**[ch3.2 · seat: citizen · source: mcp · prompt: lab3_hazy_indoor_signup]** Rahim wants indoor options near
+Woodlands on a hazy day. The workshop prompt makes the tool order explicit: read his profile, search the
+LiveWell guides, then find suitable activities through the MCP server. Rahim then asks
+to join the first option (`lab3_signup_confirm`). The coach pauses at the approval card; only after his
+one-time approval does it record his interest. This is a synthetic workshop registration, not a real booking.
 
 **[ch3.3 · seat: citizen · source: memory · prompt: lab3_memory_set]** He mentions he prefers mornings and
 does not like swimming. The coach remembers.
@@ -86,7 +88,8 @@ does not like swimming. The coach remembers.
 for suggestions. Every option is in the morning and none involves a pool.
 
 **[ch3.5 · seat: citizen · source: kb · prompt: lab3_specialists]** He asks for a meal plan and an exercise
-plan. The coach hands off to its Nutrition and Activity specialists and merges one reply.
+plan. The coach hands off to its Nutrition and Activity specialists and merges one reply. The learner checks
+both calls in the trace; if only Nutrition answered, an explicit Activity follow-up completes the demonstration.
 
 **[ch3.6 · seat: citizen · source: fabric · prompt: lab3_programme_fit]** *(Fabric step)* Rahim admits he dropped
 out of <!--ref:q_programme_fit.dropped_programme-->Healthier SG<!--/ref--> and asks which programme people his age actually stick with. The guides
