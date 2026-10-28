@@ -114,10 +114,10 @@ PTU deployments and partner models are never used.
   Azure Identity minimum to 1.20 for explicit CLI subscription selection.
 - Optional intake uses the existing strict intake schema on a separate agent. A2A remains the Navigator specialist
   path; sequential and hand-off output contracts are documented separately.
-- All 83 screenshot files decode. **50 archived captures are not displayed in participant guides**; complete
-  text-only steps and copy blocks replace those illustrations under the approved fallback.
-  No live retakes are claimed. Use `python demos/capture-screenshots.py --list-outdated` for the optional maintenance
-  subset after authorized sign-in. Do not recapture current images or manufacture the five uncaptured illustrations.
+- At the Phase 11 consolidation, all 83 files decoded and 50 archived captures were hidden behind complete
+  text-only directions. That historical count and no-retake status are superseded for Labs 0-3 by the native
+  canvas walkthrough below. `python demos/capture-screenshots.py --list-outdated` lists the remaining archived
+  subset; never treat file integrity alone as proof that an illustration is current.
 - Microsoft Learn's current Fabric Lab 28 marks its ontology experience as preview and notes a January 31, 2027
   retirement. This content revision does not migrate the Fabric deployment; reassess that preview dependency before
   a future delivery. See [Fabric Lab 28](https://microsoftlearning.github.io/mslearn-fabric/Instructions/Labs/28-build-data-agent-ontology.html).
@@ -159,3 +159,37 @@ PTU deployments and partner models are never used.
 - Default/CLI/cell execution and the opt-in path are covered offline with mocked cloud boundaries.
   No new live batch, judge score or runtime claim is made. Prepare the shared comparison before delivery;
   do not use a historical combined-output screenshot as proof of the current participant run.
+
+## Native Navigator walkthrough (2026-10-28 UTC)
+
+- No model deployment or package version changed. Fresh `livewell-wxyz` versions use `gpt-5-mini` Low for
+  Labs 0-2 and `gpt-4.1-mini` for Lab 3. The separate intake agent and fresh memory store do not reuse demo
+  conversations. Screenshots are actual Copilot browser-canvas captures; addresses/identifiers may be hidden,
+  never answers or verdicts.
+- Portal paths verified live: reuse the existing KB connection under Available knowledge bases; the
+  facilitator-only Connect alternative selects Search before KB selection; JSON citations through retrieved
+  passages; **Manage guardrail → Reassign guardrail → Assign → Save**; MCP's CSV tool fields and
+  **Always auto-approve specific tools**; **Memory → Add → Auto-create memory store**.
+  The [guardrail assignment guidance](https://learn.microsoft.com/azure/foundry/guardrails/how-to-create-guardrails)
+  describes immediate effect, but the observed draft banner explicitly required saving the agent.
+- `connect-tools.py` retains ARM `2025-10-01-preview` and checks the portal-created OpenAPI connection by
+  GET only. Its observed `OpenAPI` category is absent from the published
+  [2025-10-01-preview](https://learn.microsoft.com/azure/templates/microsoft.cognitiveservices/2025-10-01-preview/accounts/projects/connections)
+  and [2026-09-01](https://learn.microsoft.com/azure/templates/microsoft.cognitiveservices/2026-09-01/accounts/projects/connections)
+  category enums. Creation stays a documented facilitator portal step, not an undocumented automated PUT.
+- Source-aware discovery and separate confirmation replace the combined request that repeated JSON.
+  A source-skipping variant was rejected too: the final prompt names the retrieval tools, and its three
+  read operations plus actual returned guide IDs were verified. Approval/write evidence was collected once
+  in a separate rehearsal on the same saved configuration. This is not a claim that the service-loop cause
+  was fixed or that every model run is deterministic.
+- Memory recall recovered after one delayed read-only retry; an existing preference record proves storage.
+  A2A required an explicit Activity follow-up after the initial Nutrition-only route. The portal labels its
+  A2A cards Preview and returns `a2a_preview_call`, so the participant-facing portal surface is labelled
+  preview regardless of the older general-availability wording in 4.16a.
+- The pre-existing seven-prompt matrix and automatic response metrics are not a new full evaluation.
+  The [coverage record](content/admin/ADMIN-SETUP.md#navigator-walkthrough-coverage) distinguishes recoveries,
+  facilitator identity, unverified attendee permissions, and the optional Fabric step not rerun here.
+- The final KB binding check saved `wxyz` v8 on the existing `livewell-guides-kb-mcp` connection without
+  altering its instructions, model, remaining tools, memory or guardrail. Saved YAML, not the pre-save YAML
+  view, confirmed the new binding. The prepared connection returned live retrieval results; the earlier
+  generated-connection route remains a facilitator alternative only.

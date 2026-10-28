@@ -64,6 +64,7 @@ names:
   devui_app: "ca-lab4-devui-<env>"                 # Lab 4 DevUI in a browser (LAB4_DEVUI, azd deploy lab4-devui)
   mcp_connection: "livewell-activities-mcp"        # project connection to the activities MCP server
   profile_openapi_tool: "livewell_profile"         # Navigator OpenAPI tool over the profile endpoint
+  profile_openapi_connection: "livewell-profile-openapi"  # Anonymous connection; facilitator creates it in the portal
   fabric_connection: "livewell-fabric-resident360" # project connection created by Add tool -> Fabric IQ
   kb_mcp_connection: "livewell-guides-kb-mcp"      # project connection to the knowledge base MCP endpoint
   nutrition_a2a_connection: "livewell-nutrition-a2a"  # A2A connection to livewell-demo-nutrition (Lab 3 step 11)
@@ -76,7 +77,7 @@ names:
 models:
   # Quota Tier 0 (Azure Sponsorship, Oct 2026) offers gpt-5-mini 500K, gpt-4.1-mini 200K, o4-mini 100K and
   # text-embedding-3-small 1M TPM, and no model-router (ASSUMPTIONS.md 9.1). Two chat models:
-  default: "gpt-5-mini"              # Labs 0-2 agents, Lab 3 specialists, memory store, KB planner, Lab 4
+  default: "gpt-5-mini"              # Labs 0-2, specialists, Builder memory, KB planner, Lab 4; portal memory uses its agent model
   reasoning_effort:                  # per-deployment default for agents; gpt-5-mini's own default is medium
     gpt-5-mini: "low"                # low: about half the latency of medium and still calls every tool
   tools: "gpt-4.1-mini"              # Lab 3 coach on: OpenAPI, A2A and Fabric Data Agent tools are not

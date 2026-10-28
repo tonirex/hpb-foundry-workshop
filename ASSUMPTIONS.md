@@ -1060,7 +1060,7 @@ Where an entry changes something SPEC.md states, it says so.
   flags. The helper also avoids Windows command-shell interpretation of Graph alternate-key URLs. Both lookup
   shapes were verified read-only; missing principal IDs stop before any local identity value is written.
 
-## Phase 12: Lab 2 evaluation pacing
+## Phase 12: Lab 2 evaluation pacing and Navigator validation
 
 - **12.1 (user-directed separation)** The class still runs the seven-prompt baseline/guarded ladder and
   inspects traces, but reads the evaluation code and a facilitator-prepared comparison instead of submitting
@@ -1080,3 +1080,40 @@ Where an entry changes something SPEC.md states, it says so.
 - **12.4 (recorded evidence)** The old combined Builder screenshot is linked only as a historical completed
   evaluation example, not displayed as current hands-on output. Current output explicitly says evaluation
   was not run. The facilitator must have a completed comparison or recorded fallback ready before class.
+- **12.5 (user-directed follow-up)** Walk through Labs 0-3 with fresh initials `wxyz` and capture the actual
+  UI in the Copilot app's browser canvas. This replaces the earlier text-only fallback for the recaptured
+  steps. Sign-in/MFA remain account-specific and text-only; no user account was created. The existing
+  MCAPS facilitator session proves workflow behaviour, not attendee-only RBAC. Intake uses its own agent.
+- **12.6 (observed portal paths)** The facilitator's Connect to Foundry IQ alternative selects `livewell-search`
+  before the KB list loads; the final attendee route reuses the prepared entry (12.11). Structured JSON uses
+  `cited_sources` plus retrieval traces, not a guaranteed Sources button. Guardrail assignment uses
+  **Assign**, then top-level **Save**; the live unsaved-assignment banner takes precedence over assuming
+  immediate application. Self-harm Low is labelled Highest blocking in the policy preview.
+- **12.7 (OpenAPI prerequisite)** The current form requires `livewell-profile-openapi` even for Anonymous
+  authentication. It was created through the portal with no credential or RBAC change. The observed ARM
+  shape is category OpenAPI, authType None, metadata type openapi, target API root. Published category
+  enums omit OpenAPI, so do not invent a PUT contract: keep manual portal preparation and read-only
+  readiness validation in `connect-tools.py`. Configure the name and derive the target per environment;
+  do not change sharing flags to make a test pass.
+- **12.8 (generation and source evidence)** The original combined find/register question produced repeated
+  JSON: the trace contained repeated model calls, not just duplicated rendering. Saved schema/approval
+  settings were correct and guardrail records did not show blocking. A discovery-only retry returned
+  one object but skipped KB retrieval. The final tool-explicit discovery prompt verified all three reads
+  and matched every cited guide to the KB output. The underlying service repetition cause is unresolved;
+  the guide uses a verified bounded recovery, never crops a bad reply into a purported pass.
+- **12.9 (approval, memory and specialists)** One synthetic registration was approved once and its actual
+  interest receipt inspected; it was not repeated for subsequent read-only checks. Memory used a fresh
+  store (portal auto-creation selected the coach's model), a processing wait and a new conversation.
+  One server-error retry was needed, and the stored preference was inspected without editing it.
+  A2A first called only Nutrition; an explicit Activity follow-up produced the second call and a merged
+  JSON reply. Captions identify this as two turns. Current portal cards and response items say Preview.
+- **12.10 (coverage boundary)** No new batch evaluation, AI-analysis job or red-team scan was submitted;
+  automatic portal response metrics remained enabled. The existing seven-prompt matrix is not a
+  30-row groundedness comparison or a score for each participant. Attendee sign-in/permissions,
+  the optional Fabric extension and new Builder live runs remain outside this walkthrough. Test the
+  prepared KB and OpenAPI selections with an attendee before delivery.
+- **12.11 (prepared KB reuse)** Image review exposed the existing `livewell-guides-kb-mcp` entry under
+  Available knowledge bases. Prefer that entry over Connect to Foundry IQ, which had generated another
+  connection under the elevated account. On the same coach, v8 changed only the KB binding; saved YAML
+  retained the other tools, per-tool approval, canonical instructions, memory and guardrail, and a live
+  read-only discovery verified the prepared connection. This still does not certify attendee permissions.

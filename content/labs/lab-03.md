@@ -19,7 +19,7 @@ Patterns: #2 Evidence-Based Decision Support; #3 Workflow Orchestration; #6 Huma
 - Function tool path for Builder: `get_citizen_profile` with a strict schema and local execution.
 - MCP tool from project connection **`livewell-activities-mcp`**, with `register_interest` requiring approval and `find_activities` allowed without approval.
 - Memory ⚠️ preview for stated preferences across conversations.
-- Agents as tools: Coach → Nutrition + Activity specialists. 🟢 Navigator attaches two pre-built specialists with the **A2A** (Agent2Agent) tool (optional step 11); 🔵 Builder calls its own specialists through function tools ([how they differ](#a2a-specialists)). Lab 4 adds Agent Framework orchestration.
+- Agents as tools: Coach → Nutrition + Activity specialists. 🟢 Navigator attaches two pre-built specialists with the **A2A** (Agent2Agent) tool (optional step 11; the current portal marks these connection cards ⚠️ preview); 🔵 Builder calls its own specialists through function tools ([how they differ](#a2a-specialists)). Lab 4 adds Agent Framework orchestration.
 - Optional Fabric IQ bridge ⚠️ preview, covered in [Fabric step](fabric-step.md).
 
 ## Story chapter
@@ -31,7 +31,8 @@ Patterns: #2 Evidence-Based Decision Support; #3 Workflow Orchestration; #6 Huma
 <a id="navigator"></a>
 
 **Before you start:** keep your Lab 2 coach, its knowledge base and safety instructions. If you used the shared guarded
-comparator, return to **your own** coach. Screenshots use `livewell-demo-tools`; never edit that shared agent.
+comparator, return to **your own** coach. Screenshots use the fresh `livewell-wxyz` coach; use your own initials.
+The facilitator must have prepared **`livewell-profile-openapi`** and **`livewell-activities-mcp`** in this project.
 If you are switching from Builder, complete any missing [Navigator prerequisites](../../README.md#switching-rails)
 on the portal coach first; do not attach portal tools to a Python-only function-tool configuration.
 
@@ -111,9 +112,24 @@ on the portal coach first; do not attach portal tools to a Python-only function-
       | **Name** | `livewell_profile`. Use an underscore: the portal rejects dashes and spaces. |
       | **Description** | `Profile of the signed-in resident. Always pass resident_id 'me'.` |
       | **Authentication method** | **Anonymous**, already selected. |
+      | **Connection** | Select the existing **`livewell-profile-openapi`** connection. It is required even with Anonymous authentication. |
       | **OpenAPI 3.0+ schema** | Click inside the empty box and press **Ctrl+V** (**Cmd+V** on a Mac). The text may show on one line or on many; both are fine. |
 
-      <!-- historical-screenshot: screenshots/lab-03/03-livewell-profile-spec.png -->
+      ![The OpenAPI form with Anonymous authentication, existing connection and full schema](screenshots/lab-03/03-livewell-profile-spec.png)
+
+      The screenshot hides the service-address line only. Copy the full block above, not the picture.
+      If the connection is missing, stop and ask the facilitator to complete the
+      [one-time prerequisite](../admin/ADMIN-SETUP.md#profile-openapi-connection). Do not create a connection yourself.
+
+      <details>
+      <summary>Facilitator reference only: the missing connection prerequisite</summary>
+
+      This is a one-time setup step per environment, not part of the participant procedure.
+      The API-root target comes from the private values sheet; no key or password is entered.
+
+      ![Facilitator-only Anonymous OpenAPI connection setup, with its target address hidden](screenshots/lab-03/02b-openapi-connection-prerequisite.png)
+
+      </details>
 
    4. Select **Create tool**. **`livewell_profile`** now appears in the agent's **Tools** list.
 3. Add the activities MCP: **Tools** → **Add** → **Add tools** → **Configured** → select the project connection **`livewell-activities-mcp`** → **Add tool**. (**Custom** → **Model Context Protocol (MCP)** would create a new connection instead.)
@@ -123,10 +139,22 @@ on the portal coach first; do not attach portal tools to a Python-only function-
    ![The existing livewell-activities-mcp connection selected](screenshots/lab-03/05-select-activities-mcp.png)
 
 4. Configure MCP approval (tool row → **Actions** → **Configure**):
-   - `find_activities` needs no approval.
-   - `register_interest` must require approval before the tool call proceeds.
+   - Under **Allowed tools**, enter the comma-separated tool names:
 
-   <!-- historical-screenshot: screenshots/lab-03/06-register-interest-approval.png -->
+     ```text
+     find_activities,register_interest
+     ```
+
+   - Choose **Always auto-approve specific tools**. In **Tools that don't require approval**, enter only:
+
+     ```text
+     find_activities
+     ```
+
+   - Select **Apply**. `register_interest` is deliberately absent from the auto-approval list, so it still
+     waits for approval. Never choose blanket auto-approval. The agent's top-level **Save** in step 6 persists this.
+
+   ![Only find_activities is auto-approved; registration still requires a person](screenshots/lab-03/06-register-interest-approval.png)
 
 <a id="openapi-vs-mcp"></a>
 <details>
@@ -137,7 +165,7 @@ on the portal coach first; do not attach portal tools to a Python-only function-
 | | OpenAPI tool (`livewell_profile`) | MCP tool (`livewell-activities-mcp`) |
 |---|---|---|
 | What you give Foundry | An API description. Each operation becomes a tool; here there is one, `get_citizen_profile`. | A server address. The server lists its own tools when the agent runs. |
-| Where it lives | The spec is copied into your agent version. If the API changes, you paste the new spec. | A project connection, set up once by the facilitator and reused by every agent. |
+| Where it lives | The spec is copied into your agent version, with the facilitator-prepared `livewell-profile-openapi` connection selected. If the API changes, paste the new spec. | A project connection, set up once by the facilitator and reused by every agent. |
 | Approval before a call | No setting; Foundry calls the API directly. | Set per tool: `find_activities` runs freely, `register_interest` waits for a yes. |
 | Good fit | Systems that already have a REST API and a spec, which is most enterprise systems. | Tool servers built for agents, especially ones that write or change something. |
 
@@ -175,7 +203,10 @@ The tools call real services, but some parts are fixed so that everyone can fini
 
 </details>
 
-5. Enable **Memory** ⚠️ preview if it is available in your project: **Memory (Preview)** → **Enable memory** → select the memory store → **Save**. If memory is not available, skip only the memory checkpoint.
+5. Enable **Memory** ⚠️ preview if available: **Memory (Preview) → Add → Auto-create memory store**.
+   Wait for the generated store name to appear and note it. Names vary; use a fresh store for this exercise,
+   not `livewell-demo-memory`. The top-level Save in step 6 persists the attachment. If unavailable, skip
+   only the memory checkpoint.
 
    ![Memory settings for the agent](screenshots/lab-03/07-enable-memory-preview.png)
 
@@ -289,11 +320,11 @@ The tools call real services, but some parts are fixed so that everyone can fini
 
    Close the panel and **Save**. The schema name is now `livewell_evidence`.
 
-   <!-- historical-screenshot: screenshots/lab-03/08-tools-instructions.png -->
+   ![Canonical tools instructions appended to the coach](screenshots/lab-03/08-tools-instructions.png)
 
    Note the newest number under **Version → Show all version history**. Earlier steps saved too, so do not expect a fixed version number.
 
-   <!-- historical-screenshot: screenshots/lab-03/09-save-v3-tools-memory.png -->
+   ![The coach saved with tools, evidence schema and its fresh memory store](screenshots/lab-03/09-save-v3-tools-memory.png)
 
 7. Send (`lab3_profile_tailored`):
 
@@ -305,17 +336,26 @@ The tools call real services, but some parts are fixed so that everyone can fini
 
    Expect evidence JSON with advice, confidence, supporting guides, rationale and personalisation flags.
 
-   <!-- historical-screenshot: screenshots/lab-03/10-profile-tailored-answer.png -->
+   ![A profile-tailored evidence answer with real guide IDs](screenshots/lab-03/10-profile-tailored-answer.png)
 
-8. Select **New chat**, then send (`lab3_hazy_indoor_signup`). The `tools` block reads the profile once per conversation, so a new chat makes the profile lookup show in this trace:
+8. **Discover first; confirm separately.** Select **New chat**, then send (`lab3_hazy_indoor_signup`).
+   The prompt names the retrieval tools to make the order explicit. A new chat makes the profile lookup
+   visible in this trace rather than reusing the previous conversation's profile:
 
    <!-- copy:prompt lab3_hazy_indoor_signup -->
    ```text
-   It's hazy today. What can I do indoors near Woodlands, and can you sign me up?
+   It's hazy today. Look up my profile, use knowledge_base_retrieve to search the LiveWell guides for haze-safe activity advice, then use find_activities to list indoor community activities near Woodlands. Show me the options first.
    ```
    <!-- /copy -->
 
-   Expect profile + activity lookup in the trace. If it lists options and asks first, send this follow-up in the same chat (`lab3_signup_confirm`):
+   Check **Traces** for profile lookup, `knowledge_base_retrieve`, and `find_activities`, in that order.
+   Match `supporting_guides` to the retrieved passages. A real-looking guide ID or a "100%" badge alone
+   is not grounding evidence. There must be **one** evidence JSON reply and no registration yet.
+
+   ![Read-only discovery returns options and evidence before any registration](screenshots/lab-03/12-hazy-indoor-signup.png)
+
+   Only after inspecting the options and source evidence, send this confirmation in the **same chat**
+   (`lab3_signup_confirm`):
 
    <!-- copy:prompt lab3_signup_confirm -->
    ```text
@@ -326,7 +366,9 @@ The tools call real services, but some parts are fixed so that everyone can fini
    Inspect the proposed activity, then select **Approve → Approve once** on the `register_interest` card.
    The *Always approve* options would skip later approvals; do not use them.
 
-   <!-- historical-screenshot: screenshots/lab-03/13-approve-register-interest.png -->
+   ![Inspect the proposed call, then choose Approve once](screenshots/lab-03/13-approve-register-interest.png)
+
+   This records synthetic interest only; it is not a real booking or a Healthy 365 integration.
 
 9. Set memory. Send (`lab3_memory_set`):
 
@@ -336,9 +378,10 @@ The tools call real services, but some parts are fixed so that everyone can fini
    ```
    <!-- /copy -->
 
-   <!-- historical-screenshot: screenshots/lab-03/14-memory-set.png -->
+   ![The coach acknowledges the stated preferences and calls memory](screenshots/lab-03/14-memory-set.png)
 
-10. Start a **new conversation** and send (`lab3_memory_recall`):
+10. Allow at least **30 seconds** for the saved memory-update delay; processing can take up to two minutes.
+    Start a **new conversation** and send (`lab3_memory_recall`):
 
     <!-- copy:prompt lab3_memory_recall -->
     ```text
@@ -346,9 +389,16 @@ The tools call real services, but some parts are fixed so that everyone can fini
     ```
     <!-- /copy -->
 
-    Expect suggestions that respect mornings and avoid swimming or aqua activities.
+    Expect suggestions that respect mornings and avoid swimming or aqua activities. Inspect the
+    `memory_search_call` chip and preference flags, not just the time of the suggested activities.
+    For read-only confirmation, open **Memory → your generated store → Memories**, keep the current-user
+    scope and **User profile** kind, then select the existing preference row to see its details.
+    Do not use **Create memory**, **Edit** or **Delete** to manufacture a pass.
 11. Optional: hand the plan to specialist agents. The facilitator has already built two specialist agents, **`livewell-demo-nutrition`** and **`livewell-demo-activity`**, and connected them to the project. You only attach them to your coach.
     1. Select **Tools** → **Add** → **Add tools** → **Configured** → **`livewell-nutrition-a2a`** → **Add tool**. Repeat for **`livewell-activity-a2a`**, then select **Save**. There is nothing to paste: the `tools` block already tells the coach to ask the Nutrition specialist for meals and the Activity specialist for exercise.
+
+       ![Select the two existing A2A connections, one at a time; service addresses are hidden](screenshots/lab-03/25-a2a-configured-connections.png)
+
     2. In a new chat, send (`lab3_specialists`):
 
        <!-- copy:prompt lab3_specialists -->
@@ -357,13 +407,27 @@ The tools call real services, but some parts are fixed so that everyone can fini
        ```
        <!-- /copy -->
 
-    Expect one evidence JSON reply with a meal plan and an exercise plan in `advice`, after about a minute. The trace shows one call to each connection, `livewell-nutrition-a2a` and `livewell-activity-a2a`: each specialist searched the guides itself and sent back its part, and your coach merged the two. If you skip this step, the same prompt still works: the coach writes both plans itself from the knowledge base.
+    Expect one evidence JSON reply with both plans, usually after about a minute. **Verify the route**:
+    the trace must contain both `livewell-nutrition-a2a` and `livewell-activity-a2a`. A two-part answer
+    does not prove two calls. In the walkthrough, the first turn called only Nutrition; this explicit
+    follow-up (`lab3_activity_specialist_followup`) in the **same conversation** obtained Activity's contribution:
+
+    <!-- copy:prompt lab3_activity_specialist_followup -->
+    ```text
+    Ask the Activity specialist for the exercise plan too. Then combine its answer with the Nutrition specialist's meal plan in one evidence JSON reply.
+    ```
+    <!-- /copy -->
+
+    Use that follow-up once if only Nutrition appears. If both calls still cannot be verified, record
+    the optional checkpoint as incomplete and ask the facilitator; do not keep regenerating.
+    If you skip the A2A step, the coach can write both plans from the knowledge base, but that is not
+    evidence of specialist delegation.
 
     <a id="a2a-specialists"></a>
     <details>
     <summary><b>How does the coach call another agent, and what did the facilitator set up?</b> (optional)</summary>
 
-    - **A2A, not connected agents.** The classic Agent Service let you list sub-agents on a main agent ("connected agents"). The new Foundry Agent Service, which this workshop uses, does not have them, and classic agents retire on 31 March 2027. Its replacement is the **A2A** (Agent2Agent) tool, which is generally available. A2A is an open protocol, so the specialist could also be an agent outside Foundry.
+    - **A2A, not connected agents.** The classic Agent Service let you list sub-agents on a main agent ("connected agents"). The new Foundry Agent Service uses the **A2A** (Agent2Agent) tool instead. A2A is an open protocol, so a specialist can also be outside Foundry. The current portal labels these connection cards **Preview** and emits `a2a_preview_call`; treat this portal surface as preview and keep the step optional.
     - **What the facilitator set up before the workshop** (`demos/create-demo-agents.py` and `scripts/connect-tools.py`):
       1. The two specialists: ordinary prompt agents with the `nutrition` or `activity` block, the knowledge base, and for Activity a read-only activities tool (it can search but never register).
       2. **Incoming A2A** on each specialist, plus an agent card that describes what it does. The portal has no switch for this yet; it is a REST or SDK call.
@@ -424,7 +488,9 @@ All of them go into one [`create_agent`](../assets/lab3_tools.py#L129-L137) call
 
 The specialists are agents used as tools. When the coach calls `livewell-nutrition`, the handler calls `lw.ask(nutrition, ...)`, and the specialist's answer becomes the function result. The Activity specialist gets `find_activities` only, so only the coach can ask you to approve a registration.
 
-For memory, the script waits for the preference to be stored, then asks `lab3_memory_recall` in `lw.new_conversation()`. A new conversation has no chat history, so a correct answer can only come from memory.
+For memory, the script waits for the preference to be stored, then asks `lab3_memory_recall` in
+`lw.new_conversation()`. Check the stored preference and memory evidence: a morning suggestion alone
+could be coincidence, because several catalogue activities already run in the morning.
 
 The Navigator uses an OpenAPI tool for the profile, which Foundry calls on the server. Builder uses a function tool so that you can see the call arrive in your own code. See [OpenAPI tool vs MCP tool](#openapi-vs-mcp) for why the profile and the activities use different tool types.
 
@@ -445,17 +511,36 @@ There is nothing to submit. Try the steps first, then open **Expected output** t
 
 `lab3_profile_tailored`: the trace shows the profile tool (with `resident_id` `me`) and then the knowledge base. The tool output is Rahim's profile. The reply uses it, but never repeats the resident identifier.
 
-<!-- historical-screenshot: screenshots/lab-03/11-profile-trace.png -->
+![The profile request uses me and precedes knowledge retrieval](screenshots/lab-03/11-profile-trace.png)
 
-`lab3_hazy_indoor_signup`: the coach looks up indoor options, then asks to register. After your yes, the approval card shows the exact call (`register_interest` with an activity id and display name) and waits.
+`lab3_hazy_indoor_signup`: the explicit discovery prompt reads the profile, retrieves the guides and finds
+indoor options. No registration is requested during discovery. Inspect real retrieved content, not only
+the list of allowed guide IDs in the schema.
 
-<!-- historical-screenshot: screenshots/lab-03/12-hazy-indoor-signup.png -->
+![The grounded discovery trace shows the three read operations](screenshots/lab-03/12b-grounded-discovery-trace.png)
+
+After `lab3_signup_confirm`, the approval card waits. **Approve once** allows `register_interest` to run;
+the tool, not just the model's words, must return `interest_registered`. The separate approval rehearsal
+below shows that write and its receipt; use the discovery trace above to check grounding. Conversation
+duration includes time spent inspecting and approving, not just model latency. Telemetry identifiers are hidden.
+
+![The once-approved synthetic write returns an actual interest_registered receipt](screenshots/lab-03/13b-registration-trace.png)
 
 `lab3_memory_recall` in a **new** chat: morning, indoor suggestions and no swimming. Look for `prefers morning` and `dislikes swimming` in `personalisation_flags`, and `memory_search_call` in the chips under the reply.
 
-<!-- historical-screenshot: screenshots/lab-03/15-memory-recall-new-chat.png -->
+![A new conversation recalls morning and no-swimming preferences](screenshots/lab-03/15-memory-recall-new-chat.png)
 
-`lab3_specialists` (optional step 11): with the two A2A tools attached, the trace shows one call to `livewell-nutrition-a2a` and one to `livewell-activity-a2a`, and the reply has a meal plan and an exercise plan with the guide ids the specialists cited. Without them, the same reply comes from the knowledge base.
+![The actual stored preference record, inspected without editing; identifiers are hidden](screenshots/lab-03/15b-stored-preferences.png)
+
+`lab3_specialists` (optional step 11): verify both A2A routes and the guide IDs returned by the specialists.
+These captures include the explicit Activity follow-up, not a claim that the first turn called both.
+
+![One merged evidence reply after the explicit Activity follow-up](screenshots/lab-03/26-specialist-evidence-answer.png)
+
+![The two-turn conversation contains both actual specialist calls](screenshots/lab-03/27-specialist-conversation-trace.png)
+
+The portal's JSON viewer can horizontally clip long strings. Use its **Copy** button to inspect the full
+reply; compare structure, source evidence and tool calls rather than expecting identical wording.
 
 **Builder.** Look for:
 
@@ -465,7 +550,10 @@ There is nothing to submit. Try the steps first, then open **Expected output** t
 - `memories: ['User prefers mornings.', ... 'User dislikes swimming.' ...]`, then a recall answer with morning, indoor options and no swimming;
 - `livewell-nutrition` and `livewell-activity` in the `tools:` list of the specialists answer: one merged plan built from both specialists.
 
-![lab3_tools.py output: session resident, forbidden lookup for another resident, profile-tailored answer, approval before register_interest, memory recall and specialists, each with PASS lines](screenshots/lab-03/builder-output.png)
+The following is a **recorded Builder reference**, not a new Builder run from this Navigator walkthrough.
+The current script also checks that discovery is read-only and calls the knowledge base before confirmation.
+
+![Recorded Builder reference for profile, approval, memory and specialist checks](screenshots/lab-03/builder-output.png)
 
 </details>
 
@@ -475,15 +563,19 @@ There is nothing to submit. Try the steps first, then open **Expected output** t
 |---|---|
 | **OpenAPI tool** is not offered, or the portal warns that the OpenAPI or A2A tools will be removed | The agent is on `gpt-5-mini`. Switch **Model** to **`gpt-4.1-mini`** (step 1), save, then add the tool again. |
 | Profile tool is missing | Re-add the OpenAPI tool with the spec block in Navigator step 2. |
+| **Create tool** stays disabled with Anonymous authentication | Select the existing **`livewell-profile-openapi`** connection as well. If it is absent, ask the facilitator to prepare it; Anonymous does not remove this portal prerequisite. |
 | **Create tool** reports an invalid or empty schema | You pasted only part of the spec. Copy the block in step 2 again with its **Copy** button and replace everything in the **OpenAPI 3.0+ schema** box. |
-| The profile tool call fails or times out | The workshop server sleeps when idle and can take up to a minute to start: send the message again. If it keeps failing, tell the facilitator, who checks that the spec block still has the server's current address. |
+| The profile tool call fails or times out | The workshop server sleeps when idle and can take up to a minute to start. Wait, then retry the read-only question once. If it keeps failing, tell the facilitator, who checks the spec and connection target. |
 | Approval card is not shown | Check MCP approval settings. `register_interest` must require approval; `find_activities` can be auto-approved. |
 | Agent registers without approval | Stop using that version. Reconfigure MCP approval and re-copy the tools block in [Navigator step 6](#navigator). |
 | Memory ⚠️ preview is not available | Skip the memory checkpoint and continue with profile + MCP. |
-| Memory recall ignores preferences | Use a new conversation after `lab3_memory_set`, and allow time for memory processing (up to a minute). |
+| Memory recall ignores preferences | Allow the update delay, then use a new conversation. Inspect the stored preference in your own store; do not edit or clear records to force a pass. If unavailable, skip only this preview checkpoint. |
+| Several JSON objects or repeated answers appear | Select **Stop** if still generating. Do not accept the first object or keep retrying. Check the saved evidence schema and use the explicit discovery-only prompt in a new chat; registration is a separate confirmation. Report continued repetition to the facilitator. |
+| Guide IDs appear but no guide was retrieved | Do not count this as grounded. Use the full step 8 prompt, including `knowledge_base_retrieve`, and inspect its returned passages before confirming an activity. |
+| The response trace says No traces found | Allow telemetry time to arrive, close and reopen it, or use the agent's **Traces** tab. Do not resend a successful request just to obtain a trace. Use the recorded example with the facilitator if telemetry remains unavailable. |
 | 400 "must contain the word 'json'" | **Text format** is set to **JSON Object**. In **Parameters** (sliders icon next to **Model**), switch it to **JSON Schema** and expand and copy the [complete evidence schema](#evidence-schema). |
 | Tool call returns another resident or prints the resident identifier | Use the Builder function tool path or re-check the OpenAPI backend; the lab allows only the session resident. |
-| 5xx or MCP timeout | Retry once; the Builder script handles transient 5xx and the MCP server may take a moment to wake. |
+| Generic server error, 5xx or MCP timeout | For a read-only question, wait at least 30 seconds and retry once in a new chat. A memory recall needed this recovery in the walkthrough. For an approved registration, inspect the existing tool receipt first; do not repeat a write just because the reply failed. |
 | `livewell-nutrition-a2a` or `livewell-activity-a2a` is not in the **Configured** list | The facilitator has not run the specialist setup. Skip step 11; the coach still writes both plans from the knowledge base. |
 | A2A call fails with 401 or 403 | The project's Foundry Agent Consumer role can take up to 10 minutes to apply after setup. Tell the facilitator, then retry, or remove the two A2A tools and save. |
 

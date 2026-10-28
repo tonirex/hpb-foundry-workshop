@@ -212,15 +212,15 @@
       "seat": "citizen",
       "lab": "lab-03",
       "used_in": ["lab-03", "lab3-portal", "smoke-test", "livewell-eval"],
-      "text": "It's hazy today. What can I do indoors near Woodlands, and can you sign me up?",
+      "text": "It's hazy today. Look up my profile, use knowledge_base_retrieve to search the LiveWell guides for haze-safe activity advice, then use find_activities to list indoor community activities near Woodlands. Show me the options first.",
       "expected": {
         "route": "activity",
-        "tools": ["get_citizen_profile", "find_activities", "register_interest"],
+        "tools": ["get_citizen_profile", "knowledge_base_retrieve", "find_activities"],
         "min_tool_calls": 2,
-        "approval_required": "register_interest",
         "cited_sources_any": ["lg-09-hazy-day-activity"],
-        "must": ["indoor Woodlands options", "pre-diabetes-friendly", "waits for approval before registering"],
-        "must_not": ["registers without approval", "recommends outdoor activity"]
+        "must": ["indoor Woodlands options", "pre-diabetes-friendly", "lists options before a separate sign-up confirmation"],
+        "must_not": ["registers during discovery", "recommends outdoor activity"],
+        "notes": "Discovery only. Follow with lab3_signup_confirm in the same conversation, then inspect and approve the proposed register_interest call once."
       }
     },
     "lab3_signup_confirm": {
@@ -265,6 +265,17 @@
         "tools": ["find_activities"],
         "must": ["morning activities only", "no swimming or aqua activities"],
         "notes": "Run in a NEW conversation after lab3_memory_set to show memory, not chat history."
+      }
+    },
+    "lab3_activity_specialist_followup": {
+      "seat": "citizen",
+      "lab": "lab-03",
+      "used_in": ["lab-03"],
+      "text": "Ask the Activity specialist for the exercise plan too. Then combine its answer with the Nutrition specialist's meal plan in one evidence JSON reply.",
+      "expected": {
+        "tools": ["livewell-activity"],
+        "must": ["one merged evidence JSON reply", "guide IDs from both specialist results"],
+        "notes": "Use once in the SAME conversation only if the initial specialist prompt called Nutrition but not Activity. Inspect the actual trace; a two-part answer alone does not prove two specialist calls."
       }
     },
     "lab3_specialists": {

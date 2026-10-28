@@ -196,18 +196,22 @@ lw.record("lab3_profile_tailored", tailored)
 # %% [markdown]
 # ## 7. A compound request with a human in the loop (`lab3_hazy_indoor_signup`)
 #
-# Expect the profile and `find_activities` first. If the coach asks which activity you want, the script says yes
-# to the first indoor option in the same conversation. The approval request must appear BEFORE
+# Expect the profile and `find_activities` first. Discovery lists options without registering; the next turn
+# confirms the first indoor option in the same conversation. The approval request must appear BEFORE
 # `register_interest` runs.
 
 # %%
 conversation = lw.new_conversation()
 SPECIALIST_CALLS.clear()
-signup = lw.ask(coach, prompt_id="lab3_hazy_indoor_signup", functions=FUNCTIONS, approve=lw.ask_human,  # 👉
+signup = lw.ask(coach, prompt_id="lab3_hazy_indoor_signup", functions=FUNCTIONS, approve=False,  # 👉
                 conversation=conversation)
 lw.show_run(signup, verbose=args.verbose)
 turns = [signup]
-if not signup.approvals:
+discovery_read_only = not signup.approvals and not signup.called("register_interest")
+lw.expect("lab3_hazy_indoor_signup: discovery is read-only", discovery_read_only, signup.tool_names)
+discovery_searched = signup.called("knowledge_base_retrieve")
+lw.expect("lab3_hazy_indoor_signup: knowledge base searched", discovery_searched, signup.tool_names)
+if discovery_read_only and discovery_searched:
     follow = lw.ask(coach, prompt_id="lab3_signup_confirm", functions=FUNCTIONS,
                     approve=lw.ask_human, conversation=conversation, consent=False)
     lw.show_run(follow, verbose=args.verbose)

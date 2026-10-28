@@ -21,7 +21,7 @@ ROOT = P.ROOT
 LABS = ROOT / "content" / "labs"
 RUNS = ROOT / "demos" / "runs"
 PROMPTS = json.loads((ROOT / "content" / "prompts" / "test-prompts.json").read_text(encoding="utf-8"))["prompts"]
-# Same follow-up as the builder rail (content/assets/lab3_tools.py) when the coach first asks which activity.
+# Same explicit confirmation after discovery as the Builder rail (content/assets/lab3_tools.py).
 SIGNUP_YES = P.lw.prompt_text("lab3_signup_confirm")
 FIT = json.loads((ROOT / "content" / "fabric" / "reference-answers.json").read_text(encoding="utf-8"))["q_programme_fit"]
 PROGRAMME_YES = P.lw.prompt_text("lab3_programme_confirm")
@@ -34,13 +34,23 @@ HISTORICAL_RE = re.compile(
     rf"^\s*<!-- historical-screenshot: (?P<path>screenshots/(?P<id>{SLOT_ID})-[^\s]+\.png) -->\s*$"
 )
 
-# Slots a script cannot take: they need a participant (Foundry User) lab account or a fresh sign-in.
+# Slots requiring manual identity/setup checks or a specific live evidence state.
 MANUAL = {
     "lab-00/01": "fresh InPrivate sign-in with a lab account",
     "lab-00/02": "Authenticator registration on a lab account",
     "lab-04/07": "needs a Foundry User lab account (disabled controls)",
     "lab-04/08": "needs a Foundry User lab account (Access control, My role)",
-    "lab-02/20": "needs two completed portal evaluation runs (submit step 19 for demo-kb and demo-guarded)",
+    "lab-01/02": "Knowledge Add menu on an agent without KB; show the existing prepared entry",
+    "lab-01/02b": "existing livewell-guides-kb-mcp entry under Available knowledge bases",
+    "lab-02/20": "compare the existing shared guardrail matrix; do not submit a new participant batch",
+    "lab-03/02b": "facilitator-prepared Anonymous OpenAPI connection in the current portal form",
+    "lab-03/03": "current OpenAPI form with the prepared Anonymous connection selected; use native canvas capture",
+    "lab-03/12b": "ordered profile, knowledge retrieval and activity discovery trace with real source evidence",
+    "lab-03/13b": "completed, once-approved synthetic registration trace; do not repeat a write just for a screenshot",
+    "lab-03/15b": "read-only details of this participant's stored preference, with identifiers hidden",
+    "lab-03/25": "existing specialist A2A connections in the Configured catalog",
+    "lab-03/26": "one merged evidence reply from the participant's A2A-equipped coach",
+    "lab-03/27": "actual trace showing both specialist A2A calls",
 }
 EXTERNAL_CAPTURE = {"lab-04/10", "lab-04/11"}  # demos/lab4-devui.py --capture owns these.
 
@@ -374,6 +384,9 @@ def kb_config(run: Run) -> None:
             run.section_add("Knowledge")
             run.menuitem(r"connect to foundry iq")
             dlg = run.page.get_by_role("dialog").last
+            dlg.get_by_role("combobox", name=re.compile("connection", re.I)).click(timeout=5000)
+            run.page.get_by_role("option", name="livewell-search", exact=True).click(timeout=8000)
+            time.sleep(1.5)
             dlg.get_by_role("combobox", name=re.compile("knowledge base", re.I)).click(timeout=5000)
             time.sleep(1.5)
             run.page.get_by_role("option", name=re.compile("livewell-guides-kb", re.I)).first.click(timeout=8000)
@@ -628,10 +641,12 @@ def tools_chat(run: Run) -> None:
             run.shot("lab-03/11")
     run.escape()
     run.chat("lab3_hazy_indoor_signup")
-    if not P.approval_pending(run.page):
-        run.chat(SIGNUP_YES, new=False)
+    if P.approval_pending(run.page):
+        raise RuntimeError("discovery unexpectedly requested write approval; do not approve it")
+    run.say("Discover indoor options first; registration is a separate confirmation")
+    run.shot("lab-03/12")
+    run.chat(SIGNUP_YES, new=False)
     run.say("register_interest waits for approval")
-    run.shot("lab-03/12", note="" if P.approval_pending(run.page) else "no approval card")
     with run.soft("approve", "lab-03/13"):
         if not P.approval_pending(run.page):
             raise RuntimeError("no approval card")

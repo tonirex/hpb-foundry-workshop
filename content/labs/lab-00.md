@@ -31,11 +31,14 @@ Patterns: #10 Governance & Safety.
 
 Use a personal laptop and a private browser window. Open [Microsoft Foundry](https://ai.azure.com), sign in with
 your workshop account, and complete Authenticator registration if prompted. These account-specific screens are
-text-only. Screenshots below use facilitator demo agents; always edit your own `livewell-<initials>`.
+text-only. The walkthrough screenshots use the fresh practice agent `livewell-wxyz`; create and edit your own
+`livewell-<initials>`. Version numbers and generated wording can differ.
 
 1. Sign in to the Microsoft Foundry portal with **your own workshop account** (the username on your sign-in card) and open the shared project **`livewell-workshop`**.
 
    ![Project picker with livewell-workshop selected](screenshots/lab-00/03-open-livewell-project.png)
+
+   This close-up shows the MCAPS example; use the resource named on your facilitator's values sheet.
 
 2. Take the quick tour:
    - **Models** — where `gpt-5-mini` (Labs 0-2) and `gpt-4.1-mini` (Lab 3 on) are deployed.
@@ -44,7 +47,10 @@ text-only. Screenshots below use facilitator demo agents; always edit your own `
    - **Guardrails** — where shared safety policies are attached.
    - **Evaluations** — where batch and quality checks live.
    - **Traces/Monitor** — where model calls, tool calls, token use and cost are inspected.
-   ![Build area with Agents, Knowledge, Evaluations and Guardrails](screenshots/lab-00/04-portal-tour-build.png)
+   ![Expanded New Foundry navigation and the shared agent list](screenshots/lab-00/04-portal-tour-build.png)
+
+   The list pictured is from the completed walkthrough; create your own agent below, not another person's
+   test or demo agent. Ignore the **Workflows** tab: this workshop uses Agent Framework instead.
 
 3. RBAC checkpoint: **Foundry User** is sufficient to create prompt agents and run playground tests. Model deployment, new project connections and hosted publishing are facilitator tasks requiring **Foundry Project Manager** or broader permissions. Even if your workshop account has broader rights, do not change shared resources.
 4. Go to **Agents** → **New agent** → **Build an agent**.
@@ -91,7 +97,7 @@ text-only. Screenshots below use facilitator demo agents; always edit your own `
    ```
    <!-- /copy -->
 
-   <!-- historical-screenshot: screenshots/lab-00/07-base-instructions-saved.png -->
+   ![Base instructions on the fresh livewell-wxyz agent](screenshots/lab-00/07-base-instructions-saved.png)
 
 10. **Save** the agent. Note the saved version shown in the portal.
 11. Open the chat playground. Send (`lab0_hi`):
@@ -175,13 +181,16 @@ There is nothing to submit. Try the steps first, then open **Expected output** t
 
 `lab0_hi`: the coach introduces itself as LiveWell Coach and says it is not a doctor.
 
-<!-- historical-screenshot: screenshots/lab-00/08-lab0-hi.png -->
+![LiveWell Coach introduces itself and states that it is not a doctor](screenshots/lab-00/08-lab0-hi.png)
 
 `lab0_am_i_diabetic`: a refusal to diagnose, with a suggestion to see a doctor. In the trace, look for one `chat gpt-5-mini` span under the agent, no tool calls, the `base` block as the system message, and the token counts.
 
-<!-- historical-screenshot: screenshots/lab-00/09-lab0-am-i-diabetic.png -->
+![The coach refuses to diagnose diabetes and suggests speaking to a doctor](screenshots/lab-00/09-lab0-am-i-diabetic.png)
 
-<!-- historical-screenshot: screenshots/lab-00/10-refusal-trace.png -->
+![The greeting and refusal each have one model span, with no tool calls](screenshots/lab-00/10-refusal-trace.png)
+
+The conversation view includes both turns. Inspect the refusal's **Invoke Agent** entry rather than
+mistaking the conversation's two chat calls for two calls in one answer.
 
 </details>
 
@@ -196,7 +205,7 @@ There is nothing to submit. Try the steps first, then open **Expected output** t
 | No **Reasoning effort** under Parameters | You are not on `gpt-5-mini`. Reasoning effort only appears for reasoning models; check the Model dropdown. |
 | The answer cites web pages, or the trace shows a `web_search` call | The **Build an agent** template attached **Web search**. Remove it under **Tools** and save a new version. |
 | Agent diagnoses diabetes | Re-copy the instructions in [Navigator step 9](#navigator), save a new version, and retest. |
-| Trace is empty | Wait a few seconds, refresh the run list, or use the per-response trace link if the project Monitor page has not loaded yet. |
+| Trace is empty or shows only part of the run | Allow 30-60 seconds for spans to arrive, then close and reopen the trace. Use the per-response **Traces** link; do not resend a successful prompt just to populate telemetry. |
 | You accidentally used a colleague's agent | Return to Agents and open only `livewell-<your initials>`. |
 
 ## Where next

@@ -17,6 +17,8 @@
      FABRIC_IQ_CONNECTION_ID, then runs `scripts/render-values.py` to put them on the values sheet.
   5. Checks: /healthz, /openapi.json (operationId get_citizen_profile), /profile/me 200 and another resident 403,
      and that the Lab 3 spec block matches the live spec (scripts/sync-openapi-block.py --check; a warning only).
+     Also checks the facilitator-created Anonymous OpenAPI connection for the Navigator form. This connection
+     is prepared in the portal, not created or repaired by this script.
 
     python scripts/connect-tools.py            # create/update + checks
     python scripts/connect-tools.py --check    # report only
@@ -89,6 +91,26 @@ def ensure_connection(arm: Api, project_id: str, name: str, props: dict, check: 
     return ("created" if not current else "updated"), conn_id
 
 
+def check_profile_connection(arm: Api, project_id: str, name: str, target: str) -> str:
+    """Read the portal prerequisite without relying on an undocumented OpenAPI-category PUT contract."""
+    current = arm.get(f"{project_id}/connections/{name}?api-version={CONN_API}", ok_404=True)
+    fix = "facilitator: prepare the Anonymous connection in the portal (ADMIN-SETUP: Profile OpenAPI connection)"
+    if current is None:
+        return f"missing; {fix}"
+    props = current.get("properties") or {}
+    if not isinstance(props, dict):
+        return f"drift (properties); {fix}"
+    different = [key for key, value in {"category": "OpenAPI", "authType": "None"}.items()
+                 if props.get(key) != value]
+    base = target.rstrip("/")
+    if props.get("target") not in (base, base + "/"):
+        different.append("target")
+    metadata = props.get("metadata")
+    if not isinstance(metadata, dict) or metadata.get("type") != "openapi":
+        different.append("metadata.type")
+    return f"drift ({', '.join(different)}); {fix}" if different else "in sync"
+
+
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("--check", action="store_true", help="report only, change nothing")
@@ -108,6 +130,10 @@ def main() -> int:
     mcp_url = env["MCP_URL"]
     base = mcp_url.rsplit("/mcp", 1)[0]
     profile_url = f"{base}/openapi.json"
+
+    state = check_profile_connection(arm, env["AZURE_AI_PROJECT_ID"], names["profile_openapi_connection"], base)
+    rows.append(("OpenAPI prerequisite", names["profile_openapi_connection"], state))
+    ok &= state == "in sync"
 
     state, _ = ensure_connection(arm, env["AZURE_AI_PROJECT_ID"], names["mcp_connection"], {
         "category": "RemoteTool", "authType": "None", "target": mcp_url, "isSharedToAll": True,

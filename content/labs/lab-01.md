@@ -15,7 +15,7 @@ Patterns: #4 Knowledge Retrieval; #1 Multi-Document Understanding in the optiona
 ## Foundry features covered
 
 - Foundry IQ knowledge base on Azure AI Search, connected to a prompt agent.
-- Knowledge → Add → Connect to Foundry IQ portal flow ⚠️ preview.
+- Knowledge → Add → reuse the prepared Foundry IQ knowledge base; the portal experience is ⚠️ preview.
 - How Foundry IQ works and the knowledge-base settings (retrieval reasoning effort, output mode, retrieval instructions), in the optional **Explore further** panel ⚠️ preview.
 - Structured JSON response format for machine-routable answers.
 - Knowledge-base MCP endpoint connection for Builder scripts.
@@ -30,23 +30,41 @@ Patterns: #4 Knowledge Retrieval; #1 Multi-Document Understanding in the optiona
 <a id="navigator"></a>
 
 **Before you start:** your Lab 0 coach has `gpt-5-mini`, Reasoning effort Low, the `base` instructions and no tools.
-Screenshots may use `livewell-demo-kb`; make changes only to your own agent.
+Screenshots use `livewell-wxyz` and, for the optional intake, `livewell-wxyz-intake`; make changes only to your own agents.
 Switching from Builder? Check [which agent to use](../../README.md#switching-rails) first.
 
 1. Open your **`livewell-<initials>`** agent from Lab 0.
 
-   <!-- historical-screenshot: screenshots/lab-01/01-open-agent-configure.png -->
+   ![The fresh coach before adding knowledge](screenshots/lab-01/01-open-agent-configure.png)
 
-2. On the agent build page, find **Knowledge**. Select **Add** → **Connect to Foundry IQ**.
+2. On the agent build page, find **Knowledge** and select **Add**.
 
-   <!-- historical-screenshot: screenshots/lab-01/02-knowledge-add-foundry-iq.png -->
+   ![Knowledge Add menu with the prepared knowledge base available](screenshots/lab-01/02-knowledge-add-foundry-iq.png)
 
-3. Pick the shared knowledge base **`livewell-guides-kb`**. If the list is empty, refresh once and ask the facilitator to confirm the project connection.
-4. Select **Connect**. `livewell-guides-kb` now shows under **Knowledge** on your agent.
+3. Under **Available knowledge bases**, select **`livewell-guides-kb`** with the subtitle ending
+   **`livewell-guides-kb-mcp`**. This reuses the facilitator-prepared connection, the same one Builder uses.
+   Do not choose **Connect to Foundry IQ** or create a connection when this entry is available.
 
-   <!-- historical-screenshot: screenshots/lab-01/03-connect-foundry-iq.png -->
+   ![The prepared knowledge-base connection to reuse](screenshots/lab-01/02b-prepared-knowledge-connection.png)
 
-   > **Note:** The facilitator built this knowledge base before the workshop and everyone shares it. You don't create a knowledge base or an index, and the attach panel doesn't show its settings. To see what sits behind it, open **Explore further** after the pass signals below.
+4. `livewell-guides-kb` now appears under **Knowledge**. If the prepared entry is missing, stop and ask the
+   facilitator to check setup; do not make a new knowledge base, index or project connection.
+
+   > **Note:** Everyone shares the prepared knowledge base. Attaching it does not open its settings.
+   > See **Explore further** after the pass signals if you want to inspect them read-only.
+
+   <details>
+   <summary>Facilitator alternative: Connect to Foundry IQ</summary>
+
+   The initial walkthrough also exercised **Add → Connect to Foundry IQ**. In that dialog, select
+   the existing Search connection **`livewell-search`** first, wait for the list, then select
+   **`livewell-guides-kb` → Connect**. An empty list before choosing Search does not mean the KB is absent.
+   This path can create another project connection and was tested with an elevated account, so it is
+   not the default attendee route. Prefer the prepared entry above.
+
+   ![Facilitator alternative with the Search connection and shared KB selected](screenshots/lab-01/03-connect-foundry-iq.png)
+
+   </details>
 5. In **Instructions**, keep the Lab 0 `base` text and **append** this knowledge block:
 
    <!-- copy:instructions knowledge -->
@@ -75,7 +93,7 @@ Switching from Builder? Check [which agent to use](../../README.md#switching-rai
    ```
    <!-- /copy -->
 
-   <!-- historical-screenshot: screenshots/lab-01/05-knowledge-instructions.png -->
+   ![Knowledge instructions appended to the coach](screenshots/lab-01/05-knowledge-instructions.png)
 
 6. Set the response format. It is in the **Parameters** panel, not on the main build page:
    1. Select the **Parameters** icon (the sliders icon) just to the right of the **Model** dropdown at the top of the build page.
@@ -174,10 +192,7 @@ Switching from Builder? Check [which agent to use](../../README.md#switching-rai
 
    The schema permits only known guide IDs in `cited_sources`. That prevents invented IDs, not unsupported claims: check the retrieval trace and cited guide as well. Do not pick **JSON Object**: that mode needs the word "json" in every chat message and otherwise fails with a 400 error.
 
-   Facilitator examples can show the schema label `livewell_lab1_answer`. It has the same fields and rules;
-   the complete block you copy here gives **your** schema the name `livewell_answer`.
-
-   <!-- historical-screenshot: screenshots/lab-01/06-json-response-format.png -->
+   ![Parameters with the livewell_answer JSON Schema contract](screenshots/lab-01/06-json-response-format.png)
 7. Send (`lab1_prediabetes_eat`):
 
    <!-- copy:prompt lab1_prediabetes_eat -->
@@ -188,9 +203,12 @@ Switching from Builder? Check [which agent to use](../../README.md#switching-rai
 
    Expect JSON with at least one cited source. The strongest source is usually `lg-05-eating-for-pre-diabetes`, listed in [knowledge README](../knowledge/README.md).
 
-   Open **Citations / Sources** under the answer, then **Response metrics → Traces**. Confirm that `knowledge_base_retrieve` ran before the answer and that the guide supports it.
+   Read the guide IDs in JSON **`cited_sources`**. This structured-response view may not show a separate
+   **Citations / Sources** button. Select **Traces** under the response, then the
+   **Execute Tool** `knowledge_base_retrieve` span and **Input + Output**. Match the IDs to the
+   retrieved passages and check that they support the answer.
 
-   <!-- historical-screenshot: screenshots/lab-01/08-lg05-citation.png -->
+   ![The actual retrieval output includes the pre-diabetes guide](screenshots/lab-01/08-lg05-citation.png)
 
 8. Send (`lab1_supplement`):
 
@@ -210,6 +228,8 @@ Switching from Builder? Check [which agent to use](../../README.md#switching-rai
    <!-- /copy -->
 
    Expect a cited answer from the physical-activity guidance.
+
+   ![The optional activity question returns cited weekly activity guidance](screenshots/lab-01/10b-activity-guideline-answer.png)
 10. Optional Pattern #1 check: follow [Multi-document intake](#intake) below. It uses a **separate agent** because the intake JSON is a different contract. Do not replace your coach's schema.
 
 <a id="intake"></a>
@@ -255,6 +275,8 @@ Intake rules:
 <!-- /copy -->
 
 In **Parameters → Text format → JSON Schema**, **replace** the example with this complete schema, then save the agent:
+
+![The separate intake agent uses livewell_intake, not the coach answer schema](screenshots/lab-01/12-intake-schema.png)
 
 <!-- copy:schema lab1-intake -->
 ```json
@@ -458,6 +480,8 @@ Expect one JSON object with `screening`, `activity`, `preferences` and `follow_u
 The values must come from the documents. Return to **`livewell-<initials>`**, not the intake agent, for Lab 2;
 the coach must still have its knowledge base and `livewell_answer` schema.
 
+![One intake object combines the screening summary and activity diary](screenshots/lab-01/13-intake-result.png)
+
 </details>
 
 Participant-level pass signals:
@@ -510,9 +534,9 @@ flowchart TB
 
 To inspect these settings, open **Knowledge → Knowledge bases → `livewell-guides-kb`** in the left navigation,
 not the agent's attach panel. Look but don't select **Save**: a change there affects every participant.
-The older settings screenshot is omitted; the table above gives the workshop values. Do not create a new knowledge base.
+Do not create a new knowledge base or change these shared settings.
 
-<!-- historical-screenshot: screenshots/lab-01/04-kb-settings-preview.png -->
+![Read-only inspection of the shared knowledge-base settings](screenshots/lab-01/04-kb-settings-preview.png)
 
 **Retrieval reasoning effort trades cost and latency for depth.**
 
@@ -588,17 +612,19 @@ There is nothing to submit. Try the steps first, then open **Expected output** t
 
 **What this demonstrates.** Grounding combines a knowledge tool with a response contract. The schema only accepts known guide IDs, but a valid ID alone does not prove that the guide was retrieved or supports the answer: inspect the retrieval trace and the source. When the guides are silent, the right answer is to say so and route to a clinician.
 
-`lab1_prediabetes_eat`: JSON with `route` `self_care` and real guide ids in `cited_sources`, usually `lg-05-eating-for-pre-diabetes` and `lg-01-healthy-plate`. The citation chip under the reply links to the guide PDF.
+`lab1_prediabetes_eat`: JSON with `route` `self_care` and real guide ids in `cited_sources`, usually
+`lg-05-eating-for-pre-diabetes` and `lg-01-healthy-plate`. Use those IDs and the retrieval output to inspect
+the evidence; a separate citation chip is not required in the JSON view.
 
-<!-- historical-screenshot: screenshots/lab-01/07-prediabetes-json-answer.png -->
+![Cited pre-diabetes food guidance in the saved answer schema](screenshots/lab-01/07-prediabetes-json-answer.png)
 
 In the trace, look for **Execute Tool** `knowledge_base_retrieve` running before the **Chat** span. The tool span's output shows the documents it retrieved.
 
-<!-- historical-screenshot: screenshots/lab-01/09-knowledge-trace.png -->
+![Knowledge retrieval runs before the final model answer](screenshots/lab-01/09-knowledge-trace.png)
 
 `lab1_supplement`: "The LiveWell guides don't cover this", `route` `clinician` and an empty `cited_sources`. `intent` may be `out_of_scope` or `nutrition`; either is fine, because the route is what sends him to a clinician. The agent still searched the guides, found nothing about supplements and said so.
 
-<!-- historical-screenshot: screenshots/lab-01/11-json-route-clinician.png -->
+![The supplement question routes to a clinician without invented citations](screenshots/lab-01/11-json-route-clinician.png)
 
 **Builder.** The same two answers, each followed by its PASS lines, then the CHECKPOINT block. Look for `tools: knowledge_base_retrieve` on both runs, five PASS lines for the food answer and three for the supplement answer. The `model:` field shows the model that answered (`gpt-5-mini`).
 
@@ -610,8 +636,10 @@ In the trace, look for **Execute Tool** `knowledge_base_retrieve` running before
 
 | Symptom | Fix |
 |---|---|
-| **Connect to Foundry IQ** is not visible | You may be in Tools instead of Knowledge, or the portal preview has shifted. Use the screenshot-led steps above or the facilitator's prepared agent. |
-| **`livewell-guides-kb`** is not listed | Refresh, confirm you are in `livewell-workshop`, then ask the facilitator to check the shared knowledge base and your Foundry User access. |
+| **Available knowledge bases** is empty | Confirm you are in `livewell-workshop`, then ask the facilitator to check the prepared **`livewell-guides-kb-mcp`** connection and your access. Do not create another connection. |
+| Several entries are called **`livewell-guides-kb`** | Choose the subtitle ending **`livewell-guides-kb-mcp`**, not a generated `kb-...` connection. |
+| Attaching the knowledge base asks for connection permissions | Stop and ask the facilitator. The normal path selects an existing entry under **Available knowledge bases**; it does not create a connection. Do not grant yourself broader roles or edit a shared agent. |
+| No Citations / Sources button | Expected for some JSON views. Read `cited_sources`, then inspect **Traces → knowledge_base_retrieve → Input + Output**. |
 | No settings page after attaching `livewell-guides-kb` | Expected: attaching a shared knowledge base doesn't open its settings. See **Explore further** at the end of the Navigator steps. |
 | Can't find **Response format** | It is called **Text format**, inside the **Parameters** panel. Open it with the sliders icon to the right of the **Model** dropdown. |
 | Agent returns prose instead of JSON | In **Parameters** → **Text format**, choose **JSON Schema**, expand and copy the [complete answer schema](#answer-schema), save a new version, and re-run the prompt in a new chat. |
