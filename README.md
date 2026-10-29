@@ -14,7 +14,7 @@ workshop**. Fabric built the Resident 360 that sees Rahim; today Foundry builds 
 
 **Start at Lab 0, choose Navigator or Builder, and stay on that track.** Each track is self-contained.
 If you get stuck, open that lab's **Checkpoint → Expected output (open after you have tried it)** for examples
-and ask for help rather than retry repeatedly. Navigator screenshots sit beside the matching instructions.
+and ask for help rather than retry repeatedly.
 
 | Lab | Title | What you build | Time |
 |-----|-------|----------------|------|
@@ -40,9 +40,6 @@ Read each lab's objective and story, then use its **Navigator / Builder** links 
 Copy prompts, instructions and schemas with the code block's top-right **Copy** button. Keep your own track's coach
 between labs. Follow **Where next** rather than searching for another file.
 
-Outdated portal captures are not displayed in the participant guides. Those steps use complete text instructions
-and inline copy blocks instead; the retained illustrations remain alongside the relevant steps. Original captures
-are preserved in the repository for facilitator maintenance, not presented as current evidence.
 
 <a id="switching-rails"></a>
 ### Stay on one track
