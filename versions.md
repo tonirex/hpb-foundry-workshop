@@ -29,6 +29,21 @@ Older GQL-based teaching examples describe the legacy path and need a table-read
 
 ## Participant / facilitator tooling
 
+Builder correctness follow-up (2026-10-29): no dependency or API-version changes. Local regression checks now
+require successful retrieved passages, reject malformed selected JSON answers and distinguish unsupported memory
+discovery from verified-empty cleanup. These offline checks do not establish live service compatibility.
+Denial follow-up (2026-10-29): use the installed OpenAI SDK's optional `mcp_approval_response.reason`
+field and clarify the Lab 3 denial contract. No dependency or API-version change; multiple answers after denial fail.
+Memory follow-up (2026-10-29): isolate the Builder memory preview from write-capable agents. Two unqualified
+completed answers followed by an in-progress memory item were observed on azure-ai-projects 2.7.0 / openai 3.38.0.
+This does not establish a provider root cause. The blanket multi-message rejection was a local regression:
+ordinary responses now retain the original last-answer policy; multiple answers after denial remain errors.
+Scope-reset semantics were checked against [memory usage](https://learn.microsoft.com/en-us/azure/foundry/agents/how-to/memory-usage)
+and [delete memories by scope](https://learn.microsoft.com/en-us/azure/foundry/reference/rest/delete-scope-memories).
+No dependency or API-version change.
+The isolated memory cell subsequently passed all six live checks across two new conversations on those installed
+SDK versions, without registration/approval calls. This verifies the read-only demo, not the full write flow.
+
 Participant simplification (2026-10-29): no dependency or deployed-image upgrade. The supplied
 [Foundry Toolkit hosted-agent tutorial](https://learn.microsoft.com/en-us/azure/foundry/how-to/develop/vs-code-agents-workflow-pro-code)
 was checked and linked as optional Builder learning. DevUI captures use the existing pinned version below.

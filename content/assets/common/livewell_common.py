@@ -45,8 +45,6 @@ GUIDES_DIR = CONTENT / "knowledge" / "livewell-guides"
 WORKSHOP_YAML = CONTENT / "config" / "workshop.yaml"
 EVAL_FILE = CONTENT / "eval" / "livewell-eval.jsonl"
 
-RESPONSE_TIMEOUT = float(os.environ.get("LIVEWELL_TIMEOUT", "180"))
-FABRIC_TIMEOUT = float(os.environ.get("LIVEWELL_FABRIC_TIMEOUT", "300"))
 KB_LABEL = "livewell_guides"
 ACTIVITIES_LABEL = "livewell_activities"
 FABRIC_LABEL = "resident360"
@@ -97,6 +95,9 @@ def load_settings() -> None:
 
 
 load_settings()
+
+RESPONSE_TIMEOUT = float(os.environ.get("LIVEWELL_TIMEOUT", "180"))
+FABRIC_TIMEOUT = float(os.environ.get("LIVEWELL_FABRIC_TIMEOUT", "300"))
 
 
 @functools.lru_cache(maxsize=1)
@@ -470,8 +471,8 @@ def retry(fn: Callable[[], Any], *, what: str = "call", attempts: int = 5, retry
     """Exponential backoff (2, 4, 8, 16 s, plus 0-25% jitter; retry-after-ms and Retry-After win, see
     retry_delay) on 429, 5xx, timeouts and dropped connections, and at least 15 s between tries while a
     hosted agent's session starts (424 session_not_ready). Everything else, including guardrail blocks
-    (400 content_filter), raises at once. retry_timeouts=False raises a timeout at once: the server may
-    still be running the request, so a retry could repeat an approved write."""
+    (400 content_filter), raises at once. retry_timeouts=False raises all transport errors at once.
+    Approval submissions bypass this helper entirely: their outcome can be uncertain after an error."""
     import openai
     from azure.core.exceptions import HttpResponseError, ServiceRequestError, ServiceResponseError
 
@@ -481,7 +482,7 @@ def retry(fn: Callable[[], Any], *, what: str = "call", attempts: int = 5, retry
         except openai.BadRequestError:
             raise
         except (openai.APITimeoutError, openai.APIConnectionError, ServiceRequestError, ServiceResponseError) as e:
-            if not retry_timeouts and isinstance(e, openai.APITimeoutError):
+            if not retry_timeouts:
                 raise
             err: Exception = e
         except (openai.APIStatusError, HttpResponseError) as e:
@@ -753,6 +754,39 @@ def agent_reference(agent: Any, pin_version: bool = True) -> dict:
     return ref
 
 
+def memory_store_names() -> list[str] | None:
+    """Own memory stores, or None when this optional API is unsupported (not a verified empty list)."""
+    from azure.core.exceptions import HttpResponseError
+
+    prefix = f"livewell-{initials()}-"
+    try:
+        return [s.name for s in project().beta.memory_stores.list() if s.name.startswith(prefix)]
+    except HttpResponseError as error:
+        if _status(error) not in (404, 405, 501):
+            raise
+        say(f"WARNING: memory-store discovery is unavailable (HTTP {_status(error)}); "
+            "memory cleanup is NOT VERIFIED. Agent cleanup is independent.")
+        return None
+
+
+def cleanup_memory_stores(names: Iterable[str]) -> list[str]:
+    from azure.core.exceptions import ResourceNotFoundError
+
+    prefix = f"livewell-{initials()}-"
+    deleted = []
+    for name in sorted(set(names)):
+        if is_protected(name) or not name.startswith(prefix):
+            say(f"   skip {name} (not a livewell-{initials()}-* memory store)")
+            continue
+        try:
+            project().beta.memory_stores.delete(name)
+            deleted.append(name)
+        except ResourceNotFoundError:
+            pass
+    CREATED_STORES.difference_update(deleted)
+    return deleted
+
+
 def cleanup(names: Iterable[str] | None = None, *, everything: bool = False) -> list[str]:
     """Delete livewell-<INITIALS>-* agents: the ones created in this run by default, or all of yours with
     everything=True (make clean-agents). Anything else, and every protected prefix, is skipped."""
@@ -761,9 +795,8 @@ def cleanup(names: Iterable[str] | None = None, *, everything: bool = False) -> 
     prefix = f"livewell-{initials()}-"
     if everything:
         targets = sorted(a.name for a in project().agents.list() if a.name.startswith(prefix))
-        stores = sorted(s.name for s in project().beta.memory_stores.list() if s.name.startswith(prefix))
     else:
-        targets, stores = sorted(set(names) if names is not None else CREATED), sorted(CREATED_STORES)
+        targets = sorted(set(names) if names is not None else CREATED)
     deleted = []
     for name in targets:
         if is_protected(name) or not name.startswith(prefix):
@@ -774,15 +807,10 @@ def cleanup(names: Iterable[str] | None = None, *, everything: bool = False) -> 
             deleted.append(name)
         except ResourceNotFoundError:
             pass
-    for store in stores:
-        if store.startswith(prefix):
-            try:
-                project().beta.memory_stores.delete(store)
-                deleted.append(store)
-            except ResourceNotFoundError:
-                pass
     CREATED.difference_update(deleted)
-    CREATED_STORES.difference_update(deleted)
+    stores = memory_store_names() if everything else sorted(CREATED_STORES)
+    if stores is not None:
+        deleted.extend(cleanup_memory_stores(stores))
     say(f"cleanup: deleted {len(deleted)} item(s): {', '.join(deleted) or 'none'}")
     return deleted
 
@@ -800,6 +828,16 @@ class ToolCall:
     status: str = ""
     error: str = ""
     approved: bool | None = None
+
+    @property
+    def succeeded(self) -> bool:
+        if self.status != "completed" or self.error.strip().lower() not in ("", "none", "null") or not self.output.strip():
+            return False
+        try:
+            payload = json.loads(self.output)
+        except json.JSONDecodeError:
+            return True
+        return not (isinstance(payload, dict) and (payload.get("isError") or payload.get("error")))
 
     @property
     def is_fabric(self) -> bool:
@@ -829,11 +867,20 @@ class Run:
 
     @property
     def kb_called(self) -> bool:
-        return any(c.server == KB_LABEL and c.kind == "mcp_call" for c in self.tool_calls)
+        return bool(self.retrieved_guides)
+
+    @property
+    def retrieved_guides(self) -> list[str]:
+        return sorted({guide for guide, _ in kb_passages(self)})
 
     @property
     def fabric_called(self) -> bool:
+        """Any Fabric attempt, including failures: a failed route is still a route."""
         return any(c.is_fabric for c in self.tool_calls)
+
+    @property
+    def fabric_succeeded(self) -> bool:
+        return any(c.is_fabric and c.kind == "mcp_call" and c.succeeded for c in self.tool_calls)
 
     @property
     def approvals(self) -> list[ToolCall]:
@@ -855,8 +902,18 @@ class Run:
         return {"agent": self.agent, "version": self.version, "model": self.model, "blocked": self.blocked,
                 "block_reason": self.block_reason, "annotations": self.annotations, "seconds": round(self.seconds, 1),
                 "tools": [{k: v for k, v in asdict(c).items() if k != "output"} for c in self.tool_calls],
-                "kb_called": self.kb_called, "fabric_called": self.fabric_called, "citations": self.citations,
+                "kb_called": self.kb_called, "retrieved_guides": self.retrieved_guides,
+                "fabric_called": self.fabric_called, "fabric_succeeded": self.fabric_succeeded,
+                "citations": self.citations,
                 "json": data, "text": self.text, "response_ids": self.response_ids}
+
+
+class AmbiguousResponseError(ValueError):
+    """Multiple answer messages followed a denied approval; none was selected."""
+
+    def __init__(self, message: str, run: Run):
+        super().__init__(message)
+        self.run = run
 
 
 def _is_content_filter(err: Exception) -> bool:
@@ -954,10 +1011,15 @@ def ask(agent: Any, text: str | None = None, *, prompt_id: str | None = None,
     * MCP approval requests use `ask_human` by default, or explicit `approve` (bool/callback), and are
       printed, because the approval is the human-in-the-loop moment of Lab 3.
     * A guardrail block (HTTP 400 content_filter) returns Run(blocked=True) instead of raising.
+    * Approval submissions are never automatically retried, even on throttling or server errors.
+    * Multiple answer messages use the last message, except after a denied approval.
+    * Failed, incomplete or exhausted runs raise rather than returning an empty success-shaped Run.
     * The consent line is prepended so the Lab 0 consent rule does not stall scripted runs.
     """
     import openai
 
+    if max_rounds < 1:
+        raise ValueError("max_rounds must be at least 1")
     text = prompt_text(prompt_id) if prompt_id else (text or "")
     ref = agent_reference(agent)
     run = Run(prompt=text, agent=ref["name"], version=ref.get("version", ""))
@@ -974,8 +1036,10 @@ def ask(agent: Any, text: str | None = None, *, prompt_id: str | None = None,
             kw["previous_response_id"] = previous
         approving = isinstance(pending, list) and any(p.get("type") == "mcp_approval_response" for p in pending)
         try:
-            resp = retry(lambda: client.responses.create(**kw), what=f"{run.agent} response",
-                         retry_timeouts=not approving)
+            if approving:
+                resp = client.responses.create(**kw)
+            else:
+                resp = retry(lambda: client.responses.create(**kw), what=f"{run.agent} response")
         except openai.BadRequestError as e:
             if not _is_content_filter(e):
                 raise
@@ -990,6 +1054,10 @@ def ask(agent: Any, text: str | None = None, *, prompt_id: str | None = None,
         if getattr(resp, "status", "") == "incomplete" and "content_filter" in str(details):
             run.blocked, run.block_reason, run.text = True, "content_filter (output)", resp.output_text or ""
             break
+        if getattr(resp, "status", None) != "completed":
+            detail = getattr(resp, "error", None) or details or "no error details"
+            raise RuntimeError(f"{run.agent} response {resp.id} has status {getattr(resp, 'status', None)!r}: "
+                               f"{_trunc(detail, 300)}. The response was not retried; inspect its trace.")
         pending = []
         for item in resp.output:
             call = _item_to_call(item)
@@ -1015,14 +1083,32 @@ def ask(agent: Any, text: str | None = None, *, prompt_id: str | None = None,
                 call.approved = ok
                 say(f"   APPROVAL requested: {call.server}.{call.name}({_trunc(call.arguments, 160)}) -> "
                     f"{'APPROVED' if ok else 'DENIED'}")
-                pending.append({"type": "mcp_approval_response", "approval_request_id": item.id, "approve": ok})
+                decision = {"type": "mcp_approval_response", "approval_request_id": item.id, "approve": ok}
+                if not ok:
+                    decision["reason"] = ("Human approval denied. Do not execute or retry this action. "
+                                          "Acknowledge the denial; do not claim that this action completed.")
+                pending.append(decision)
         if not pending:
             messages = [i for i in resp.output if getattr(i, "type", "") == "message"]
             run.replies = len(messages)
-            # gpt-4.1-mini occasionally sends the answer twice in one response; keep the last one.
-            run.text = ("".join(getattr(p, "text", "") or "" for p in (messages[-1].content or []))
-                        if messages else "") or resp.output_text or ""
+            denied = [c.name for c in run.approvals if c.approved is False]
+            if run.replies > 1 and denied:
+                run.seconds = time.time() - start
+                raise AmbiguousResponseError(
+                    f"{run.agent} returned {run.replies} answer messages in response {resp.id}; "
+                    "expected one answer after denial. No message was selected and the request was not retried. "
+                    f"Recorded DENIED approval(s): {', '.join(denied)}. "
+                    "Do not treat answer text as proof that a denied action executed.", run)
+            run.text = ("".join(getattr(p, "text", "") or getattr(p, "refusal", "") or ""
+                                for p in (messages[-1].content or []))
+                        if messages else resp.output_text or "")
+            if not run.text.strip():
+                raise RuntimeError(f"{run.agent} response {resp.id} completed without a final answer. "
+                                   "The response was not retried; inspect its trace.")
             break
+    else:
+        raise RuntimeError(f"{run.agent} exhausted {max_rounds} tool-loop rounds without a final answer "
+                           f"(last response {previous}). The request was not restarted; inspect its trace.")
     run.seconds = time.time() - start
     if verbose:
         show_run(run, verbose=True)
@@ -1045,8 +1131,9 @@ def show_run(run: Run, *, verbose: bool = False, max_chars: int = 1500) -> None:
             if c.output:
                 say(f"       output: {_trunc(c.output.replace(chr(10), ' '), 300)}")
         say(f"   response ids (search these in Foundry > Traces): {', '.join(run.response_ids)}")
-        if run.replies > 1:
-            say(f"   (the model sent {run.replies} replies in one response; showing the last)")
+    if run.replies > 1:
+        say(f"   NOTE: the model sent {run.replies} answer messages; showing the last. "
+            "JSON parsing uses this same answer.")
     if run.text:
         say(_trunc(run.text, max_chars))
 
@@ -1055,39 +1142,18 @@ def show_run(run: Run, *, verbose: bool = False, max_chars: int = 1500) -> None:
 # Parsing replies
 # ---------------------------------------------------------------------------------------------------
 def extract_json(text: str) -> dict:
-    """Parse a JSON object from a reply: whole text, a ```json fence, or the first balanced {...}."""
+    """Require one complete JSON object, optionally wrapped in one Markdown code fence."""
     t = (text or "").strip()
-    fence = re.search(r"```(?:json)?\s*(\{.*?\})\s*```", t, re.S)
-    for candidate in ([fence.group(1)] if fence else []) + [t]:
-        try:
-            value = json.loads(candidate)
-            if isinstance(value, dict):
-                return value
-        except Exception:
-            pass
-    start = t.find("{")
-    while start != -1:
-        depth, in_str, esc = 0, False, False
-        for i in range(start, len(t)):
-            ch = t[i]
-            if in_str:
-                esc = (ch == "\\") and not esc
-                if ch == '"' and not esc:
-                    in_str = False
-                continue
-            if ch == '"':
-                in_str = True
-            elif ch == "{":
-                depth += 1
-            elif ch == "}":
-                depth -= 1
-                if depth == 0:
-                    try:
-                        return json.loads(t[start:i + 1])
-                    except Exception:
-                        break
-        start = t.find("{", start + 1)
-    raise ValueError(f"no JSON object in reply: {_trunc(t, 200)!r}")
+    fence = re.fullmatch(r"```(?:json)?\s*\n(.*?)\n\s*```", t, re.S)
+    if fence:
+        t = fence.group(1).strip()
+    try:
+        value = json.loads(t)
+    except json.JSONDecodeError as error:
+        raise ValueError(f"expected exactly one complete JSON object: {_trunc(t, 200)!r}") from error
+    if not isinstance(value, dict):
+        raise ValueError("expected exactly one JSON object, not an array or scalar")
+    return value
 
 
 @functools.lru_cache(maxsize=1)
@@ -1308,25 +1374,39 @@ KB_TOOL_DEFINITION = {
 }
 
 
-def kb_context(run: Run, max_chars: int = 12000) -> str:
-    """The passages the knowledge base returned in this run: the grounding context for GroundednessEvaluator."""
-    parts: list[str] = []
+def kb_passages(run: Run) -> list[tuple[str, str]]:
+    """Known guide IDs and non-empty passages returned by successful knowledge-base calls."""
+    passages: list[tuple[str, str]] = []
     for call in run.tool_calls:
-        if call.kind != "mcp_call" or call.server != KB_LABEL or not call.output:
+        if call.kind != "mcp_call" or call.server != KB_LABEL or not call.succeeded:
             continue
         try:
-            docs = json.loads(call.output).get("documents", [])
-        except Exception:
-            parts.append(call.output)
+            payload = json.loads(call.output)
+        except json.JSONDecodeError:
+            continue
+        docs = payload.get("documents") if isinstance(payload, dict) else None
+        if not isinstance(docs, list):
             continue
         for doc in docs:
+            if not isinstance(doc, dict):
+                continue
+            content = doc.get("content")
             try:
-                inner = json.loads(doc.get("content") or "{}")
-            except Exception:
-                inner = {"snippet": doc.get("content", "")}
-            guide = normalise_guide(inner.get("blob_url", "") or doc.get("title", "") or "") or doc.get("title", "")
-            parts.append(f"[{guide}] {inner.get('snippet') or inner.get('content') or ''}".strip())
-    return _trunc("\n\n".join(parts), max_chars)
+                inner = json.loads(content) if isinstance(content, str) else content
+            except json.JSONDecodeError:
+                inner = {"snippet": content}
+            if not isinstance(inner, dict):
+                continue
+            guide = normalise_guide(inner.get("blob_url", "")) or normalise_guide(doc.get("title", ""))
+            snippet = inner.get("snippet") or inner.get("content")
+            if guide and isinstance(snippet, str) and snippet.strip():
+                passages.append((guide, snippet.strip()))
+    return passages
+
+
+def kb_context(run: Run, max_chars: int = 12000) -> str:
+    """Successful retrieved passages only; tool errors must never become grounding context."""
+    return _trunc("\n\n".join(f"[{guide}] {text}" for guide, text in kb_passages(run)), max_chars)
 
 
 def eval_tool_calls(run: Run) -> list[dict]:

@@ -40,7 +40,7 @@ class FabricOptInTests(unittest.TestCase):
             load_instructions=Mock(return_value="aggregate-only instructions"),
             fabric_tool=Mock(return_value=object()),
             ask=Mock(return_value=NS(text="Healthier SG; I Quit; National Steps Challenge",
-                                     fabric_called=True, tool_names=["fabric_iq"])),
+                                     fabric_called=True, fabric_succeeded=True, tool_names=["fabric_iq"])),
             say=Mock(), show_run=Mock(), expect=Mock(), record=Mock(),
             ascii_safe=lambda text: text, _trunc=lambda text, length: text[:length],
             CONTENT=ROOT / "content", TOOLS_MODEL="tools-model", FABRIC_TIMEOUT=180,

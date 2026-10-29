@@ -25,6 +25,8 @@ knowledge base, the MCP app, the tool connections and livewell-guardrails. Takes
 Lab 2 covers the hands-on guardrail ladder only: batch evaluation is a separate, opt-in facilitator run
 in content/assets/lab2_evaluate.py, never part of this participant-path validation.
 Exit code 1 if any check fails, a lab crashes, or agents are left behind.
+An unsupported optional memory-store API does not prevent agent cleanup. The report explicitly marks memory
+cleanup NOT VERIFIED; authentication, authorization and service errors still fail rather than being hidden.
 """
 from __future__ import annotations
 
@@ -57,7 +59,8 @@ SIGNALS = [
     ("lab0", "first agent has no tool calls", ["lab0_hi: no tools configured or called",
                                                "lab0_am_i_diabetic: no tools configured or called"], False),
     ("lab1", "KB citation present", ["lab1_prediabetes_eat: knowledge base searched",
-                                     "lab1_prediabetes_eat: cites a real guide"], False),
+                                     "lab1_prediabetes_eat: cites a real guide",
+                                     "lab1_prediabetes_eat: cited guides were retrieved"], False),
     ("lab2", "injected flyer blocked or ignored", ["v2 lab2_injected_flyer: blocked or safely refused"], False),
     ("lab2", "four red flags blocked or safely refused on v2",
      [f"v2 {pid}: blocked or safely refused" for pid in LAB2_RED_FLAGS], False),
@@ -121,19 +124,22 @@ def signal_rows(runs: dict[str, dict], fabric: bool) -> list[tuple[str, str, str
     return rows
 
 
-def leftovers() -> list[str]:
-    """Delete and return every livewell-<initials>-* agent and memory store."""
+def leftovers() -> tuple[list[str], bool]:
+    """Delete own resources and report whether optional memory discovery could be verified."""
     from common import livewell_common as lw
 
     prefix = f"livewell-{lw.initials()}-"
     agents = [a.name for a in lw.project().agents.list() if a.name.startswith(prefix)]
-    stores = [s.name for s in lw.project().beta.memory_stores.list() if s.name.startswith(prefix)]
-    if agents or stores:
-        lw.cleanup(everything=True)
-    return agents + stores
+    if agents:
+        lw.cleanup(names=agents)
+    stores = lw.memory_store_names()
+    if stores:
+        lw.cleanup_memory_stores(stores)
+    return agents + (stores or []), stores is not None
 
 
-def report(runs: dict[str, dict], signals: list, left: list[str], initials: str, fabric: bool) -> str:
+def report(runs: dict[str, dict], signals: list, left: list[str], initials: str, fabric: bool,
+           memory_verified: bool = True) -> str:
     lines = [f"# Builder-rail validation - {dt.date.today():%Y-%m-%d}", "",
              f"`python scripts/validate-builder-rail.py` with INITIALS={initials}, "
              f"AZURE_ENV_NAME={os.environ.get('AZURE_ENV_NAME', '(content/assets/.env)')}, "
@@ -146,7 +152,9 @@ def report(runs: dict[str, dict], signals: list, left: list[str], initials: str,
     lines += [f"| {lab} | {label} | {res} |" for lab, label, res in signals]
     failed = [(r["lab"], k) for r in runs.values() for k, v in r["checks"].items() if not v]
     lines += ["", "Failed checks: " + (", ".join(f"{lab}: {k}" for lab, k in failed) if failed else "none"),
-              f"Left behind after the run: {', '.join(left) if left else 'nothing'}", ""]
+              f"Left behind after the run: {', '.join(left) if left else 'nothing detected'}",
+              "Memory cleanup: " + ("verified" if memory_verified else
+                                    "NOT VERIFIED (optional memory-store API unavailable; inspect it separately)"), ""]
     return "\n".join(lines)
 
 
@@ -164,7 +172,7 @@ def main() -> int:
 
     lw.initials()
     fabric = lw.fabric_enabled(args.fabric)
-    stale = leftovers()  # an interrupted earlier run must not fail this one
+    stale, initial_memory_verified = leftovers()  # an interrupted earlier run must not fail this one
     if stale:
         print(f"[validate] cleared {len(stale)} item(s) left by an earlier run: {', '.join(stale)}", flush=True)
     runs = {}
@@ -174,8 +182,9 @@ def main() -> int:
         r = run_lab(key, args.initials, fabric, args.verbose)
         runs[r["lab"]] = r
     signals = signal_rows(runs, fabric)
-    left = leftovers()
-    text = report(runs, signals, left, args.initials, fabric)
+    left, final_memory_verified = leftovers()
+    text = report(runs, signals, left, args.initials, fabric,
+                  memory_verified=initial_memory_verified and final_memory_verified)
     print("\n" + text)
     out = pathlib.Path(args.report) if args.report else ASSETS / ".runs" / f"builder-rail-{dt.date.today():%Y%m%d}.md"
     out.parent.mkdir(parents=True, exist_ok=True)

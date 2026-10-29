@@ -76,8 +76,9 @@ class ApprovalTests(unittest.TestCase):
 
     def run_approval_loop(self, **kwargs):
         client = NS(responses=NS(create=mock.Mock(side_effect=[
-            NS(id="response-1", output=[NS(id="approval-1", type="mcp_approval_request")], output_text=""),
-            NS(id="response-2", output=[], output_text="Decision recorded"),
+            NS(id="response-1", status="completed", output=[NS(id="approval-1", type="mcp_approval_request")],
+               output_text=""),
+            NS(id="response-2", status="completed", output=[], output_text="Decision recorded"),
         ])))
         with mock.patch.object(lw, "agent_reference", return_value={"name": "test-agent"}), \
                 mock.patch.object(lw, "is_hosted", return_value=False), \

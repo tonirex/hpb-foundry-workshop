@@ -234,6 +234,9 @@ Or run [`lab1_knowledge.py`](../assets/lab1_knowledge.py) as `# %%` cells in ord
 4. Read the `CHECKPOINT` block. Keep this coach for Builder Lab 2; do not use `--cleanup` between labs.
 
 The important cells are `lw.kb_tool()`, `lw.create_agent(...)` and `lw.ask(...)`. JSON constrains shape; it does not prove a claim is supported.
+Source checks require a completed retrieval with non-empty guide passages and match cited IDs to those returned
+guides. Failed calls and valid-looking IDs alone do not pass. Multiple answer messages or concatenated JSON
+objects are rejected rather than silently selecting one answer; inspect the response before trying again.
 
 ## Checkpoint
 
