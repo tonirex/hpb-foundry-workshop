@@ -55,7 +55,7 @@ Your earlier portal agent is unchanged; this exercise does not require the Build
 
 ### 1. Open the prepared workflow
 
-Click **Lab 4 private launch link (no token entry)** in the private workshop message. **LiveWell sequential** opens automatically. Do not forward the link; it expires at the supplied time.
+Click [Open the DevUI](https://ca-lab4-devui-mcaps.icymushroom-b5576da9.swedencentral.azurecontainerapps.io/workshop#access=eyJhdWQiOiJodHRwczovL2NhLWxhYjQtZGV2dWktbWNhcHMuaWN5bXVzaHJvb20tYjU1NzZkYTkuc3dlZGVuY2VudHJhbC5henVyZWNvbnRhaW5lcmFwcHMuaW8iLCJleHAiOjE3OTMzNTM2NzAsImlhdCI6MTc5MzMxNzY3MCwia2luZCI6ImxhdW5jaCIsIm5vbmNlIjoiMGY2YmRiNzE4OTJhZDQ2M2JiMmEwZTA4ODRlY2U5YTUiLCJ2IjoxfQ.GAy_aAfU9BMVK5aaZX0MleADFw5QIE8550fwEOnXQMk). **LiveWell sequential** opens automatically. Do not forward the link; it expires at the supplied time.
 
 ![Prepared sequential graph without a token-entry form](screenshots/lab-04/12-private-link-ready.png)
 
