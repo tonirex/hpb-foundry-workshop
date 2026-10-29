@@ -7,7 +7,7 @@
 #   `content/data/citizens.json`, and only for the signed-in session resident;
 # * the activities MCP server (project connection `livewell-activities-mcp`): `find_activities` runs freely,
 #   `register_interest` waits for a human approval;
-# * memory (preview) for stated preferences across conversations;
+# * a separate read-only memory coach (preview) for stated preferences across conversations;
 # * two specialists, `livewell-<INITIALS>-nutrition` and `livewell-<INITIALS>-activity`, connected to the coach
 #   as function tools: when the coach calls one, this script asks that specialist agent and hands back its reply.
 #
@@ -128,7 +128,7 @@ lw.say(f"specialists: {nutrition.name} v{nutrition.version}, {activity.name} v{a
 
 # %%
 blocks = ["base", "knowledge", "safety", "tools"]
-tools = [profile, knowledge, activities, nutrition_tool, activity_tool] + ([memory] if memory else [])
+tools = [profile, knowledge, activities, nutrition_tool, activity_tool]
 coach = lw.create_agent(
     "coach",
     lw.load_instructions(*blocks),  # 👉
@@ -136,7 +136,7 @@ coach = lw.create_agent(
     schema=lw.evidence_schema(), schema_name="livewell_evidence",
     model=lw.TOOLS_MODEL,  # 👉
     rai_policy=GUARDRAIL,
-    description="LiveWell Coach - Lab 3 tools, MCP and memory",
+    description="LiveWell Coach - Lab 3 tools, MCP and specialists",
 )
 lw.say(f"coach = {coach.name} version {coach.version} on {coach.definition.model}")
 
@@ -212,7 +212,7 @@ lw.show_run(signup, verbose=args.verbose)
 turns = [signup]
 discovery_read_only = not signup.approvals and not signup.called("register_interest")
 lw.expect("lab3_hazy_indoor_signup: discovery is read-only", discovery_read_only, signup.tool_names)
-discovery_searched = signup.called("knowledge_base_retrieve")
+discovery_searched = signup.kb_called
 lw.expect("lab3_hazy_indoor_signup: knowledge base searched", discovery_searched, signup.tool_names)
 if discovery_read_only and discovery_searched:
     follow = lw.ask(coach, prompt_id="lab3_signup_confirm", functions=FUNCTIONS,
@@ -238,33 +238,58 @@ lw.record("lab3_hazy_indoor_signup", {"turns": [r.summary() for r in turns], "to
 
 # %% [markdown]
 # ## 8. Memory across conversations (`lab3_memory_set` -> new conversation -> `lab3_memory_recall`)
+#
+# The optional preview uses a separate coach with read-only activity access. Historical preferences or
+# signup intent must never cause a new registration during this exercise.
 
 # %%
 recall = None
+memory_status = "SKIPPED (disabled or unavailable)"
 if memory:
-    told = lw.ask(coach, prompt_id="lab3_memory_set", functions=FUNCTIONS, conversation=lw.new_conversation())  # 👉
-    lw.show_run(told, verbose=args.verbose)
-    lw.say("waiting for the preference to reach memory (up to 2 minutes) ...")
-    remembered = lw.wait_for_memories(store, match=r"morning|swim")
-    lw.say(f"memories: {remembered}")
-    recall = lw.ask(coach, prompt_id="lab3_memory_recall", functions=FUNCTIONS,  # 👉
-                    conversation=lw.new_conversation())
-    lw.show_run(recall, verbose=args.verbose)
-    advice = lw.ascii_safe(advice_of(recall))
-    negated = re.compile(r"\b(not|no|avoid\w*|dislike\w*|instead|skip|without)\b|n't", re.I)
-    swim = [s for s in re.split(r"(?<=[.!?;])\s+|\n+", advice) if re.search(r"swim|aqua|pool", s, re.I)
-            and not negated.search(s)]
-    lw.expect("lab3_memory_recall: preference remembered",
-              any(re.search(r"morning|swim", m, re.I) for m in remembered), remembered)
-    lw.expect("lab3_memory_recall: memory search recorded",
-              any(c.kind == "memory_search_call" for c in recall.tool_calls), recall.tool_names)
-    lw.expect("lab3_memory_recall: suggests mornings", bool(re.search(r"morning|\b([6-9]|1[01])(:\d\d)?\s*a\.?m", advice, re.I)))
-    lw.expect("lab3_memory_recall: no swimming or aqua suggestion", not swim, swim)
-    lw.expect("lab3_memory_recall: activities fit the resident's conditions", *fits_profile(recall))
-    lw.expect("lab3_memory_recall: no invented guide ids", not invented(recall), invented(recall))
-    lw.record("lab3_memory_recall", recall)
+    memory_coach = lw.create_agent(
+        "memory-coach", lw.load_instructions(*blocks, "memory"),  # 👉
+        tools=[profile, knowledge, lw.activities_tool(read_only=True), memory],  # 👉
+        schema=lw.evidence_schema(), schema_name="livewell_evidence",
+        model=lw.TOOLS_MODEL, rai_policy=GUARDRAIL,
+        description="LiveWell Coach - read-only memory preview",
+    )
+    memory_functions = {"get_citizen_profile": lw.get_citizen_profile}
+    try:
+        told = lw.ask(memory_coach, prompt_id="lab3_memory_set", functions=memory_functions, approve=False,
+                      conversation=lw.new_conversation())  # 👉
+        lw.show_run(told, verbose=args.verbose)
+        lw.say("waiting for the preference to reach memory (up to 2 minutes) ...")
+        remembered = lw.wait_for_memories(store, match=r"morning|swim")
+        lw.say(f"memories: {remembered}")
+        recall = lw.ask(memory_coach, prompt_id="lab3_memory_recall", functions=memory_functions, approve=False,  # 👉
+                        conversation=lw.new_conversation())
+        lw.show_run(recall, verbose=args.verbose)
+    except lw.AmbiguousResponseError as error:
+        memory_status = "NOT VERIFIED (ambiguous preview response)"
+        lw.say(f"memory preview {memory_status}: {error}")
+        lw.record("lab3_memory_recall", {"status": "NOT VERIFIED", "error": str(error),
+                                        "trace": error.run.summary()})
+    else:
+        advice = lw.ascii_safe(advice_of(recall))
+        negated = re.compile(r"\b(not|no|avoid\w*|dislike\w*|instead|skip|without)\b|n't", re.I)
+        swim = [s for s in re.split(r"(?<=[.!?;])\s+|\n+", advice) if re.search(r"swim|aqua|pool", s, re.I)
+                and not negated.search(s)]
+        memory_checks = [
+            lw.expect("lab3_memory_recall: preference remembered",
+                      any(re.search(r"morning|swim", m, re.I) for m in remembered), remembered),
+            lw.expect("lab3_memory_recall: memory search recorded",
+                      any(c.kind == "memory_search_call" for c in recall.tool_calls), recall.tool_names),
+            lw.expect("lab3_memory_recall: suggests mornings",
+                      bool(re.search(r"morning|\b([6-9]|1[01])(:\d\d)?\s*a\.?m", advice, re.I))),
+            lw.expect("lab3_memory_recall: no swimming or aqua suggestion", not swim, swim),
+            lw.expect("lab3_memory_recall: activities fit the resident's conditions", *fits_profile(recall)),
+            lw.expect("lab3_memory_recall: no invented guide ids", not invented(recall), invented(recall)),
+        ]
+        memory_status = "VERIFIED" if all(memory_checks) else "NOT VERIFIED (check memory evidence)"
+        lw.record("lab3_memory_recall", recall)
 else:
-    lw.say("memory skipped")
+    lw.say(f"memory {memory_status}")
+lw.record("lab3_memory_status", memory_status)
 
 # %% [markdown]
 # ## 9. Specialists (`lab3_specialists`)
@@ -305,7 +330,7 @@ if args.fabric:
     ranked = [r["region"] for r in sorted(reference["q_disengaged_regions"]["rows"], key=lambda r: -r["share_pct"])]
     first = re.search(r"\b(North[- ]East|North|West|Central|East)\b", lw.ascii_safe(mei.text))
     top = first.group(1).replace(" ", "-") if first else None
-    lw.expect("fabric_q_disengaged_regions: Fabric IQ tool called", mei.fabric_called, mei.tool_names)
+    lw.expect("fabric_q_disengaged_regions: Fabric IQ tool called", mei.fabric_succeeded, mei.tool_names)
     lw.expect("fabric_q_disengaged_regions: top region matches the reference (+-1 rank)", top in ranked[:2],
               f"{top} vs reference {ranked[:3]}")
     lw.expect("fabric_q_disengaged_regions: no resident_id", no_resident_id(mei))
@@ -378,7 +403,8 @@ else:
 lw.checkpoint("Lab 3", {
     "lab3_hazy_indoor_signup tool calls": [f"{k} {n}" for k, n in kinds],
     "lab3_profile_tailored": evidence,
-    "lab3_memory_recall (new conversation)": (recall.json() if recall and not recall.blocked else "(memory skipped)"),
+    "lab3_memory_status": memory_status,
+    "lab3_memory_recall (new conversation)": (recall.json() if recall and not recall.blocked else memory_status),
     **fabric_result,
 })
 lw.say(f"results saved to {lw.save_results('lab3')}")

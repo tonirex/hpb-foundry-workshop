@@ -242,7 +242,7 @@ if args.fabric:
     answer = lw.ascii_safe(mei.text)
     positions = {p: answer.find(p.split(" (")[0]) for p in ranked if p.split(" (")[0] in answer}
     top = min(positions, key=positions.get) if positions else None
-    lw.expect("lab4_q_programmes_disengaged: Fabric IQ tool called", mei.fabric_called, mei.tool_names)
+    lw.expect("lab4_q_programmes_disengaged: Fabric IQ tool called", mei.fabric_succeeded, mei.tool_names)
     lw.expect("lab4_q_programmes_disengaged: grouped by programme (>= 3 named)", len(positions) >= 3, sorted(positions))
     lw.expect("lab4_q_programmes_disengaged: top programme matches the reference (+-1 rank)", top in ranked[:2],
               f"{top} vs reference {ranked[:3]}")

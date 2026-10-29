@@ -59,7 +59,7 @@ class ScriptTests(unittest.TestCase):
     def test_fabric_comparison_is_independent_and_has_no_write_tools(self):
         self.lw.fabric_enabled.return_value = True
         self.lw.ask.side_effect = [
-            NS(text="Aggregate regions", fabric_called=True, tool_names=["fabric_iq"]),
+            NS(text="Aggregate regions", fabric_called=True, fabric_succeeded=True, tool_names=["fabric_iq"]),
             NS(text="Guide advice", fabric_called=False, kb_called=True, tool_names=["knowledge_base_retrieve"]),
         ]
         self.execute("lab3_fabric.py")

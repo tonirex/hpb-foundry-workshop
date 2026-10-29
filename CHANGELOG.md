@@ -4,6 +4,30 @@ All notable changes to this workshop. One entry per phase PR.
 
 ## [Unreleased]
 
+### Builder correctness fixes (2026-10-29)
+
+- Require successful knowledge retrieval with non-empty passages, and match Lab 1 citations to retrieved guides.
+  Keep failed Fabric routing attempts visible without counting them as successful Fabric execution.
+- Preserve the original last-answer selection for ordinary multi-message responses; display and parse that same
+  answer. Reject concatenated JSON objects or extra text within it, and multiple answers after a denied approval.
+  Returned responses are not automatically replayed, avoiding repeated approved writes.
+- Clean up participant agents independently of optional memory discovery. Unsupported memory APIs produce an
+  explicit NOT VERIFIED report; permission and service errors remain failures. Cleanup prefix guards remain intact.
+- Submit approval decisions once only, including after connection, throttling or server errors. Keep retries for
+  ordinary calls; failed/incomplete responses, exhausted tool loops and empty final answers now stop explicitly.
+- Load timeout overrides after the settings files, preserving shell-variable precedence and the existing defaults.
+- Make denied MCP approvals explicit in the protocol reason and Lab 3 instructions. Require a successful write
+  result before confirming registration; fail closed on multiple answers after denial and report recorded denials.
+- Add offline regression coverage. No dependency pins, permissions or paid evaluations changed.
+- Isolate Builder's optional memory preview in a read-only coach, away from registrations and specialist writes.
+  Report unexpected denial-related ambiguity in that preview as NOT VERIFIED with its trace and continue the
+  core lab. Historical memory is not a new request or write permission. Personal memory reset is explicit, never
+  automatic; the user separately approved resetting their own test scope.
+- Verify the isolated memory demo live across two conversations: all six memory checks passed, with no registration
+  or approval calls. Reset eleven old personal memory items before that test; the store and other resources stayed.
+- Correct the overly broad multi-message rejection introduced during this review. An identical-response offline
+  comparison showed original last-answer handling worked; memory reset/isolation was not proof of its necessity.
+
 ### Participant simplification and inline screenshots (2026-10-29)
 
 - Removed intake from Lab 1 and retired the closing spotlight from active workshop content and tooling.

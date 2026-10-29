@@ -73,6 +73,8 @@ invented = [s for s in eat_json.get("cited_sources", []) if not lw.normalise_gui
 lw.expect("lab1_prediabetes_eat: knowledge base searched", eat.kb_called)
 lw.expect("lab1_prediabetes_eat: cites a real guide", bool(set(eat.citations) & set(lw.guide_ids())), eat.citations)
 lw.expect("lab1_prediabetes_eat: cites an expected guide", bool(set(eat.citations) & set(exp["cited_sources_any"])))
+lw.expect("lab1_prediabetes_eat: cited guides were retrieved",
+          bool(eat.citations) and set(eat.citations) <= set(eat.retrieved_guides), eat.retrieved_guides)
 lw.expect("lab1_prediabetes_eat: no invented source", not invented, invented)
 lw.expect("lab1_prediabetes_eat: route self_care", eat_json.get("route") == exp["route"], eat_json.get("route"))
 lw.record("lab1_prediabetes_eat", eat)

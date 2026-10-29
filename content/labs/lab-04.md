@@ -180,6 +180,7 @@ These are intended routes, not guaranteed model outcomes; explain the actual run
 | Red failed node | Open **Show error** and record the message. |
 | `knowledge_base_retrieve` exceeds its runtime | A live check encountered a 90-second retrieval timeout. Wait, then try one fresh session; if it repeats, use Expected output and report it rather than keep rerunning. |
 | Route differs | Inspect the actual tool call; do not retry indefinitely to match the example. |
+| Builder warning: `No handoff configuration found for agent 'activity'` | Expected: Activity is the final agent and has no outgoing hand-off. The explicit termination condition stops the workflow after its assistant answer. Check for Activity's answer and the final `CHECKPOINT`; the warning alone does not mean the workflow is stuck. |
 | Knowledge/activity tools absent from DevUI's Tools panel | That panel shows local hand-offs, not Foundry-hosted MCP internals. Token counts are not tool-call proof. |
 
 DevUI is a Microsoft open-source development sample, not a production multi-user app. Use only synthetic data.

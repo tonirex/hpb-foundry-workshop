@@ -95,7 +95,8 @@ def check_knowledge(agent) -> list:
     want = lw.expected("lab1_prediabetes_eat").get("cited_sources_any") or ["lg-05-eating-for-pre-diabetes"]
     invented = lw.invented_guides(run)
     return [("Knowledge: guide question cites a KB doc",
-             run.kb_called and bool(set(want) & set(run.citations)) and not invented,
+             run.kb_called and bool(set(want) & set(run.citations)) and not invented
+             and set(run.citations) <= set(run.retrieved_guides),
              f"kb={'yes' if run.kb_called else 'no'}, cites {', '.join(run.citations) or 'nothing'}"
              + (f", invented {invented}" if invented else "") + f" ({run.seconds:.0f}s)")]
 
@@ -138,7 +139,7 @@ def check_tools(agent, attempts: int = 2) -> list:
         names = sorted({c.name for c in run.tool_calls if c.kind in ("openapi_call", "mcp_call", "function_call")})
         profile = any(n.endswith("get_citizen_profile") for n in names)
         wrote = any(c.name == "register_interest" and c.kind == "mcp_call" for c in run.tool_calls)
-        ok = (profile and "find_activities" in names and run.called("knowledge_base_retrieve")
+        ok = (profile and "find_activities" in names and run.kb_called
               and len(names) >= 2 and not run.approvals and not wrote and no_resident_id(run.text))
         if ok or wrote or run.approvals:
             break
@@ -199,7 +200,7 @@ def check_fabric(agent) -> list:
     top = first.group(1).replace(" ", "-") if first else None
     rahim = lw.ask(agent, prompt_id="lab1_prediabetes_eat", approve=False)
     return [("Fabric: Mei's question calls Fabric IQ",
-             mei.fabric_called and top in ranked[:2] and no_resident_id(mei.text),
+             mei.fabric_succeeded and top in ranked[:2] and no_resident_id(mei.text),
              f"fabric={'yes' if mei.fabric_called else 'no'}, top region {top} (reference {', '.join(ranked[:3])}) "
              f"({mei.seconds:.0f}s)"),
             ("Fabric: Rahim's question stays off Fabric", not rahim.fabric_called and rahim.kb_called,

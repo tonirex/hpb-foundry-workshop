@@ -45,7 +45,7 @@ lw.say(f"created {agent.name} version {agent.version}")
 regions = lw.ask(agent, prompt_id="fabric_q_disengaged_regions", consent=False,
                  approve=False, timeout=lw.FABRIC_TIMEOUT)  # 👉
 lw.show_run(regions, verbose=args.verbose)
-lw.expect("fabric_q_disengaged_regions: Fabric IQ tool called", regions.fabric_called, regions.tool_names)
+lw.expect("fabric_q_disengaged_regions: Fabric IQ tool called", regions.fabric_succeeded, regions.tool_names)
 lw.record("fabric_q_disengaged_regions", regions)
 
 food = lw.ask(agent, prompt_id="lab1_prediabetes_eat", consent=False, approve=False)  # 👉

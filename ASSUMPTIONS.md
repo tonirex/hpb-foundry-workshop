@@ -1354,3 +1354,49 @@ says so. The linear procedure is [HPB-DELIVERY-RUNBOOK.md](content/admin/HPB-DEL
   the narrow request. A post-completion screenshot selector needed the Tools count badge; the successful
   hand-off was not rerun for that automation issue. Five model-backed workflow submissions, no evaluations,
   red teaming, deployment, identity/RBAC or capacity changes. Detailed provenance is in FACILITATOR-DEMOS.md.
+
+## Phase 4 follow-up: Builder correctness (2026-10-29)
+
+- The user approved fixing the three offline audit findings before the broader Python review. A successful
+  knowledge call must return non-empty passages for recognised guides; cited IDs must come from those passages.
+  This verifies source provenance, not semantic entailment of every claim (still a human/LLM-judge task).
+- Single-object parsing accepts raw JSON or one enclosing Markdown fence, not surrounding prose or concatenated
+  objects within the selected answer. Ordinary multi-message responses use the last message for both display
+  and parsing; multiple answers after a denied approval fail explicitly without automatic replay.
+- Optional memory-store discovery returning HTTP 404, 405 or 501 is unavailable, not proof of no stores. Agent
+  cleanup proceeds and the validator reports memory cleanup NOT VERIFIED. Other errors still propagate.
+- The legacy `tonirex/care-pal-foundry-workshop` reference returned HTTP 404 during reference review. Reused the
+  accessible CasePal helper and this repository's current patterns instead. No SDK upgrade or cloud run is approved
+  by these local fixes; live compatibility remains unverified.
+- The user also approved the three follow-up review fixes. Approval decisions are submitted once, without any
+  automatic retry (including throttling and server errors); the facilitator must inspect an uncertain registration
+  before a manual retry. Ordinary call retry/backoff behavior remains unchanged by default.
+- Failed, incomplete (except a reported content-filter block), non-terminal or empty final responses and exhausted
+  tool loops are errors, not successful empty runs. Refusal message content remains visible. Timeout overrides are
+  initialised after the participant/azd settings files and still yield to explicitly set shell variables.
+- The user's live denial failure had a recorded `approve=false`, two unqualified assistant messages claiming
+  registration and no `register_interest` execution in the saved response/input trace. Read-only inspection did
+  not replay the decision or establish independent server-state proof. Keep ambiguity rejection, send an explicit
+  denial reason and require successful execution evidence in the Lab 3 instructions. Prompt wording cannot
+  guarantee model compliance; the corrected live denial flow still needs a fresh participant run.
+- A subsequent memory-preference prompt was correctly sent in a new conversation, but its saved trace contained
+  an approved registration call, two completed assistant answers and an in-progress memory item. Retrieved
+  historical memory also contained earlier signup intent. This suggests unsafe carry-over of intent, but does
+  not establish the upstream cause of duplicate answers or independently verify the registration database.
+  The user approved isolating Builder memory in a read-only preview coach and resetting only their personal
+  test memory. The core write-capable coach no longer attaches memory; the preview has no registration or
+  specialist tools, and denies any unexpected approval. Multiple answers following an unexpected denial are
+  explicitly recorded NOT VERIFIED rather than blocking the remaining core exercise. Other errors propagate.
+  Memory resets are not automatic script recovery. No signup action was replayed during investigation.
+- The approved reset used `delete_scope` for the current participant's own store and scope, and `list_memories`
+  verified zero remaining items immediately afterwards (eleven before reset). A subsequent bounded live run of
+  the actual memory cell created only the personal read-only memory coach and passed all six checks across two
+  new conversations, without registration or approval calls. That test populated memory again; this is not a
+  claim that the scope remains empty or that all provider-side historical summaries/queued updates were erased.
+  The full signup/denial exercise was not replayed, and the upstream duplicate-message cause remains unproven.
+- Correction after the user's original-checkout comparison: the baseline deliberately selected the last answer
+  when the model returned multiple messages. Replaying identical output offline confirmed our blanket rejection
+  introduced the crash. Restore that policy without concatenating messages or falling back to an earlier answer
+  when the last is empty. Keep the separately approved read-only memory isolation, but do not claim that it or
+  memory cleanup was required to fix this regression. The denial exception remains deliberately conservative:
+  it does not semantically classify arbitrary registration claims in a single model message.

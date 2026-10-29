@@ -165,7 +165,7 @@ class CopyBlocksTests(unittest.TestCase):
                 tools = ({"register_interest"} if registered else set()) | (
                     {"knowledge_base_retrieve"} if searched else set())
                 run = SimpleNamespace(approvals=[object()] if approval else [], tool_names=sorted(tools),
-                                      called=lambda name: name in tools)
+                                      called=lambda name: name in tools, kb_called=searched)
                 lw = Mock()
                 lw.ask.side_effect = [run, run]
                 scope = {"lw": lw, "coach": object(), "FUNCTIONS": {}, "SPECIALIST_CALLS": [],
@@ -188,7 +188,7 @@ class CopyBlocksTests(unittest.TestCase):
         tools = [SimpleNamespace(kind="mcp_call", name=name)
                  for name in ("get_citizen_profile", "knowledge_base_retrieve", "find_activities")]
         run = SimpleNamespace(tool_calls=tools, called=lambda name: True,
-                              approvals=[object()], text="{}", seconds=1)
+                              approvals=[object()], text="{}", seconds=1, kb_called=True)
         lw = Mock()
         lw.ask.return_value = run
         scope = {"lw": lw, "no_resident_id": lambda text: True}
